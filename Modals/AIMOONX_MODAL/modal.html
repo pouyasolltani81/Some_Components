@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <title>Document</title>
+</head>
+<body class="flex items-center justify-center h-screen w-screen bg-gray-800">
+
+    <div class=" w-[700px] bg-violet-100 rounded-xl p-6 border-4 " dir="ltr">
+
+        <div class="p-4 flex justify-between">
+            
+            <div class="hover:text-red-800 cursor-pointer">X</div>
+            <div>Coin Analysis</div>
+            <div></div>
+
+        </div>
+
+        <div class="flex flex-col gap-2 transition-all" id="InputForm">
+
+
+            <div class="p-4 border-1 border-black rounded-xl bg-violet-200">XRP/USDT</div>
+
+            <div class="p-4 flex justify-between">
+
+                <div class="flex">
+
+                    <div class="text-gray-600 pr-2">time frame :</div>
+                    <div>4H</div>
+
+                </div>
+
+
+                <div class="flex">
+
+                    <div class="text-gray-600 pr-2">candle count :</div>
+                    <div>10</div>
+
+                </div>
+
+
+            </div>
+
+
+            <div class="flex p-4 justify-between">
+
+                <div class="flex">
+
+                    <div class="text-gray-600 pr-2 ">Use News :</div>
+                    <div class="text-green-800 cursor-pointer">True</div>
+
+                </div>
+
+                <div class="flex">
+
+                    <div class="text-gray-600 pr-2">Use Market Data :</div>
+                    <div class="text-green-800 cursor-pointer">True</div>
+
+                </div>
+
+                <div class="flex">
+
+                    <div class="text-gray-600 pr-2">Use Indicator :</div>
+                    <div class="text-red-800 cursor-pointer">False</div>
+
+                </div>
+
+
+            </div>
+
+
+            <div class=" w-full p-4 text-center bg-yellow-200 rounded-xl border-1 border-gray-800 hover:bg-yellow-300 cursor-pointer" id="AnalysisButton">
+                analyse
+            </div>
+
+            
+            
+            
+            
+        </div>
+        
+        <div class=" w-full p-4 text-center bg-yellow-200 rounded-xl  scale-y-0 transition hidden" id="WaitingMessage">
+            We are analysing the news . Please wait ...
+        </div>
+        
+        <div class="flex flex-col transition-all scale-y-0 hidden" id="AnalisisAnswer">
+
+            <div class="flex justify-between p-4">
+                <div>
+                    <div>XRP/USDT   icon</div>
+                    <div>XRP/USDT</div>
+                </div>
+
+                <div class="p-4 bg-green-100 rounded-xl">kharid</div>
+
+            </div>
+
+
+            <div class="flex justify-between p-4">
+                <div class="flex ">
+
+                    <div class="text-gray-600 pr-2">Patern :</div>
+                    <div>somthing good</div>
+
+                </div>
+
+
+                <div class="flex ">
+
+                    <div class="text-gray-600 pr-2">duration :</div>
+                    <div>2 weeks</div>
+
+                </div>
+
+
+                <div class="flex ">
+
+                    <div class="text-gray-600 pr-2">updated at : </div>
+                    <div>1/1/1</div>
+
+                </div>
+            </div>
+
+            <div class="flex flex-col p-4">
+
+                <div class="text-gray-600">analysis :</div>
+                <div class="break-words">A summery about how the model is analysing the coin  using the relevant news and in the selected time frame. if you have used market data and indicator there is a chance that the model analys the pair coin more accuratly.</div>
+
+            </div>
+
+
+            <div class="flex justify-between p-4 gap-2">
+                <div class=" p-2 rounded-xl cursor-pointer text-2xl"> < </div>
+
+                <div class="bg-gray-50 p-2 rounded-xl cursor-pointer">Breaking Newws</div>
+                <div class="bg-gray-50 p-2 rounded-xl cursor-pointer">Breaaking Newws</div>
+                <div class="bg-gray-50 p-2 rounded-xl cursor-pointer">Breaking News</div>
+
+                <div class="p-2 rounded-xl cursor-pointer text-2xl">></div>
+            </div>
+
+
+
+        </div>
+
+    </div>
+
+
+    <script src="./modal_js.js"></script>
+</body>
+</html>
