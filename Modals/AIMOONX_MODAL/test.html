@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coin Analysis Modal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+    .animate-slide-up { animation: slideUp 0.3s ease-in-out; }
+    .news-container {
+      max-height: 150px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #6b7280 #e5e7eb;
+    }
+    .news-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    .news-container::-webkit-scrollbar-thumb {
+      background-color: #6b7280;
+      border-radius: 4px;
+    }
+    .news-container::-webkit-scrollbar-track {
+      background-color: #e5e7eb;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center h-screen space-y-4">
+  <!-- Offline Mode Toggle -->
+  <div class="flex items-center space-x-2">
+    <label class="text-gray-700">حالت آفلاین:</label>
+    <input type="checkbox" id="offlineModeToggle" class="form-checkbox h-5 w-5 text-purple-600">
+  </div>
+
+  <!-- Buttons to Open Modals -->
+  <button class="open-modal-button px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors" data-coin-one="XRP" data-coin-two="USDT">
+    تحلیل XRP/USDT
+  </button>
+  <button class="open-modal-button px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors" data-coin-one="BTC" data-coin-two="USDT">
+    تحلیل BTC/USDT
+  </button>
+
+  <!-- Modal Container -->
+  <div id="modal-container" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden"></div>
+
+  <script>
+    class SmartCoinAnalysCard {
+      constructor(COIN_ONE, COIN_TWO, offlineMode = false) {
+        this.smartOrderId = COIN_ONE;
+        this.prefixId = `card_${Math.random().toString(36).substr(2, 9)}`;
+        this.cardElement = null;
+        this.newsItems = [];
+        this.visibleNewsCount = 5;
+        this.offlineMode = offlineMode;
+        this.isRequestPending = false;
+        this.createCard();
+        this.addEventListeners();
+      }
+
+      createCard() {
+        const cardHTML = `
+          <div id="${this.prefixId}" class="w-[400px] bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in">
+            <!-- Header -->
+            <div class="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center">
+              <div class="text-lg font-semibold">📊 تحلیل کوین</div>
+              <button class="close-button hover:bg-purple-700 p-1 rounded-full transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Input Form -->
+            <div class="p-6 space-y-4" id="${this.prefixId}_InputForm">
+              <!-- Coin Pair -->
+              <div class="space-y-2">
+                <label class="text-gray-700">💱 جفت ارز:</label>
+                <select id="${this.prefixId}_coinPair" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <option value="XRP-USDT" selected>🪙 XRP/USDT</option>
+                  <option value="BTC-USDT">⚡ BTC/USDT</option>
+                  <option value="ETH-USDT">🔥 ETH/USDT</option>
+                  <option value="LTC-USDT">🌟 LTC/USDT</option>
+                </select>
+              </div>
+
+              <!-- Time Frame and Candle Count -->
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-gray-700">⏱️ تایم فریم:</label>
+                  <select id="${this.prefixId}_timeFrame" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="1h">1H</option>
+                    <option value="4h" selected>4H</option>
+                    <option value="1d">1D</option>
+                    <option value="1w">1W</option>
+                  </select>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-gray-700">🕒 تعداد کندل:</label>
+                  <input type="number" id="${this.prefixId}_candleCount" value="10" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+              </div>
+
+              <!-- Options -->
+              <div class="space-y-2">
+                <label class="text-gray-700">📰 استفاده از اخبار:</label>
+                <select id="${this.prefixId}_useNews" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <option value="true" selected>✅ بله</option>
+                  <option value="false">❌ خیر</option>
+                </select>
+              </div>
+
+              <!-- Indicators Option -->
+              <div class="space-y-2">
+                <label class="text-gray-700">📊 استفاده از اندیکاتورها:</label>
+                <select id="${this.prefixId}_useIndicator" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <option value="true" selected>✅ بله</option>
+                  <option value="false">❌ خیر</option>
+                </select>
+              </div>
+
+              <!-- Analyze Button -->
+              <button class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors analysis-button">
+                تحلیل ✨
+              </button>
+            </div>
+
+            <!-- Waiting Message -->
+            <div class="p-6 bg-yellow-100 hidden waiting-message animate-slide-up">
+              <div class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>در حال دریافت داده‌ها... لطفا منتظر بمانید. ⏳</span>
+              </div>
+            </div>
+
+            <!-- Analysis Answer -->
+            <div class="p-6 space-y-4 hidden analysis-answer animate-slide-up">
+              <div class="flex justify-between items-center">
+                <div class="text-lg font-semibold" id="${this.prefixId}_pairName">XRP/USDT</div>
+                <div class="px-4 py-2 bg-green-100 text-green-800 rounded-lg" id="${this.prefixId}_decision">تصمیم</div>
+              </div>
+              <div class="space-y-2">
+                <div class="flex justify-between">
+                  <span class="text-gray-700">📐 الگو:</span>
+                  <span id="${this.prefixId}_pattern">-</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-700">⌛ مدت:</span>
+                  <span id="${this.prefixId}_duration">-</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-700">📅 آخرین بروزرسانی:</span>
+                  <span id="${this.prefixId}_updatedAt">-</span>
+                </div>
+              </div>
+
+              <!-- News Section -->
+              <div class="space-y-2">
+                <label class="text-gray-700">📰 اخبار مرتبط:</label>
+                <div class="news-container bg-gray-50 p-2 rounded-lg">
+                  <div id="${this.prefixId}_newsList" class="space-y-2"></div>
+                </div>
+                <button id="${this.prefixId}_showMoreNews" class="w-full py-1 text-purple-600 hover:text-purple-700 transition-colors hidden">
+                  نمایش بیشتر
+                </button>
+              </div>
+
+              <!-- More Information Button -->
+              <button class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors more-info-button">
+                اطلاعات بیشتر
+              </button>
+            </div>
+          </div>
+        `;
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = cardHTML;
+        this.cardElement = tempDiv.firstElementChild;
+      }
+
+      async sendInitialRequest(payload) {
+        if (this.offlineMode) {
+          // Simulate API response with hardcoded data
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              resolve({
+                return: true,
+                message: "We are processing your task, refer getLLMResponse with your task_id for results",
+                data: "67973ff5d7b4388f49a28783",
+              });
+            }, 1000);
+          });
+        }
+
+        const url = "http://79.175.177.113:15800/AimoonxNewsHUB/LLM/coinAnalyze/";
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("Error sending initial request:", error);
+          throw error;
+        }
+      }
+
+      async fetchAnalysisResults(taskId) {
+        if (this.offlineMode) {
+          // Simulate API response with hardcoded data
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              resolve({
+                return: true,
+                message: "completed",
+                data: [
+                  {
+                    name: "BTC-USDT daily analysis",
+                    status: "completed",
+                    createdAt: 1737965557,
+                    updatedAt: 1737965563,
+                    result: {
+                      response: {
+                        input_tokens: " ",
+                        output_tokens: 451,
+                        chart_Pattern: "سیگنال صعودی قوی",
+                        timestamp: 1737965563,
+                        rec_position: "خرید",
+                        summaryFa: "در هفته آینده، تصمیم نرخ بهره آمریکا و جلسه FOMC می تواند روندهای بیت کوین را تعیین کند. همچنین خبرهایی در مورد ورود شرکت های بزرگ نفتی و فناوری به صنعت استخراج بیت کوین وجود دارد. خبرگزاران پیش بینی می کنند که بازار بیت کوین ممکن است در طی 3 ماه آینده وارد دوره نزولی شود.",
+                        duration: "1-2 هفته",
+                        analysis: "بر اساس تحلیل تکنیکال، روند صعودی قوی در بازار بیت کوین وجود دارد و احتمال رسیدن به اوج جدید در آینده نزدیک وجود دارد. همچنین با توجه به خبرهای مثبت در مورد ورود شرکت های بزرگ به این صنعت، انتظار می رود قیمت بیت کوین در هفته های آینده افزایش یابد. اما بر اساس پیش بینی برخی تحلیلگران، ممکن است بازار بیت کوین در طی 3 ماه آینده وارد دوره نزولی شود.",
+                      },
+                      serviceName: "BTC-USDT daily analysis",
+                      serviceNameFa: "تحلیل روزانه نماد BTC-USDT ",
+                      newsTitles: [
+                        "Top Economic Events to Watch Next Week: US Interest Rate Decision, FOMC Meeting to Decide Crypto Trends",
+                        "Bitcoin, ETH, & XRP Price Prediction: Here’s What You Can Expect Next Week!",
+                        "Spot Bitcoin ETFs Record Staggering $4.7 Billion In Seven-Day Inflow Streak — Details",
+                        "Coinbase CEO: Trump’s Crypto Plans Spark Buzz in Crypto, Finance, and Tech",
+                        "Brazilian Oil Giant Petrobras to Enter Bitcoin Mining with Innovative Plan!",
+                        "Crypto Experts Forecast Bitcoin Market Peak: Bear Market Could Emerge Within 3 Months",
+                        "Bitcoin Poised For ‘Blow-Off Top’: Elliott Wave Analysis Suggests New ATH Of $170,000",
+                        "Bitcoin Price Dips But Nears $100K: A Pullback or a Launchpad?",
+                        "What is XRP’s Alleged New Meme Coin ‘Bitcoin Maxi Tears’?",
+                        "Robert Kiyosaki Predicts Stock Market Crash in Feb 2025 : Crypto Market to the Rescue?",
+                        "Crypto is Down Today & May Remain Highly Voltile This Week: Here’s What to Expect With Bitcoin & Altcoins",
+                        "How Low Can Bitcoin Price Crash? Arthur Hayes Warns of Temporary Setback",
+                      ],
+                      newsWordFreq: {},
+                      newsCount: 12,
+                      candles: {
+                        Close: [
+                          104740.1,
+                          105064.2,
+                          105002.9,
+                          104830,
+                          104963,
+                          105083.9,
+                          102617.4,
+                          101399.5,
+                          99054.1,
+                          99070.7,
+                        ],
+                        Open: [
+                          105046.3,
+                          104741.7,
+                          105064.2,
+                          105002.9,
+                          104830.1,
+                          104963,
+                          105083.9,
+                          102606.7,
+                          101399.5,
+                          99054.1,
+                        ],
+                        High: [
+                          105250,
+                          105242.8,
+                          105511.9,
+                          105232.5,
+                          105090.1,
+                          105250.3,
+                          105200,
+                          103272.8,
+                          101399.5,
+                          99145.1,
+                        ],
+                        Low: [
+                          104685.2,
+                          104502.4,
+                          104944.7,
+                          104432.8,
+                          104697.1,
+                          104890.3,
+                          102511.8,
+                          100724.6,
+                          97778.8,
+                          98694.5,
+                        ],
+                        timestap: [
+                          1737835200,
+                          1737849600,
+                          1737864000,
+                          1737878400,
+                          1737892800,
+                          1737907200,
+                          1737921600,
+                          1737936000,
+                          1737950400,
+                          1737964800,
+                        ],
+                        volume: [
+                          12302935.881871132,
+                          12453149.091202611,
+                          10041671.928971462,
+                          14277554.493472043,
+                          9575352.572005635,
+                          12788501.884106295,
+                          32436170.232665684,
+                          58313789.53150362,
+                          97717913.28039879,
+                          4030005.292235333,
+                        ],
+                        Bid: [
+                          117.16061341,
+                          118.79846087,
+                          95.50388673,
+                          136.27763434,
+                          91.26742705,
+                          121.71950851,
+                          313.13504049,
+                          572.91861546,
+                          979.89384922,
+                          40.74945475,
+                        ],
+                      },
+                      indicators: [],
+                      word_frequencies: [
+                        {
+                          text: "top",
+                          value: 1525,
+                        },
+                        {
+                          text: "economic",
+                          value: 763,
+                        },
+                        {
+                          text: "events",
+                          value: 763,
+                        },
+                        {
+                          text: "watch",
+                          value: 763,
+                        },
+                        {
+                          text: "next",
+                          value: 1525,
+                        },
+                        {
+                          text: "week",
+                          value: 2288,
+                        },
+                        {
+                          text: "us",
+                          value: 763,
+                        },
+                        {
+                          text: "interest",
+                          value: 763,
+                        },
+                        {
+                          text: "rate",
+                          value: 763,
+                        },
+                        {
+                          text: "decision",
+                          value: 763,
+                        },
+                        {
+                          text: "fomc",
+                          value: 763,
+                        },
+                        {
+                          text: "meeting",
+                          value: 763,
+                        },
+                        {
+                          text: "decide",
+                          value: 763,
+                        },
+                        {
+                          text: "crypto",
+                          value: 4576,
+                        },
+                        {
+                          text: "trends",
+                          value: 763,
+                        },
+                        {
+                          text: "bitcoin",
+                          value: 6864,
+                        },
+                        {
+                          text: "eth",
+                          value: 763,
+                        },
+                        {
+                          text: "xrp",
+                          value: 1525,
+                        },
+                        {
+                          text: "price",
+                          value: 2288,
+                        },
+                        {
+                          text: "prediction",
+                          value: 763,
+                        },
+                        {
+                          text: "expect",
+                          value: 1525,
+                        },
+                        {
+                          text: "spot",
+                          value: 763,
+                        },
+                        {
+                          text: "etfs",
+                          value: 763,
+                        },
+                        {
+                          text: "record",
+                          value: 763,
+                        },
+                        {
+                          text: "staggering",
+                          value: 763,
+                        },
+                        {
+                          text: "billion",
+                          value: 763,
+                        },
+                        {
+                          text: "seven",
+                          value: 763,
+                        },
+                        {
+                          text: "day",
+                          value: 763,
+                        },
+                        {
+                          text: "inflow",
+                          value: 763,
+                        },
+                        {
+                          text: "streak",
+                          value: 763,
+                        },
+                        {
+                          text: "details",
+                          value: 763,
+                        },
+                        {
+                          text: "coinbase",
+                          value: 763,
+                        },
+                        {
+                          text: "ceo",
+                          value: 763,
+                        },
+                        {
+                          text: "trump",
+                          value: 763,
+                        },
+                        {
+                          text: "plans",
+                          value: 763,
+                        },
+                        {
+                          text: "spark",
+                          value: 763,
+                        },
+                        {
+                          text: "buzz",
+                          value: 763,
+                        },
+                        {
+                          text: "finance",
+                          value: 763,
+                        },
+                        {
+                          text: "tech",
+                          value: 763,
+                        },
+                        {
+                          text: "brazilian",
+                          value: 763,
+                        },
+                        {
+                          text: "oil",
+                          value: 763,
+                        },
+                        {
+                          text: "giant",
+                          value: 763,
+                        },
+                        {
+                          text: "petrobras",
+                          value: 763,
+                        },
+                        {
+                          text: "enter",
+                          value: 763,
+                        },
+                        {
+                          text: "mining",
+                          value: 763,
+                        },
+                        {
+                          text: "innovative",
+                          value: 763,
+                        },
+                        {
+                          text: "plan",
+                          value: 763,
+                        },
+                        {
+                          text: "experts",
+                          value: 763,
+                        },
+                        {
+                          text: "forecast",
+                          value: 763,
+                        },
+                        {
+                          text: "market",
+                          value: 3051,
+                        },
+                        {
+                          text: "peak",
+                          value: 763,
+                        },
+                        {
+                          text: "bear",
+                          value: 763,
+                        },
+                        {
+                          text: "could",
+                          value: 763,
+                        },
+                        {
+                          text: "emerge",
+                          value: 763,
+                        },
+                        {
+                          text: "within",
+                          value: 763,
+                        },
+                        {
+                          text: "months",
+                          value: 763,
+                        },
+                        {
+                          text: "poised",
+                          value: 763,
+                        },
+                        {
+                          text: "blow",
+                          value: 763,
+                        },
+                        {
+                          text: "elliott",
+                          value: 763,
+                        },
+                        {
+                          text: "wave",
+                          value: 763,
+                        },
+                        {
+                          text: "analysis",
+                          value: 763,
+                        },
+                        {
+                          text: "suggests",
+                          value: 763,
+                        },
+                        {
+                          text: "new",
+                          value: 1525,
+                        },
+                        {
+                          text: "ath",
+                          value: 763,
+                        },
+                        {
+                          text: "dips",
+                          value: 763,
+                        },
+                        {
+                          text: "nears",
+                          value: 763,
+                        },
+                        {
+                          text: "pullback",
+                          value: 763,
+                        },
+                        {
+                          text: "launchpad",
+                          value: 763,
+                        },
+                        {
+                          text: "alleged",
+                          value: 763,
+                        },
+                        {
+                          text: "meme",
+                          value: 763,
+                        },
+                        {
+                          text: "coin",
+                          value: 763,
+                        },
+                        {
+                          text: "maxi",
+                          value: 763,
+                        },
+                        {
+                          text: "tears",
+                          value: 763,
+                        },
+                        {
+                          text: "robert",
+                          value: 763,
+                        },
+                        {
+                          text: "kiyosaki",
+                          value: 763,
+                        },
+                        {
+                          text: "predicts",
+                          value: 763,
+                        },
+                        {
+                          text: "stock",
+                          value: 763,
+                        },
+                        {
+                          text: "crash",
+                          value: 1525,
+                        },
+                        {
+                          text: "feb",
+                          value: 763,
+                        },
+                        {
+                          text: "rescue",
+                          value: 763,
+                        },
+                        {
+                          text: "today",
+                          value: 763,
+                        },
+                        {
+                          text: "may",
+                          value: 763,
+                        },
+                        {
+                          text: "remain",
+                          value: 763,
+                        },
+                        {
+                          text: "highly",
+                          value: 763,
+                        },
+                        {
+                          text: "voltile",
+                          value: 763,
+                        },
+                        {
+                          text: "altcoins",
+                          value: 763,
+                        },
+                        {
+                          text: "low",
+                          value: 763,
+                        },
+                        {
+                          text: "arthur",
+                          value: 763,
+                        },
+                        {
+                          text: "hayes",
+                          value: 763,
+                        },
+                        {
+                          text: "warns",
+                          value: 763,
+                        },
+                        {
+                          text: "temporary",
+                          value: 763,
+                        },
+                        {
+                          text: "setback",
+                          value: 763,
+                        },
+                      ],
+                    },
+                  },
+                ],
+              });
+            }, 1000);
+          });
+        }
+
+        const url = "http://79.175.177.113:15800/AimoonxNewsHUB/LLM/getLLMResponse/";
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ task_id: taskId }),
+          });
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("Error fetching analysis results:", error);
+          throw error;
+        }
+      }
+
+      renderNews(newsItems) {
+        const newsList = this.cardElement.querySelector(`#${this.prefixId}_newsList`);
+        const showMoreButton = this.cardElement.querySelector(`#${this.prefixId}_showMoreNews`);
+
+        // Clear existing news
+        newsList.innerHTML = '';
+
+        // Render visible news items
+        newsItems.slice(0, this.visibleNewsCount).forEach((news) => {
+          const newsItem = document.createElement('a');
+          newsItem.href = news.link || "#";
+          newsItem.target = "_blank";
+          newsItem.className = "block text-purple-600 hover:text-purple-700 transition-colors";
+          newsItem.textContent = news.title;
+          newsList.appendChild(newsItem);
+        });
+
+        // Show "Show More" button if there are more news items
+        if (newsItems.length > this.visibleNewsCount) {
+          showMoreButton.classList.remove('hidden');
+        } else {
+          showMoreButton.classList.add('hidden');
+        }
+      }
+
+      async analyze() {
+        const inputForm = this.cardElement.querySelector(`#${this.prefixId}_InputForm`);
+        const waitingMessage = this.cardElement.querySelector('.waiting-message');
+        const analysisAnswer = this.cardElement.querySelector('.analysis-answer');
+
+        // Get user inputs
+        const coinPair = this.cardElement.querySelector(`#${this.prefixId}_coinPair`).value;
+        const timeFrame = this.cardElement.querySelector(`#${this.prefixId}_timeFrame`).value;
+        const candleCount = this.cardElement.querySelector(`#${this.prefixId}_candleCount`).value;
+        const useNews = this.cardElement.querySelector(`#${this.prefixId}_useNews`).value === "true";
+        const useIndicator = this.cardElement.querySelector(`#${this.prefixId}_useIndicator`).value === "true";
+
+        // Show waiting message
+        inputForm.classList.add('hidden');
+        waitingMessage.classList.remove('hidden');
+
+        // Send initial request
+        try {
+          const payload = {
+            symbol: coinPair,
+            useNews: useNews,
+            useMarketData: true, // Assuming this is always true
+            useIndicator: useIndicator,
+            timeframe: timeFrame,
+            candleCount: parseInt(candleCount, 10),
+          };
+
+          const initialResponse = await this.sendInitialRequest(payload);
+          const taskId = initialResponse.data;
+
+          // Fetch analysis results
+          let analysisResults;
+          do {
+            analysisResults = await this.fetchAnalysisResults(taskId);
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // Poll every 2 seconds
+          } while (analysisResults.message !== "completed");
+
+          // Hide waiting message and show analysis answer
+          waitingMessage.classList.add('hidden');
+          analysisAnswer.classList.remove('hidden');
+
+          // Update analysis answer
+          const result = analysisResults.data[0].result.response;
+          this.cardElement.querySelector(`#${this.prefixId}_pairName`).textContent = coinPair;
+          this.cardElement.querySelector(`#${this.prefixId}_decision`).textContent = result.rec_position;
+          this.cardElement.querySelector(`#${this.prefixId}_pattern`).textContent = result.chart_Pattern;
+          this.cardElement.querySelector(`#${this.prefixId}_duration`).textContent = result.duration;
+          this.cardElement.querySelector(`#${this.prefixId}_updatedAt`).textContent = new Date(result.timestamp * 1000).toLocaleString('fa-IR');
+          this.cardElement.querySelector(`#${this.prefixId}_analysisText`).textContent = result.summaryFa;
+
+          // Render news
+          this.newsItems = analysisResults.data[0].result.newsTitles.map((title) => ({ title, link: "#" }));
+          this.renderNews(this.newsItems);
+        } catch (error) {
+          console.error("Error during analysis:", error);
+          waitingMessage.classList.add('hidden');
+          inputForm.classList.remove('hidden');
+          alert("خطا در دریافت داده‌ها. لطفا دوباره تلاش کنید.");
+        }
+      }
+
+      addEventListeners() {
+        const analysisButton = this.cardElement.querySelector('.analysis-button');
+        const closeButton = this.cardElement.querySelector('.close-button');
+        const showMoreNewsButton = this.cardElement.querySelector(`#${this.prefixId}_showMoreNews`);
+        const moreInfoButton = this.cardElement.querySelector('.more-info-button');
+
+        analysisButton.addEventListener('click', () => this.analyze());
+
+        showMoreNewsButton.addEventListener('click', () => {
+          this.visibleNewsCount += 5;
+          this.renderNews(this.newsItems);
+        });
+
+        moreInfoButton.addEventListener('click', () => {
+          window.open('https://example.com/more-info', '_blank');
+        });
+
+        closeButton.addEventListener('click', () => {
+          this.cardElement.remove();
+          if (this.isRequestPending) {
+            const openButton = document.querySelector(`button[data-coin-one="${this.smartOrderId}"]`);
+            if (openButton) {
+              openButton.classList.remove('bg-purple-600');
+              openButton.classList.add('bg-yellow-500');
+              openButton.textContent = `در حال پردازش ${this.smartOrderId}`;
+            }
+          }
+        });
+      }
+
+      start(container = document.body) {
+        container.appendChild(this.cardElement);
+      }
+    }
+
+    // Handle opening modals
+    document.addEventListener('DOMContentLoaded', () => {
+      const modalContainer = document.getElementById('modal-container');
+      const offlineModeToggle = document.getElementById('offlineModeToggle');
+
+      document.querySelectorAll('.open-modal-button').forEach((button) => {
+        button.addEventListener('click', () => {
+          const coinOne = button.getAttribute('data-coin-one');
+          const coinTwo = button.getAttribute('data-coin-two');
+          const offlineMode = offlineModeToggle.checked;
+
+          // Open modal
+          modalContainer.classList.remove('hidden');
+          const card = new SmartCoinAnalysCard(coinOne, coinTwo, offlineMode);
+          card.start(modalContainer);
+
+          // Change button state
+          button.classList.remove('bg-purple-600');
+          button.classList.add('bg-yellow-500');
+          button.textContent = `در حال پردازش ${coinOne}/${coinTwo}`;
+        });
+      });
+
+      // Close modal when clicking outside
+      modalContainer.addEventListener('click', (e) => {
+        if (e.target === modalContainer) {
+          modalContainer.classList.add('hidden');
+          modalContainer.innerHTML = '';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

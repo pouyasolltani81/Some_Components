@@ -305,7 +305,6 @@ class SmartCoinAnalysCard {
             <div class="flex flex-col transition-all scale-y-0 hidden analysis-answer">
                 <div class="flex justify-between p-4">
                     <div>
-                        <div id="${this.prefixId}_pair">XRP/USDT</div>
                         <div id="${this.prefixId}_pairName">XRP/USDT</div>
                     </div>
                     <div class="p-4 bg-green-100 rounded-xl" id="${this.prefixId}_decision">Decision</div>
@@ -430,6 +429,6 @@ function showSmartCoinAnalysCard(COIN_ONE, COIN_TWO, container = document.body) 
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    showSmartCoinAnalysCard("XRP", "USDT");
-});
+// document.addEventListener('DOMContentLoaded', () => {
+//     showSmartCoinAnalysCard("XRP", "USDT");
+// });
