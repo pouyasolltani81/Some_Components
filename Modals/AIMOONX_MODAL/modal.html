@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -6,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Coin Analysis Modal</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.js"></script>
+  
+
   <style>
     @keyframes fadeIn {
       from { opacity: 0; }
@@ -36,262 +38,15 @@
   </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen">
-  <div id="modal-container"></div>
 
-  <script>
-    class SmartCoinAnalysCard {
-      constructor(COIN_ONE, COIN_TWO) {
-        this.smartOrderId = COIN_ONE;
-        this.prefixId = `card_${Math.random().toString(36).substr(2, 9)}`;
-        this.cardElement = null;
-        this.newsItems = this.generateMockNews(); // Mock news data
-        this.visibleNewsCount = 5; // Number of news items to show initially
-        this.createCard();
-        this.addEventListeners();
-      }
 
-      createCard() {
-        const cardHTML = `
-          <div id="${this.prefixId}" class="w-[400px] bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in">
-            <!-- Header -->
-            <div class="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center">
-              <button class="close-button hover:bg-purple-700 p-1 rounded-full transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              <div class="text-lg font-semibold">📊 تحلیل کوین</div>
+  <div id="modal-container" class="ml-2" ></div>
+  <div id="modal-container2"  class="ml-2"></div>
+  <div id="modal-container3" class="ml-2"></div>
 
-            </div>
 
-            <!-- Input Form -->
-            <div class="p-6 space-y-4" id="${this.prefixId}_InputForm">
-              <!-- Coin Pair -->
-              <div class="space-y-2">
-                <label class="text-gray-700">💱 جفت ارز:</label>
-                <select id="${this.prefixId}_coinPair" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="XRP/USDT" selected>🪙 XRP/USDT</option>
-                  <option value="BTC/USDT">⚡ BTC/USDT</option>
-                  <option value="ETH/USDT">🔥 ETH/USDT</option>
-                  <option value="LTC/USDT">🌟 LTC/USDT</option>
-                </select>
-              </div>
-
-              <!-- Time Frame and Candle Count -->
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <label class="text-gray-700">⏱️ تایم فریم:</label>
-                  <select id="${this.prefixId}_timeFrame" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option value="1H">1H</option>
-                    <option value="4H" selected>4H</option>
-                    <option value="1D">1D</option>
-                    <option value="1W">1W</option>
-                  </select>
-                </div>
-                <div class="space-y-2">
-                  <label class="text-gray-700">🕒 تعداد کندل:</label>
-                  <input type="number" id="${this.prefixId}_candleCount" value="10" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                </div>
-              </div>
-
-              <!-- Options -->
-              <div class="space-y-2">
-                <label class="text-gray-700">📰 استفاده از اخبار:</label>
-                <select id="${this.prefixId}_useNews" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="true" selected>✅ بله</option>
-                  <option value="false">❌ خیر</option>
-                </select>
-              </div>
-
-              <!-- Indicators Option -->
-              <div class="space-y-2">
-                <label class="text-gray-700">📊 استفاده از اندیکاتورها:</label>
-                <select id="${this.prefixId}_useIndicator" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="true" selected>✅ بله</option>
-                  <option value="false">❌ خیر</option>
-                </select>
-              </div>
-
-              <!-- Analyze Button -->
-              <button class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors analysis-button">
-                تحلیل ✨
-              </button>
-            </div>
-
-            <!-- Waiting Message -->
-            <div class="p-6 bg-yellow-100 hidden waiting-message animate-slide-up">
-              <div class="flex items-center space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span>در حال دریافت داده‌ها... لطفا منتظر بمانید. ⏳</span>
-              </div>
-            </div>
-
-            <!-- Analysis Answer -->
-            <div class="p-6 space-y-4 hidden analysis-answer animate-slide-up">
-              <div class="flex justify-between items-center">
-                <div class="text-lg font-semibold" id="${this.prefixId}_pairName">XRP/USDT</div>
-                <div class="px-4 py-2 bg-green-100 text-green-800 rounded-lg" id="${this.prefixId}_decision">تصمیم</div>
-              </div>
-              <div class="space-y-2">
-                <div class="flex justify-between">
-                  <span class="text-gray-700">📐 الگو:</span>
-                  <span id="${this.prefixId}_pattern">-</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-700">⌛ مدت:</span>
-                  <span id="${this.prefixId}_duration">-</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-700">📅 آخرین بروزرسانی:</span>
-                  <span id="${this.prefixId}_updatedAt">-</span>
-                </div>
-              </div>
-
-              <!-- News Section -->
-              <div class="space-y-2">
-                <label class="text-gray-700">📰 اخبار مرتبط:</label>
-                <div class="news-container bg-gray-50 p-2 rounded-lg">
-                  <div id="${this.prefixId}_newsList" class="space-y-2"></div>
-                </div>
-                <button id="${this.prefixId}_showMoreNews" class="w-full py-1 text-purple-600 hover:text-purple-700 transition-colors hidden">
-                  نمایش بیشتر
-                </button>
-              </div>
-
-              <!-- More Information Button -->
-              <button class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors more-info-button">
-                اطلاعات بیشتر
-              </button>
-            </div>
-          </div>
-        `;
-
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = cardHTML;
-        this.cardElement = tempDiv.firstElementChild;
-      }
-
-      generateMockNews() {
-        return Array.from({ length: 20 }, (_, i) => ({
-          title: `خبر مرتبط ${i + 1}`,
-          link: `https://example.com/news/${i + 1}`,
-        }));
-      }
-
-      renderNews() {
-        const newsList = this.cardElement.querySelector(`#${this.prefixId}_newsList`);
-        const showMoreButton = this.cardElement.querySelector(`#${this.prefixId}_showMoreNews`);
-
-        // Clear existing news
-        newsList.innerHTML = '';
-
-        // Render visible news items
-        this.newsItems.slice(0, this.visibleNewsCount).forEach((news) => {
-          const newsItem = document.createElement('a');
-          newsItem.href = news.link;
-          newsItem.target = "_blank";
-          newsItem.className = "block text-purple-600 hover:text-purple-700 transition-colors";
-          newsItem.textContent = news.title;
-          newsList.appendChild(newsItem);
-        });
-
-        // Show "Show More" button if there are more news items
-        if (this.newsItems.length > this.visibleNewsCount) {
-          showMoreButton.classList.remove('hidden');
-        } else {
-          showMoreButton.classList.add('hidden');
-        }
-      }
-
-      async fetchData(params) {
-        // Mocked analysis data
-        const mockedData = {
-          pair: params.coinPair,
-          decision: "خرید 🟢",
-          pattern: "چکش صعودی 🛠️",
-          duration: `${params.candleCount} کندل`,
-          updatedAt: new Date().toLocaleTimeString('fa-IR'),
-          analysisText: `بر اساس ${params.candleCount} کندل اخیر در تایم فریم ${params.timeFrame}، بازار صعودی به نظر می‌رسد.`,
-        };
-
-        // Simulate a delay for fetching data
-        return new Promise((resolve) => {
-          setTimeout(() => resolve(mockedData), 2000);
-        });
-      }
-
-      addEventListeners() {
-        const inputForm = this.cardElement.querySelector(`#${this.prefixId}_InputForm`);
-        const waitingMessage = this.cardElement.querySelector('.waiting-message');
-        const analysisAnswer = this.cardElement.querySelector('.analysis-answer');
-        const analysisButton = this.cardElement.querySelector('.analysis-button');
-        const closeButton = this.cardElement.querySelector('.close-button');
-        const showMoreNewsButton = this.cardElement.querySelector(`#${this.prefixId}_showMoreNews`);
-        const moreInfoButton = this.cardElement.querySelector('.more-info-button');
-
-        analysisButton.addEventListener('click', async () => {
-          const coinPair = this.cardElement.querySelector(`#${this.prefixId}_coinPair`).value;
-          const timeFrame = this.cardElement.querySelector(`#${this.prefixId}_timeFrame`).value;
-          const candleCount = this.cardElement.querySelector(`#${this.prefixId}_candleCount`).value;
-          const useNews = this.cardElement.querySelector(`#${this.prefixId}_useNews`).value;
-          const useIndicator = this.cardElement.querySelector(`#${this.prefixId}_useIndicator`).value;
-
-          // Show waiting message
-          inputForm.classList.add('hidden');
-          waitingMessage.classList.remove('hidden');
-
-          // Fetch mocked data
-          try {
-            const data = await this.fetchData({ coinPair, timeFrame, candleCount, useNews, useIndicator });
-
-            // Hide waiting message and show analysis answer
-            waitingMessage.classList.add('hidden');
-            analysisAnswer.classList.remove('hidden');
-
-            // Update analysis answer
-            this.cardElement.querySelector(`#${this.prefixId}_pairName`).textContent = data.pair || 'N/A';
-            this.cardElement.querySelector(`#${this.prefixId}_decision`).textContent = data.decision || 'N/A';
-            this.cardElement.querySelector(`#${this.prefixId}_pattern`).textContent = data.pattern || 'N/A';
-            this.cardElement.querySelector(`#${this.prefixId}_duration`).textContent = data.duration || 'N/A';
-            this.cardElement.querySelector(`#${this.prefixId}_updatedAt`).textContent = data.updatedAt || 'N/A';
-
-            // Render news
-            this.renderNews();
-          } catch (error) {
-            console.error('Error fetching data:', error);
-          }
-        });
-
-        showMoreNewsButton.addEventListener('click', () => {
-          this.visibleNewsCount += 5;
-          this.renderNews();
-        });
-
-        moreInfoButton.addEventListener('click', () => {
-          window.open('https://example.com/more-info', '_blank');
-        });
-
-        closeButton.addEventListener('click', () => {
-          this.cardElement.remove();
-        });
-      }
-
-      start(container = document.body) {
-        container.appendChild(this.cardElement);
-      }
-    }
-
-    function showSmartCoinAnalysCard(COIN_ONE, COIN_TWO, container = document.body) {
-      const card = new SmartCoinAnalysCard(COIN_ONE, COIN_TWO);
-      card.start(container);
-      return card;
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      showSmartCoinAnalysCard("XRP", "USDT", document.getElementById('modal-container'));
-    });
+  <script src="modal_js.js">
+    
   </script>
 </body>
 </html>
