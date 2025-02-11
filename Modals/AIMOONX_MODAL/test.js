@@ -10,8 +10,11 @@ async function fetchCoinList() {
           Authorization: token,
         },
       })
-      .then((response) => {
+      .then ( async(response) => {
         console.log(response);
+        
+         console.log(response.data.coins);
+         
       })
       .catch((error) => {
         console.error("There was an error making the request:", error);
