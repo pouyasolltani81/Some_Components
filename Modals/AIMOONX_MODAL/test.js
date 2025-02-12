@@ -1,13 +1,16 @@
 async function fetchCoinList() {
-  const url = "http://188.34.202.221:8000/Coin/ListCoins/";
+  const url = "http://188.34.202.221:8000/Market/GetMarketPair/";
   const token = "6ae3d79118083127c5442c7c6bfaf0b9";
+  const params = {
+    marketpair_id : 1
+  }
   try {
     axios
-      .get(url, {
+      .post(url,params,  {
         headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json; charset=utf-8",
-          Authorization: token,
+          'Accept': "application/json",
+          "Content-Type": "application/json",
+          'Authorization': token,
         },
       })
       .then ( async(response) => {
@@ -25,3 +28,5 @@ async function fetchCoinList() {
 }
 
 fetchCoinList();
+
+
