@@ -16,6 +16,14 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
   <!-- Axios -->
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .candle-rect { stroke-width: 1; }
+        .bearish { fill: #d75541; stroke: #d75541; }
+        .bullish { fill: #50a073; stroke: #50a073; }
+        .wick { stroke-width: 1.5; }
+        .axis path { stroke: #666; }
+    </style>
 </head>
 <body class="bg-gray-100">
   <div class="container mx-auto p-6">
@@ -63,7 +71,9 @@
         <p id="marketDesc" class="text-gray-600"></p>
       </div>
       <!-- Candle Chart Canvas -->
-      <canvas id="candleChart" class="w-full h-96"></canvas>
+      <!-- <canvas id="candleChart" class="w-full h-96"></canvas>
+        -->
+        <div id="candle-chart"></div>
     </div>
   </div>
   
@@ -77,59 +87,18 @@
     // Fetch active markets from the API
     async function fetchActiveMarkets() {
       try {
-        // const response = await axios.get("http://188.34.202.221:8000/Market/GetActiveMarkets/" , {
-        //   headers: {
-        //     'Accept': "application/json",
-        //     'Authorization': token,
-        //   },
-        // });
-        // if (response.data.return) {
-        //   activeMarkets = response.data.markets;
-          activeMarkets = [
-    {
-      "id": 1,
-      "name": "kucoin",
-      "user": {
-        "id": 1,
-        "uuid": "6e402431-250c-4c52-84dc-e621af5f1aea",
-        "email": "admin@admin.com",
-        "username": "admin",
-        "is_active": true
-      },
-      "desc": "kucoin admin",
-      "api_params": {
-        "api_key": "6794bbb3af72b100015101ab",
-        "api_secret": "04a5639d-79dd-4e38-a8a1-c706699b06b2",
-        "passphrase": "exchange@1"
-      },
-      "base_url": "http://kucoin.com",
-      "is_active": true,
-      "ping_at": "2025-01-31T09:36:51.561210+03:30"
-    },
-    {
-      "id": 2,
-      "name": "nobitex",
-      "user": {
-        "id": 1,
-        "uuid": "6e402431-250c-4c52-84dc-e621af5f1aea",
-        "email": "admin@admin.com",
-        "username": "admin",
-        "is_active": true
-      },
-      "desc": "nobitex admin",
-      "api_params": {
-        "api_key": "Token bd0c716f14512ea784e00c6803f5e2f5b27b46bb",
-        "api_secret": "",
-        "passphrase": ""
-      },
-      "base_url": "http://nobitex.com",
-      "is_active": true,
-      "ping_at": "2025-01-31T09:36:51.967947+03:30"
-    }
-  ];
+        const response = await axios.get("http://188.34.202.221:8000/Pair/ListPairs/" , {
+          headers: {
+            'Accept': "application/json",
+            'Authorization': token,
+          },
+        });
+        if (response.data.return) {
+          activeMarkets = response.data.pairs;
+    
 
           populateMarketSelect();
-        // }
+        }
       } catch (error) {
         console.error("Error fetching active markets:", error);
       }
@@ -200,55 +169,125 @@
 if (Chart.FinancialController && Chart.CandlestickElement) {
   Chart.register(Chart.FinancialController, Chart.CandlestickElement);
 }
-// Initialize or update the candlestick chart
-function updateCandleChart(candleData) {
-  console.log("Candle data received (length:", candleData.length, "):", candleData);
-  const ctx = document.getElementById('candleChart').getContext('2d');
-  
-  // If no data, log an error and exit
-  if (!Array.isArray(candleData) || candleData.length === 0) {
-    console.error("No candle data available to render.");
-    return;
-  }
-  
-  if (candleChart) {
-    candleChart.data.datasets[0].data = candleData;
-    candleChart.update();
-  } else {
-    candleChart = new Chart(ctx, {
-      type: 'candlestick',
-      data: {
-        datasets: [{
-          label: 'OHLCV',
-          data: candleData,
-          // Explicit color definitions; try removing this block if candles still don't show
-          color: {
-            up: 'rgba(80, 160, 115, 1)',
-            down: 'rgba(215, 85, 65, 1)',
-            unchanged: 'rgba(90, 90, 90, 1)'
-          }
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            type: 'time',
-            time: { tooltipFormat: 'YYYY-MM-DD HH:mm' },
-            // Disable autoSkip so every candle is processed
-            ticks: { autoSkip: false, maxRotation: 0, minRotation: 0 },
-            title: { display: true, text: 'Time' }
-          },
-          y: {
-            title: { display: true, text: 'Price ($)' }
-          }
-        }
-      }
-    });
-  }
+// function updateCandleChart(candleData) {
+//   const ctx = document.getElementById('candleChart').getContext('2d');
+
+//   // Validate data format
+//   if (!candleData?.length || !candleData[0]?.x instanceof Date) {
+//     console.error("Invalid candle data format. Required: {x: Date, o: number, h: number, l: number, c: number}[]");
+//     return;
+//   }
+
+//   // Configure colors
+//   const datasetConfig = {
+//     label: 'Price',
+//     data: candleData,
+//     borderColor: candleData.map(c => c.o > c.c ? '#D75541' : '#50A073'), // Red/Green borders
+//     backgroundColor: candleData.map(c => c.o > c.c ? '#D7554166' : '#50A07366') // Transparent fill
+//   };
+
+//   // Update or create chart
+//   if (candleChart) {
+//     candleChart.data.datasets[0] = datasetConfig;
+//     candleChart.update();
+//   } else {
+//     candleChart = new Chart(ctx, {
+//       type: 'candlestick',
+//       data: { datasets: [datasetConfig] },
+//       options: {
+//         responsive: true,
+//         scales: {
+//           x: {
+//             type: 'time',
+//             time: { unit: 'minute', tooltipFormat: 'yyyy-MM-dd HH:mm' },
+//             ticks: { source: 'data', maxRotation: 0 }
+//           },
+//           y: { title: { display: true, text: 'Price (USD)' } }
+//         }
+//       }
+//     });
+//   }
+// }
+    
+
+function updateCandleChart(data, width = 800, height = 500) {
+    // Clear previous chart
+    d3.select("#candle-chart").html("");
+
+    // Set up dimensions
+    const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+
+    // Create SVG container
+    const svg = d3.select("#candle-chart")
+        .append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("preserveAspectRatio", "xMidYMid meet")
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Create scales
+    const xScale = d3.scaleTime()
+        .domain(d3.extent(data, d => d.x))
+        .range([0, chartWidth]);
+
+    const yScale = d3.scaleLinear()
+        .domain([d3.min(data, d => d.l), d3.max(data, d => d.h)])
+        .nice()
+        .range([chartHeight, 0]);
+
+    // Calculate candle width
+    const candleWidth = chartWidth / data.length * 0.7;
+
+    // Draw candles
+    svg.selectAll(".candle")
+        .data(data)
+        .enter()
+        .append("g")
+        .attr("class", "candle")
+        .attr("transform", d => `translate(${xScale(d.x)},0)`)
+        .each(function(d) {
+            const isBullish = d.c > d.o;
+            const upper = Math.max(d.o, d.c);
+            const lower = Math.min(d.o, d.c);
+            
+            // Candle body
+            d3.select(this)
+                .append("rect")
+                .attr("class", `candle-rect ${isBullish ? 'bullish' : 'bearish'}`)
+                .attr("x", -candleWidth/2)
+                .attr("y", yScale(upper))
+                .attr("width", candleWidth)
+                .attr("height", yScale(lower) - yScale(upper));
+
+            // Wick (high-low line)
+            d3.select(this)
+                .append("line")
+                .attr("class", "wick")
+                .attr("stroke", isBullish ? "#50a073" : "#d75541")
+                .attr("x1", 0)
+                .attr("x2", 0)
+                .attr("y1", yScale(d.h))
+                .attr("y2", yScale(d.l));
+        });
+
+    // Add axes
+    const xAxis = d3.axisBottom(xScale)
+        .tickFormat(d3.timeFormat("%Y-%m-%d %H:%M"));
+    
+    const yAxis = d3.axisLeft(yScale);
+
+    svg.append("g")
+        .attr("class", "axis x-axis")
+        .attr("transform", `translate(0,${chartHeight})`)
+        .call(xAxis);
+
+    svg.append("g")
+        .attr("class", "axis y-axis")
+        .call(yAxis);
 }
 
-    
     // Event listeners for the Update button and market selection
     document.getElementById('updateBtn').addEventListener('click', fetchOHLCVData);
     document.getElementById('marketSelect').addEventListener('change', function(e) {

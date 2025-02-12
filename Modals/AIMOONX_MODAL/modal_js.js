@@ -1,69 +1,69 @@
 // ===========================================================================
-      // 1. Fetch the list of coin pairs from the API
-      // ===========================================================================
-      async function fetchCoinList() {
-        const url = "http://188.34.202.221:8000/Pair/ListPairs/";
-        const token = "6ae3d79118083127c5442c7c6bfaf0b9";
-        try {
-          const response = await axios.get(url, {
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json; charset=utf-8",
-              Authorization: token,
-            },
-          });
-          console.log("Coin list response:", response);
-          
-          return response.data.pairs;
-        } catch (error) {
-          console.error("Error fetching coin list:", error);
-          return [];
-        }
-      }
+// 1. Fetch the list of coin pairs from the API
+// ===========================================================================
+async function fetchCoinList() {
+  const url = "http://188.34.202.221:8000/Pair/ListPairs/";
+  const token = "6ae3d79118083127c5442c7c6bfaf0b9";
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json; charset=utf-8",
+        Authorization: token,
+      },
+    });
+    console.log("Coin list response:", response);
 
-      // ===========================================================================
-      // 2. Define the SmartCoinAnalysCard class (with integrated coin list)
-      // ===========================================================================
-      class SmartCoinAnalysCard {
-        constructor(COIN_ONE, COIN_TWO, coinList = null) {
-          this.coin_one = COIN_ONE;
-          this.coin_two = COIN_TWO;
-          // If a coin list is provided from the API, use it to populate the options;
-          // otherwise, use fallback hard-coded pairs.
-          if (coinList && coinList.length > 0) {
-            // Here we transform the API "name" (e.g. "BTC-USDT") into "BTC/USDT"
-            this.Pair_coins_value = coinList.map(pair =>
-              pair.name.replace("-", "-")
-            );
-            // You can customize the display (for example, add emojis) as desired:
-            this.Pair_coins_name = coinList.map(pair =>
-              pair.name.replace("-", "/")
-            );
-          } else {
-            this.Pair_coins_value = ["XRP/USDT", "BTC/USDT"];
-            this.Pair_coins_name = ["🪙 XRP/USDT", "⚡ BTC/USDT"];
-          }
+    return response.data.pairs;
+  } catch (error) {
+    console.error("Error fetching coin list:", error);
+    return [];
+  }
+}
 
-          this.prefixId = `card_${Math.random().toString(36).substr(2, 9)}`;
-          this.cardElement = null;
-          this.triggerButton = null;
-          this.newsItems = this.generateMockNews();
-          this.visibleNewsCount = 5;
-          this.createTriggerButton();
-          this.createModal();
-          this.addEventListeners();
-        }
+// ===========================================================================
+// 2. Define the SmartCoinAnalysCard class (with integrated coin list)
+// ===========================================================================
+class SmartCoinAnalysCard {
+  constructor(COIN_ONE, COIN_TWO, coinList = null) {
+    this.coin_one = COIN_ONE;
+    this.coin_two = COIN_TWO;
+    // If a coin list is provided from the API, use it to populate the options;
+    // otherwise, use fallback hard-coded pairs.
+    if (coinList && coinList.length > 0) {
+      // Here we transform the API "name" (e.g. "BTC-USDT") into "BTC/USDT"
+      this.Pair_coins_value = coinList.map(pair =>
+        pair.name.replace("-", "-")
+      );
+      // You can customize the display (for example, add emojis) as desired:
+      this.Pair_coins_name = coinList.map(pair =>
+        pair.name.replace("-", "/")
+      );
+    } else {
+      this.Pair_coins_value = ["XRP/USDT", "BTC/USDT"];
+      this.Pair_coins_name = ["🪙 XRP/USDT", "⚡ BTC/USDT"];
+    }
 
-        createTriggerButton() {
-          const button = document.createElement("button");
-          button.className =
-            "py-3 px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-lg";
-          button.textContent = `${this.coin_one} / ${this.coin_two}`;
-          this.triggerButton = button;
-        }
+    this.prefixId = `card_${Math.random().toString(36).substr(2, 9)}`;
+    this.cardElement = null;
+    this.triggerButton = null;
+    this.newsItems = this.generateMockNews();
+    this.visibleNewsCount = 5;
+    this.createTriggerButton();
+    this.createModal();
+    this.addEventListeners();
+  }
 
-        createModal() {
-          const cardHTML = `
+  createTriggerButton() {
+    const button = document.createElement("button");
+    button.className =
+      "py-3 px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-lg";
+    button.textContent = `${this.coin_one} / ${this.coin_two}`;
+    this.triggerButton = button;
+  }
+
+  createModal() {
+    const cardHTML = `
           <div id="${this.prefixId}" class="w-[600px] bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in hidden">
             <div class="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center">
               <button class="close-button hover:bg-purple-700 p-1 rounded-full transition-colors">
@@ -168,232 +168,236 @@
           </div>
           `;
 
-          const tempDiv = document.createElement("div");
-          tempDiv.innerHTML = cardHTML;
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = cardHTML;
 
-          // Populate the coin pair <select> options using the coinList data
-          const coinPairSelect = tempDiv.querySelector(`#${this.prefixId}_coinPair`);
-          this.Pair_coins_name.forEach((element, index) => {
-            let option = document.createElement("option");
-            option.value = this.Pair_coins_value[index];
-            option.innerHTML = element;
-            // Set the default selected option if it matches the card’s coin pair
-            if (this.Pair_coins_value[index] === `${this.coin_one}/${this.coin_two}`) {
-              option.selected = "true";
-            }
-            coinPairSelect.appendChild(option);
-          });
-
-          this.cardElement = tempDiv.firstElementChild;
-        }
-
-        generateMockNews() {
-          return Array.from({ length: 20 }, (_, i) => ({
-            title: `خبر مرتبط ${i + 1}`,
-            link: `https://example.com/news/${i + 1}`,
-          }));
-        }
-
-        renderNews() {
-          const newsList = this.cardElement.querySelector(
-            `#${this.prefixId}_newsList`
-          );
-          const showMoreButton = this.cardElement.querySelector(
-            `#${this.prefixId}_showMoreNews`
-          );
-          newsList.innerHTML = "";
-          this.newsItems.slice(0, this.visibleNewsCount).forEach((news) => {
-            const newsItem = document.createElement("a");
-            newsItem.href = news.link;
-            newsItem.target = "_blank";
-            newsItem.className =
-              "block text-purple-600 hover:text-purple-700 transition-colors";
-            newsItem.textContent = news.title;
-            newsList.appendChild(newsItem);
-          });
-          showMoreButton.classList.toggle(
-            "hidden",
-            this.newsItems.length <= this.visibleNewsCount
-          );
-        }
-
-        // ------------------------------------------------------------------------
-        // This method demonstrates two axios calls:
-        //  1. Sending the analysis request (POST)
-        //  2. Retrieving the analysis result (GET)
-        // Replace the URLs with your actual endpoints.
-        // ------------------------------------------------------------------------
-        async fetchData(params) {
-          const sendUrl = "http://79.175.177.113:15800/AimoonxNewsHUB/LLM/coinAnalyze/";
-          const getUrl = "http://79.175.177.113:15800/AimoonxNewsHUB/LLM/getLLMResponse/";
-          try {
-            // 1. Send the analysis request
-            const sendResponse = await axios.post(sendUrl, params, {
-              headers: { Accept: "application/json",
-              "Content-Type": "application/json; charset=utf-8",
-              Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7', },
-            });
-            // Assume the response returns an analysis ID
-            const analysisId = sendResponse.data.data;
-            // 2. Retrieve the analysis result using the analysisId
-            const getResponse = await axios.post(getUrl, {
-              params: { task_id: analysisId },
-            }, {
-              headers: { Accept: "application/json",
-              "Content-Type": "application/json; charset=utf-8",
-              Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7', },
-            });
-              my_json = {
-                 pair: getResponse.data.data.name,
-                decision:getResponse.data.data.result.rec_position ,
-                pattern:  getResponse.data.data.result.chart_Pattern,
-                duration: `${ getResponse.data.data} کندل`,
-                updatedAt:  getResponse.data.data.status,
-
-              }
-            return getResponse.data.data;
-          } catch (error) {
-            console.error("Error fetching analysis data", error);
-            // For template purposes, return mocked data if an error occurs
-            // return {
-            //   pair: params.coinPair,
-            //   decision: "خرید 🟢",
-            //   pattern: "چکش صعودی 🛠️",
-            //   duration: `${params.candleCount} کندل`,
-            //   updatedAt: new Date().toLocaleTimeString("fa-IR"),
-            // };
-          }
-        }
-
-        addEventListeners() {
-          // Refresh button to restart the analysis process
-          const refreshButton = this.cardElement.querySelector(".refresh-button");
-          refreshButton.addEventListener("click", () => {
-            this.cardElement
-              .querySelector(".analysis-answer")
-              .classList.add("hidden");
-            this.cardElement
-              .querySelector(`#${this.prefixId}_InputForm`)
-              .classList.remove("hidden");
-            this.visibleNewsCount = 5;
-            this.cardElement.querySelector(
-              `#${this.prefixId}_newsList`
-            ).innerHTML = "";
-          });
-
-          this.triggerButton.addEventListener("click", () => {
-            this.cardElement.classList.remove("hidden");
-            this.triggerButton.classList.add("hidden");
-          });
-
-          const analysisButton =
-            this.cardElement.querySelector(".analysis-button");
-          const showMoreNewsButton = this.cardElement.querySelector(
-            `#${this.prefixId}_showMoreNews`
-          );
-          const moreInfoButton =
-            this.cardElement.querySelector(".more-info-button");
-
-          analysisButton.addEventListener("click", async () => {
-            analysisButton.disabled = true;
-            analysisButton.classList.replace("bg-purple-600", "bg-gray-400");
-            analysisButton.classList.replace("hover:bg-purple-700", "cursor-not-allowed");
-            this.triggerButton.classList.replace("bg-purple-600", "bg-gray-400");
-
-            const params = {
-              symbol: this.cardElement.querySelector(
-                `#${this.prefixId}_coinPair`
-              ).value,
-              timeFrame: this.cardElement.querySelector(
-                `#${this.prefixId}_timeFrame`
-              ).value,
-              candleCount: this.cardElement.querySelector(
-                `#${this.prefixId}_candleCount`
-              ).value,
-              useNews: this.cardElement.querySelector(
-                `#${this.prefixId}_useNews`
-              ).value,
-              useIndicator: this.cardElement.querySelector(
-                `#${this.prefixId}_useIndicator`
-              ).value,
-              useMarketData: true,
-            };
-
-            this.cardElement
-              .querySelector(`#${this.prefixId}_InputForm`)
-              .classList.add("hidden");
-            this.cardElement
-              .querySelector(".waiting-message")
-              .classList.remove("hidden");
-
-            try {
-              const data = await this.fetchData(params);
-              this.cardElement.querySelector(
-                `#${this.prefixId}_pairName`
-              ).textContent = data.pair;
-              this.cardElement.querySelector(
-                `#${this.prefixId}_decision`
-              ).textContent = data.decision;
-              this.cardElement.querySelector(
-                `#${this.prefixId}_pattern`
-              ).textContent = data.pattern;
-              this.cardElement.querySelector(
-                `#${this.prefixId}_duration`
-              ).textContent = data.duration;
-              this.cardElement.querySelector(
-                `#${this.prefixId}_updatedAt`
-              ).textContent = data.updatedAt;
-              this.renderNews();
-            } finally {
-              analysisButton.disabled = false;
-              analysisButton.classList.replace("bg-gray-400", "bg-purple-600");
-              analysisButton.classList.replace("cursor-not-allowed", "hover:bg-purple-700");
-              this.triggerButton.classList.replace("bg-gray-400", "bg-purple-600");
-
-              this.cardElement
-                .querySelector(".waiting-message")
-                .classList.add("hidden");
-              this.cardElement
-                .querySelector(".analysis-answer")
-                .classList.remove("hidden");
-            }
-          });
-
-          showMoreNewsButton.addEventListener("click", () => {
-            this.visibleNewsCount += 5;
-            this.renderNews();
-          });
-
-          moreInfoButton.addEventListener("click", () => {
-            window.open("https://example.com/more-info", "_blank");
-          });
-
-          this.cardElement
-            .querySelector(".close-button")
-            .addEventListener("click", () => {
-              this.cardElement.classList.add("hidden");
-              this.triggerButton.classList.remove("hidden");
-            });
-        }
-
-        start(container = document.body) {
-          container.appendChild(this.triggerButton);
-          container.appendChild(this.cardElement);
-        }
+    // Populate the coin pair <select> options using the coinList data
+    const coinPairSelect = tempDiv.querySelector(`#${this.prefixId}_coinPair`);
+    this.Pair_coins_name.forEach((element, index) => {
+      let option = document.createElement("option");
+      option.value = this.Pair_coins_value[index];
+      option.innerHTML = element;
+      // Set the default selected option if it matches the card’s coin pair
+      if (this.Pair_coins_value[index] === `${this.coin_one}/${this.coin_two}`) {
+        option.selected = "true";
       }
+      coinPairSelect.appendChild(option);
+    });
 
-      // Helper function to instantiate a new SmartCoinAnalysCard.
-      // Note: We now pass the fetched coinList as the third parameter.
-      function showSmartCoinAnalysCard(COIN_ONE, COIN_TWO, coinList, container = document.body) {
-        return new SmartCoinAnalysCard(COIN_ONE, COIN_TWO, coinList).start(container);
-      }
+    this.cardElement = tempDiv.firstElementChild;
+  }
 
-      // ===========================================================================
-      // 3. When the DOM is ready, fetch the coin list and create the cards
-      // ===========================================================================
-      document.addEventListener("DOMContentLoaded", async () => {
-        const coinList = await fetchCoinList();
-        showSmartCoinAnalysCard("XRP", "USDT", coinList, document.getElementById("modal-container"));
-        showSmartCoinAnalysCard("BTC", "USDT", coinList, document.getElementById("modal-container2"));
-        showSmartCoinAnalysCard("ETC", "USDT", coinList, document.getElementById("modal-container3"));
+  generateMockNews() {
+    return Array.from({ length: 20 }, (_, i) => ({
+      title: `خبر مرتبط ${i + 1}`,
+      link: `https://example.com/news/${i + 1}`,
+    }));
+  }
+
+  renderNews() {
+    const newsList = this.cardElement.querySelector(
+      `#${this.prefixId}_newsList`
+    );
+    const showMoreButton = this.cardElement.querySelector(
+      `#${this.prefixId}_showMoreNews`
+    );
+    newsList.innerHTML = "";
+    this.newsItems.slice(0, this.visibleNewsCount).forEach((news) => {
+      const newsItem = document.createElement("a");
+      newsItem.href = news.link;
+      newsItem.target = "_blank";
+      newsItem.className =
+        "block text-purple-600 hover:text-purple-700 transition-colors";
+      newsItem.textContent = news.title;
+      newsList.appendChild(newsItem);
+    });
+    showMoreButton.classList.toggle(
+      "hidden",
+      this.newsItems.length <= this.visibleNewsCount
+    );
+  }
+
+  // ------------------------------------------------------------------------
+  // This method demonstrates two axios calls:
+  //  1. Sending the analysis request (POST)
+  //  2. Retrieving the analysis result (GET)
+  // Replace the URLs with your actual endpoints.
+  // ------------------------------------------------------------------------
+  async fetchData(params) {
+    const sendUrl = "http://79.175.177.113:15800/AimoonxNewsHUB/LLM/coinAnalyze/";
+    const getUrl = "http://79.175.177.113:15800/AimoonxNewsHUB/LLM/getLLMResponse/";
+    try {
+      // 1. Send the analysis request
+      const sendResponse = await axios.post(sendUrl, params, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json; charset=utf-8",
+          Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
+        },
       });
+      // Assume the response returns an analysis ID
+      const analysisId = sendResponse.data.data;
+      // 2. Retrieve the analysis result using the analysisId
+      const getResponse = await axios.post(getUrl, {
+        params: { task_id: analysisId },
+      }, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json; charset=utf-8",
+          Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
+        },
+      });
+      my_json = {
+        pair: getResponse.data.data.name,
+        decision: getResponse.data.data.result.rec_position,
+        pattern: getResponse.data.data.result.chart_Pattern,
+        duration: `${getResponse.data.data} کندل`,
+        updatedAt: getResponse.data.data.status,
+
+      }
+      return getResponse.data.data;
+    } catch (error) {
+      console.error("Error fetching analysis data", error);
+      // For template purposes, return mocked data if an error occurs
+      // return {
+      //   pair: params.coinPair,
+      //   decision: "خرید 🟢",
+      //   pattern: "چکش صعودی 🛠️",
+      //   duration: `${params.candleCount} کندل`,
+      //   updatedAt: new Date().toLocaleTimeString("fa-IR"),
+      // };
+    }
+  }
+
+  addEventListeners() {
+    // Refresh button to restart the analysis process
+    const refreshButton = this.cardElement.querySelector(".refresh-button");
+    refreshButton.addEventListener("click", () => {
+      this.cardElement
+        .querySelector(".analysis-answer")
+        .classList.add("hidden");
+      this.cardElement
+        .querySelector(`#${this.prefixId}_InputForm`)
+        .classList.remove("hidden");
+      this.visibleNewsCount = 5;
+      this.cardElement.querySelector(
+        `#${this.prefixId}_newsList`
+      ).innerHTML = "";
+    });
+
+    this.triggerButton.addEventListener("click", () => {
+      this.cardElement.classList.remove("hidden");
+      this.triggerButton.classList.add("hidden");
+    });
+
+    const analysisButton =
+      this.cardElement.querySelector(".analysis-button");
+    const showMoreNewsButton = this.cardElement.querySelector(
+      `#${this.prefixId}_showMoreNews`
+    );
+    const moreInfoButton =
+      this.cardElement.querySelector(".more-info-button");
+
+    analysisButton.addEventListener("click", async () => {
+      analysisButton.disabled = true;
+      analysisButton.classList.replace("bg-purple-600", "bg-gray-400");
+      analysisButton.classList.replace("hover:bg-purple-700", "cursor-not-allowed");
+      this.triggerButton.classList.replace("bg-purple-600", "bg-gray-400");
+
+      const params = {
+        symbol: this.cardElement.querySelector(
+          `#${this.prefixId}_coinPair`
+        ).value,
+        timeFrame: this.cardElement.querySelector(
+          `#${this.prefixId}_timeFrame`
+        ).value,
+        candleCount: this.cardElement.querySelector(
+          `#${this.prefixId}_candleCount`
+        ).value,
+        useNews: this.cardElement.querySelector(
+          `#${this.prefixId}_useNews`
+        ).value,
+        useIndicator: this.cardElement.querySelector(
+          `#${this.prefixId}_useIndicator`
+        ).value,
+        useMarketData: true,
+      };
+
+      this.cardElement
+        .querySelector(`#${this.prefixId}_InputForm`)
+        .classList.add("hidden");
+      this.cardElement
+        .querySelector(".waiting-message")
+        .classList.remove("hidden");
+
+      try {
+        const data = await this.fetchData(params);
+        this.cardElement.querySelector(
+          `#${this.prefixId}_pairName`
+        ).textContent = data.pair;
+        this.cardElement.querySelector(
+          `#${this.prefixId}_decision`
+        ).textContent = data.decision;
+        this.cardElement.querySelector(
+          `#${this.prefixId}_pattern`
+        ).textContent = data.pattern;
+        this.cardElement.querySelector(
+          `#${this.prefixId}_duration`
+        ).textContent = data.duration;
+        this.cardElement.querySelector(
+          `#${this.prefixId}_updatedAt`
+        ).textContent = data.updatedAt;
+        this.renderNews();
+      } finally {
+        analysisButton.disabled = false;
+        analysisButton.classList.replace("bg-gray-400", "bg-purple-600");
+        analysisButton.classList.replace("cursor-not-allowed", "hover:bg-purple-700");
+        this.triggerButton.classList.replace("bg-gray-400", "bg-purple-600");
+
+        this.cardElement
+          .querySelector(".waiting-message")
+          .classList.add("hidden");
+        this.cardElement
+          .querySelector(".analysis-answer")
+          .classList.remove("hidden");
+      }
+    });
+
+    showMoreNewsButton.addEventListener("click", () => {
+      this.visibleNewsCount += 5;
+      this.renderNews();
+    });
+
+    moreInfoButton.addEventListener("click", () => {
+      window.open("https://example.com/more-info", "_blank");
+    });
+
+    this.cardElement
+      .querySelector(".close-button")
+      .addEventListener("click", () => {
+        this.cardElement.classList.add("hidden");
+        this.triggerButton.classList.remove("hidden");
+      });
+  }
+
+  start(container = document.body) {
+    container.appendChild(this.triggerButton);
+    container.appendChild(this.cardElement);
+  }
+}
+
+// Helper function to instantiate a new SmartCoinAnalysCard.
+// Note: We now pass the fetched coinList as the third parameter.
+function showSmartCoinAnalysCard(COIN_ONE, COIN_TWO, coinList, container = document.body) {
+  return new SmartCoinAnalysCard(COIN_ONE, COIN_TWO, coinList).start(container);
+}
+
+// ===========================================================================
+// 3. When the DOM is ready, fetch the coin list and create the cards
+// ===========================================================================
+document.addEventListener("DOMContentLoaded", async () => {
+  const coinList = await fetchCoinList();
+  showSmartCoinAnalysCard("XRP", "USDT", coinList, document.getElementById("modal-container"));
+  showSmartCoinAnalysCard("BTC", "USDT", coinList, document.getElementById("modal-container2"));
+  showSmartCoinAnalysCard("ETC", "USDT", coinList, document.getElementById("modal-container3"));
+});
