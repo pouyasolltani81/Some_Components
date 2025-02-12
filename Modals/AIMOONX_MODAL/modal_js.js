@@ -85,10 +85,10 @@ class SmartCoinAnalysCard {
                 <div class="space-y-2">
                   <label class="text-gray-700">⏱️ تایم فریم:</label>
                   <select id="${this.prefixId}_timeFrame" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option value="1H">1H</option>
-                    <option value="4H" selected>4H</option>
-                    <option value="1D">1D</option>
-                    <option value="1W">1W</option>
+                    <option value="1h">1H</option>
+                    <option value="4h" selected>4H</option>
+                    <option value="1d">1D</option>
+                    <option value="1w">1W</option>
                   </select>
                 </div>
                 <div class="space-y-2">
@@ -235,26 +235,51 @@ class SmartCoinAnalysCard {
           Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
         },
       });
+
+      console.log(sendResponse.data , params);
+      
       // Assume the response returns an analysis ID
       const analysisId = sendResponse.data.data;
-      // 2. Retrieve the analysis result using the analysisId
-      const getResponse = await axios.post(getUrl, {
-        params: { task_id: analysisId },
-      }, {
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json; charset=utf-8",
-          Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
-        },
-      });
-      my_json = {
-        pair: getResponse.data.data.name,
-        decision: getResponse.data.data.result.rec_position,
-        pattern: getResponse.data.data.result.chart_Pattern,
-        duration: `${getResponse.data.data} کندل`,
-        updatedAt: getResponse.data.data.status,
 
+      while(true) {
+
+        
+            // 2. Retrieve the analysis result using the analysisId
+          let getResponse = await axios.post(getUrl, {
+            params: { task_id: '67acea7ef373038717da13fe' ,  t: new Date().getTime() }
+          }, {
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json; charset=utf-8",
+              Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
+            },
+          });
+          
+          console.log(getResponse.data);
+          console.log(analysisId);
+
+          if (getResponse.data.message !== 'pending') {
+            console.log('not pending?');
+            console.log(getResponse.data.message);
+            my_json = {
+            pair: getResponse.data.data.name,
+            decision: getResponse.data.data.result.rec_position,
+            pattern: getResponse.data.data.result.chart_Pattern,
+            duration: `${getResponse.data.data} کندل`,
+            updatedAt: getResponse.data.data.status,
+
+          }
+
+          break ;
+            
+          }
+
+          console.log("Still pending, retrying in 2 seconds...");
+          await new Promise((resolve) => setTimeout(resolve, 2000)); 
+          
+          
       }
+      
       return getResponse.data.data;
     } catch (error) {
       console.error("Error fetching analysis data", error);
@@ -308,7 +333,7 @@ class SmartCoinAnalysCard {
         symbol: this.cardElement.querySelector(
           `#${this.prefixId}_coinPair`
         ).value,
-        timeFrame: this.cardElement.querySelector(
+        timeframe: this.cardElement.querySelector(
           `#${this.prefixId}_timeFrame`
         ).value,
         candleCount: this.cardElement.querySelector(

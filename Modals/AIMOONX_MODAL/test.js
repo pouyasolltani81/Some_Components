@@ -1,8 +1,8 @@
-async function fetchCoinList() {
-  const url = "http://188.34.202.221:8000/Market/GetMarketPair/";
-  const token = "6ae3d79118083127c5442c7c6bfaf0b9";
+async function qwefetchCoinList(id) {
+  const url = "http://79.175.177.113:15800/AimoonxNewsHUB/LLM/getLLMResponse/";
+  const token = "189b4bf96bf5de782515c1b4f0b2a2c7";
   const params = {
-    marketpair_id : 1
+    task_id : id
   }
   try {
     axios
@@ -27,6 +27,5 @@ async function fetchCoinList() {
   }
 }
 
-fetchCoinList();
 
 
