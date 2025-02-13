@@ -14,9 +14,10 @@ async function qwefetchCoinList(id) {
         },
       })
       .then ( async(response) => {
+        console.log('test responce' );
+
         console.log(response);
         
-         console.log(response.data.coins);
          
       })
       .catch((error) => {

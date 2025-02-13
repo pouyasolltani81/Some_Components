@@ -1,143 +1,118 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Market Candlestick Chart</title>
-  <!-- Tailwind CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <!-- Moment.js -->
-  <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Chart.js Financial Plugin for candlestick charts -->
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.1.0"></script>
-  <!-- Chart.js Moment Adapter -->
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
-  <!-- Axios -->
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="https://d3js.org/d3.v7.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/date-fns@4.1.0/cdn.min.js"></script>
-    <style>
-        :root {
-            --background: #131722;
-            --surface: #2A2E39;
-            --text-primary: #D1D4DC;
-            --bullish: #26A69A;
-            --bearish: #EF5350;
-            --grid-line: #363C4E;
-            --tooltip-bg: rgba(26, 29, 41, 0.9);
-        }
 
-        body {
-            margin: 0;
-            background: var(--background);
-            font-family: 'Roboto', sans-serif;
-            color: var(--text-primary);
-        }
+let params = new URLSearchParams(window.location.search);
+let id = params.get("id");
+console.log(id); // Outputs: "Foo Bar"
 
-        .chart-container {
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+// Array to store historical prices (we'll store up to 20 points)
+const priceHistory = [];
+const maxDataPoints = 20;
 
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
+// Setup Chart.js chart
+const ctx = document.getElementById('priceChart').getContext('2d');
+const priceChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [], // Timestamps will be added here
+        datasets: [{
+            label: 'Price',
+            data: [],
+            backgroundColor: 'rgba(16, 185, 129, 0.2)', // green-500
+            borderColor: 'rgba(16, 185, 129, 1)',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            x: {
+                type: 'time',
+                time: { unit: 'second' },
+                title: { display: true, text: 'Time' }
+            },
+            y: {
+                title: { display: true, text: 'Price ($)' }
+            }
         }
+    }
+});
 
-        .timeframe-toolbar button {
-            background: var(--surface);
-            border: 1px solid var(--grid-line);
-            color: var(--text-primary);
-            padding: 6px 12px;
-            margin: 0 2px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-
-        .candle {
-            transition: all 0.2s ease;
-        }
-
-        .candle:hover {
-            filter: brightness(1.2);
-        }
-
-        .crosshair {
-            stroke: var(--text-primary);
-            stroke-dasharray: 4;
-            opacity: 0.7;
-        }
-
-        .tooltip {
-            position: absolute;
-            padding: 8px;
-            background: var(--tooltip-bg);
-            border: 1px solid var(--grid-line);
-            border-radius: 4px;
-            pointer-events: none;
-            font-size: 0.9em;
-        }
-    </style>
-</head>
-<body class="bg-gray-100">
-  <div class="container mx-auto p-6">
-    <!-- Page Header -->
-    <header class="mb-4">
-      <h1 class="text-3xl font-bold text-gray-800">Market Candlestick Chart</h1>
-    </header>
-    <!-- Interactive Controls -->
-    <div class="bg-white p-4 rounded-lg shadow mb-4">
-      <div class="flex flex-wrap gap-4 items-center">
-        <!-- Market Select Dropdown -->
-        <div>
-          <label for="marketSelect" class="block text-sm font-medium text-gray-700">Select Market</label>
-          <select id="marketSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-            <!-- Options populated dynamically -->
-          </select>
-        </div>
-        <!-- Timeframe Input -->
-        <div>
-          <label for="timeframe" class="block text-sm font-medium text-gray-700">Timeframe</label>
-          <input type="text" id="timeframe" value="1m" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-        </div>
-        <!-- Since Input -->
-        <div>
-          <label for="since" class="block text-sm font-medium text-gray-700">Since (YYYY-MM-DD HH:MM:SS)</label>
-          <input type="text" id="since" value="2025-02-07 09:52:37" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-        </div>
-        <!-- Limit Input -->
-        <div>
-          <label for="limit" class="block text-sm font-medium text-gray-700">Limit</label>
-          <input type="number" id="limit" value="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-        </div>
-        <!-- Update Button -->
-        <div class="self-end">
-          <button id="updateBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Update Chart</button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Single Container for Market Info and Candle Chart -->
-    <div id="chartContainer" class="bg-white shadow rounded-lg p-6">
-      <!-- Market Info -->
-      <div id="coinInfo" class="mb-4">
-        <h2 id="marketName" class="text-2xl font-semibold text-gray-800"></h2>
-        <p id="marketDesc" class="text-gray-600"></p>
-      </div>
-      <!-- Candle Chart Canvas -->
-      <!-- <canvas id="candleChart" class="w-full h-96"></canvas>
-        -->
-        <div id="candle-chart"></div>
-    </div>
-  </div>
-  
-  <!-- JavaScript: Fetch active markets, OHLCV data, and render candlestick chart -->
-  <script>
+async function fetchCoinList() {
+    const url = "http://188.34.202.221:8000/Market/GetMarketPair/";
     const token = "6ae3d79118083127c5442c7c6bfaf0b9";
+    const params = { marketpair_id: id };
+    try {
+        axios.post(url, params, {
+            headers: {
+                'Accept': "application/json",
+                'Authorization': token,
+            },
+        })
+            .then(response => {
+                const data = response.data.market_pair;
+                if (data) {
+                    // Update data cards
+                    document.getElementById('pairName').textContent = data.pair.name;
+                    document.getElementById('price').textContent = data.formatted_price;
+                    document.getElementById('askPrice').textContent = data.ask_price;
+                    document.getElementById('bidPrice').textContent = data.bid_price;
+                    document.getElementById('volume').textContent = parseFloat(data.volume).toFixed(2);
+                    document.getElementById('changePrice').textContent = data.change_price;
+                    document.getElementById('changeRate').textContent = data.change_rate;
+                    if (data.pair.src) {
+                        document.getElementById('srcCoinName').textContent = `${data.pair.src.name} (${data.pair.src.symbol})`;
+                        document.getElementById('srcLogo').src = data.pair.src.logo_url;
+                    }
+                    if (data.pair.base) {
+                        document.getElementById('baseCoinName').textContent = `${data.pair.base.name} (${data.pair.base.symbol})`;
+                        document.getElementById('baseLogo').src = data.pair.base.logo_url;
+                    }
+                    document.getElementById('openPrice').textContent = data.open_price;
+                    document.getElementById('closePrice').textContent = data.close_price;
+                    document.getElementById('highPrice').textContent = data.high_price;
+                    document.getElementById('lowPrice').textContent = data.low_price;
+
+                    // Update chart: use the main price (formatted_price) as our data point
+                    const currentPrice = parseFloat(data.price);
+                    const currentTime = new Date();
+
+                    // Add new data point
+                    priceHistory.push({ time: currentTime, price: currentPrice });
+                    // Limit array length
+                    if (priceHistory.length > maxDataPoints) {
+                        priceHistory.shift();
+                    }
+
+                    // Update chart labels and data arrays
+                    priceChart.data.labels = priceHistory.map(point => point.time);
+                    priceChart.data.datasets[0].data = priceHistory.map(point => point.price);
+                    priceChart.update();
+                }
+            })
+            .catch(error => {
+                console.error("Error making request:", error);
+            });
+    } catch (error) {
+        console.error("Error fetching coin list:", error);
+    }
+}
+
+// Initial call and repeat every 2 seconds
+fetchCoinList();
+setInterval(fetchCoinList, 2000);
+
+
+
+
+
+
+
+
+
+// candle chart 
+
+const token = "6ae3d79118083127c5442c7c6bfaf0b9";
     let activeMarkets = [];
     let currentMarketId = null;
     let candleChart = null;
@@ -170,6 +145,9 @@
         const option = document.createElement('option');
         option.value = market.id;
         option.textContent = market.name;
+        if (market.id == id) {
+            option.selected = "true";
+        }
         select.appendChild(option);
       });
       // Set default market
@@ -387,7 +365,4 @@ function updateCandleChart(data) {
     // Initial calls
     fetchActiveMarkets();
     // Optionally auto-update OHLCV data every 10 seconds
-    setInterval(fetchOHLCVData, 10000);
-  </script>
-</body>
-</html>
+    // setInterval(fetchOHLCVData, 10000);

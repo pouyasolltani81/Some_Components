@@ -1,267 +1,258 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coin Analysis Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@4.1.0/cdn.min.js"></script>
+
     <style>
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+        :root {
+            --background: #131722;
+            --surface: #2A2E39;
+            --text-primary: #D1D4DC;
+            --bullish: #26A69A;
+            --bearish: #EF5350;
+            --grid-line: #363C4E;
+            --tooltip-bg: rgba(26, 29, 41, 0.9);
         }
-        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
-        
-        .gradient-bg {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+
+        body {
+            margin: 0;
+            background: var(--background);
+            font-family: 'Roboto', sans-serif;
+            color: var(--text-primary);
         }
-        
-        .news-container {
-            max-height: 300px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #4f46e5 #e0e7ff;
+
+        .chart-container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        
-        .news-container::-webkit-scrollbar {
-            width: 8px;
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
         }
-        
-        .news-container::-webkit-scrollbar-thumb {
-            background-color: #4f46e5;
+
+        .timeframe-toolbar button {
+            background: var(--surface);
+            border: 1px solid var(--grid-line);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            margin: 0 2px;
+            cursor: pointer;
             border-radius: 4px;
+        }
+
+        .candle {
+            transition: all 0.2s ease;
+        }
+
+        .candle:hover {
+            filter: brightness(1.2);
+        }
+
+        .crosshair {
+            stroke: var(--text-primary);
+            stroke-dasharray: 4;
+            opacity: 0.7;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 8px;
+            background: var(--tooltip-bg);
+            border: 1px solid var(--grid-line);
+            border-radius: 4px;
+            pointer-events: none;
+            font-size: 0.9em;
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4">
-    <!-- Online Version -->
-    <div class="max-w-6xl mx-auto space-y-8">
-        <div class="bg-white rounded-xl shadow-xl p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Online Version</h2>
-            <div id="online-component" class="space-y-4"></div>
+<body>
+    <div class="chart-container">
+        <div class="chart-header">
+            <div class="symbol-info">
+                <h2>BTC/USDT</h2>
+                <div class="price-display">$97,073.4 <span class="change positive">+1.2%</span></div>
+            </div>
+            <div class="timeframe-toolbar">
+                <button>1m</button>
+                <button>5m</button>
+                <button>15m</button>
+                <button>1H</button>
+                <button>4H</button>
+                <button>1D</button>
+            </div>
         </div>
-
-        <!-- Offline Version -->
-        <div class="bg-white rounded-xl shadow-xl p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Offline Version</h2>
-            <div id="offline-component" class="space-y-4"></div>
-        </div>
+        <div id="candle-chart"></div>
     </div>
 
-    <!-- Modal Container -->
-    <div id="modal-container" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4"></div>
-
 <script>
-// ======================
-// OFFLINE VERSION COMPONENT
-// ======================
-class OfflineCoinAnalyser {
-    constructor(container) {
-        this.container = container;
-        this.createButton();
+const renderAdvancedChart = (data) => {
+    // Configuration
+    const width = 1200;
+    const height = 600;
+    const margin = { top: 30, right: 40, bottom: 50, left: 60 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+
+    // Clear previous chart
+    d3.select("#candle-chart").html("");
+
+    // Create SVG
+    const svg = d3.select("#candle-chart")
+        .append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Create scales
+    const xScale = d3.scaleTime()
+        .domain(d3.extent(data, d => d.x))
+        .range([0, chartWidth]);
+
+    const yScale = d3.scaleLinear()
+        .domain([d3.min(data, d => d.l), d3.max(data, d => d.h)])
+        .nice()
+        .range([chartHeight, 0]);
+
+    // Create axes
+    const xAxis = d3.axisBottom(xScale)
+        .tickFormat(d3.timeFormat("%a %H:%M"))
+        .tickSizeOuter(0);
+
+    const yAxis = d3.axisRight(yScale)
+        .tickSize(chartWidth)
+        .tickFormat(d3.format("$,.2f"));
+
+    // Add Y-axis grid
+    svg.append("g")
+        .attr("class", "y-axis")
+        .call(yAxis)
+        .select(".domain").remove()
+        .selectAll(".tick line")
+        .attr("stroke", "var(--grid-line)")
+        .attr("stroke-opacity", 0.3);
+
+    // Add X-axis
+    svg.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", `translate(0,${chartHeight})`)
+        .call(xAxis)
+        .selectAll("text")
+        .style("text-anchor", "middle");
+
+    // Draw candles
+    const candleWidth = chartWidth / data.length * 0.7;
+    
+    const candles = svg.append("g")
+        .selectAll("g")
+        .data(data)
+        .join("g")
+        .attr("class", "candle")
+        .attr("transform", d => `translate(${xScale(d.x)},0)`);
+
+    // Candle bodies
+    candles.append("rect")
+        .attr("x", -candleWidth/2)
+        .attr("width", candleWidth)
+        .attr("fill", d => d.c > d.o ? "var(--bullish)" : "var(--bearish)")
+        .attr("y", d => yScale(Math.max(d.o, d.c)))
+        .attr("height", d => Math.abs(yScale(d.o) - yScale(d.c)));
+
+    // Wicks
+    candles.append("line")
+        .attr("class", "wick")
+        .attr("stroke", d => d.c > d.o ? "var(--bullish)" : "var(--bearish)")
+        .attr("y1", d => yScale(d.h))
+        .attr("y2", d => yScale(d.l))
+        .attr("x1", 0)
+        .attr("x2", 0);
+
+    // Volume bars (optional)
+    // Technical indicators (SMA example)
+    const smaPeriod = 20;
+    const sma = data.map((d, i) => {
+        if (i < smaPeriod - 1) return null;
+        const sum = data.slice(i - smaPeriod + 1, i + 1)
+                       .reduce((acc, val) => acc + val.c, 0);
+        return { x: d.x, value: sum / smaPeriod };
+    }).filter(d => d !== null);
+
+    // Draw SMA line
+    const smaLine = d3.line()
+        .x(d => xScale(d.x))
+        .y(d => yScale(d.value));
+
+    svg.append("path")
+        .datum(sma)
+        .attr("class", "sma-line")
+        .attr("d", smaLine)
+        .attr("stroke", "#FF9800")
+        .attr("fill", "none")
+        .attr("stroke-width", 1.5);
+
+    // Crosshair and tooltip
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+    svg.append("rect")
+        .attr("class", "overlay")
+        .attr("width", chartWidth)
+        .attr("height", chartHeight)
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .on("mousemove", (event) => {
+            const [xCoord] = d3.pointer(event);
+            const bisectDate = d3.bisector(d => d.x).left;
+            const x0 = xScale.invert(xCoord);
+            const i = bisectDate(data, x0, 1);
+            const d = data[i];
+            
+            tooltip.style("opacity", 1)
+                .html(`
+                    <div>Time: ${dateFns.format(d.x, 'MMM d HH:mm')}</div>
+                    <div>Open: ${d.o.toFixed(2)}</div>
+                    <div>High: ${d.h.toFixed(2)}</div>
+                    <div>Low: ${d.l.toFixed(2)}</div>
+                    <div>Close: ${d.c.toFixed(2)}</div>
+                `)
+                .style("left", `${event.pageX + 10}px`)
+                .style("top", `${event.pageY - 30}px`);
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0));
+};
+
+// Sample data generation
+const generateData = () => {
+    const data = [];
+    let currentPrice = 97000;
+    let currentTime = new Date(2025, 1, 7, 9, 53);
+    
+    for(let i = 0; i < 100; i++) {
+        const open = currentPrice;
+        const close = open + (Math.random() - 0.5) * 200;
+        const high = Math.max(open, close) + Math.random() * 50;
+        const low = Math.min(open, close) - Math.random() * 50;
+        
+        data.push({
+            x: new Date(currentTime),
+            o: open,
+            h: high,
+            l: low,
+            c: close
+        });
+        
+        currentPrice = close;
+        currentTime = new Date(currentTime.getTime() + 5 * 60000);
     }
+    return data;
+};
 
-    createButton() {
-        const button = document.createElement('button');
-        button.className = 'px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all flex items-center gap-2';
-        button.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7.175l1.042-2.084a1 1 0 01.894-.553h.887a.75.75 0 00.672-.418l1.659-3.318a1 1 0 011.788.894l-1.659 3.318a2.25 2.25 0 01-2.017 1.256h-.887l-1.042 2.084a1 1 0 01-1.788 0z" clip-rule="evenodd" />
-            </svg>
-            تحلیل آفلاین
-        `;
-        button.onclick = () => this.showModal(true);
-        this.container.appendChild(button);
-    }
-
-    async showModal() {
-        const modal = new AnalysisModal(true);
-        modal.show();
-    }
-}
-
-// ======================
-// ONLINE VERSION COMPONENT
-// ======================
-class OnlineCoinAnalyser {
-    constructor(container) {
-        this.container = container;
-        this.createButton();
-    }
-
-    createButton() {
-        const button = document.createElement('button');
-        button.className = 'px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all flex items-center gap-2';
-        button.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M13 7H7v6h6V7z" />
-                <path fill-rule="evenodd" d="M7 2a1 1 0 012 0v1h2V2a1 1 0 112 0v1h2a2 2 0 012 2v2h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1v2a2 2 0 01-2 2h-2v1a1 1 0 11-2 0v-1H9v1a1 1 0 11-2 0v-1H5a2 2 0 01-2-2v-2H2a1 1 0 110-2h1V9H2a1 1 0 010-2h1V5a2 2 0 012-2h2V2zM5 5h10v10H5V5z" clip-rule="evenodd" />
-            </svg>
-            تحلیل آنلاین
-        `;
-        button.onclick = () => this.showModal();
-        this.container.appendChild(button);
-    }
-
-    async showModal() {
-        const modal = new AnalysisModal();
-        modal.show();
-    }
-}
-
-// ======================
-// SHARED ANALYSIS MODAL
-// ======================
-class AnalysisModal {
-    constructor(offlineMode = false) {
-        this.offlineMode = offlineMode;
-        this.modalId = `modal_${Math.random().toString(36).substr(2, 9)}`;
-        this.createModal();
-    }
-
-    createModal() {
-        const modalHTML = `
-            <div id="${this.modalId}" class="bg-white rounded-2xl shadow-2xl w-full md:w-[800px] max-h-[90vh] overflow-hidden animate-fade-in">
-                <!-- Header -->
-                <div class="gradient-bg p-6 flex justify-between items-center">
-                    <h3 class="text-xl font-semibold text-white">📈 تحلیل پیشرفته بازار</h3>
-                    <button class="close-button text-white hover:text-indigo-100 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Content -->
-                <div class="p-6 space-y-6">
-                    <!-- Input Section -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-3">
-                            <label class="block text-gray-700 font-medium">جفت ارز</label>
-                            <select class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
-                                ${['BTC/USDT', 'ETH/USDT', 'XRP/USDT', 'LTC/USDT'].map(pair => `
-                                    <option value="${pair}">${pair}</option>
-                                `).join('')}
-                            </select>
-                        </div>
-
-                        <div class="space-y-3">
-                            <label class="block text-gray-700 font-medium">تایم فریم</label>
-                            <select class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
-                                ${['1H', '4H', '1D', '1W'].map(tf => `
-                                    <option value="${tf}">${tf}</option>
-                                `).join('')}
-                            </select>
-                        </div>
-
-                        <div class="space-y-3">
-                            <label class="block text-gray-700 font-medium">تعداد کندل‌ها</label>
-                            <input type="number" value="50" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
-                        </div>
-
-                        <div class="space-y-3">
-                            <label class="block text-gray-700 font-medium">اندیکاتورها</label>
-                            <select class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
-                                <option value="all">همه اندیکاتورها</option>
-                                <option value="rsi">RSI</option>
-                                <option value="macd">MACD</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Analysis Results -->
-                    <div class="space-y-6 hidden analysis-results">
-                        <!-- Result Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-green-50 p-4 rounded-xl">
-                                <div class="text-green-600 font-bold text-lg">خرید</div>
-                                <div class="text-gray-600 mt-2">احتمال موفقیت: 78%</div>
-                            </div>
-                            <div class="bg-blue-50 p-4 rounded-xl">
-                                <div class="text-blue-600 font-bold text-lg">الگوی شناسایی شده</div>
-                                <div class="text-gray-600 mt-2">چکش صعودی</div>
-                            </div>
-                            <div class="bg-purple-50 p-4 rounded-xl">
-                                <div class="text-purple-600 font-bold text-lg">توصیه سرمایه</div>
-                                <div class="text-gray-600 mt-2">2-5% سرمایه</div>
-                            </div>
-                        </div>
-
-                        <!-- News Feed -->
-                        <div class="bg-gray-50 p-4 rounded-xl">
-                            <h4 class="font-medium text-gray-700 mb-3">اخبار مرتبط</h4>
-                            <div class="news-container space-y-3">
-                                ${Array.from({length: 15}, (_, i) => `
-                                    <div class="p-3 bg-white rounded-lg hover:bg-gray-50 transition-colors">
-                                        <div class="text-sm font-medium text-gray-800">خبر مهم بازار ${i+1}</div>
-                                        <div class="text-xs text-gray-500 mt-1">2 ساعت پیش</div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="flex flex-col md:flex-row gap-4">
-                        <button class="analyze-button w-full py-4 gradient-bg text-white rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin hidden" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            شروع تحلیل
-                        </button>
-                        <button class="w-full md:w-auto py-4 px-8 border-2 border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors">
-                            تنظیمات پیشرفته
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = modalHTML;
-        this.modalElement = tempDiv.firstElementChild;
-        this.addEventListeners();
-    }
-
-    addEventListeners() {
-        const closeButton = this.modalElement.querySelector('.close-button');
-        closeButton.addEventListener('click', () => this.hide());
-    }
-
-    show() {
-        const container = document.getElementById('modal-container');
-        container.classList.remove('hidden');
-        container.appendChild(this.modalElement);
-    }
-
-    hide() {
-        const container = document.getElementById('modal-container');
-        this.modalElement.remove();
-        if (!container.children.length) {
-            container.classList.add('hidden');
-        }
-    }
-}
-
-// Initialize Components
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize online component
-    const onlineContainer = document.getElementById('online-component');
-    new OnlineCoinAnalyser(onlineContainer);
-
-    // Initialize offline component
-    const offlineContainer = document.getElementById('offline-component');
-    new OfflineCoinAnalyser(offlineContainer);
-
-    // Handle modal container clicks
-    const modalContainer = document.getElementById('modal-container');
-    modalContainer.addEventListener('click', (e) => {
-        if (e.target === modalContainer) {
-            modalContainer.classList.add('hidden');
-            modalContainer.innerHTML = '';
-        }
-    });
-});
+// Initialize chart
+renderAdvancedChart(generateData());
 </script>
 </body>
 </html>

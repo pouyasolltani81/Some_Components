@@ -28,6 +28,7 @@ class SmartCoinAnalysCard {
   constructor(COIN_ONE, COIN_TWO, coinList = null) {
     this.coin_one = COIN_ONE;
     this.coin_two = COIN_TWO;
+    
     // If a coin list is provided from the API, use it to populate the options;
     // otherwise, use fallback hard-coded pairs.
     if (coinList && coinList.length > 0) {
@@ -38,6 +39,10 @@ class SmartCoinAnalysCard {
       // You can customize the display (for example, add emojis) as desired:
       this.Pair_coins_name = coinList.map(pair =>
         pair.name.replace("-", "/")
+      );
+
+      this.Pair_coins_ids = coinList.map(pair =>
+        pair.id
       );
     } else {
       this.Pair_coins_value = ["XRP/USDT", "BTC/USDT"];
@@ -64,7 +69,7 @@ class SmartCoinAnalysCard {
 
   createModal() {
     const cardHTML = `
-          <div id="${this.prefixId}" class="w-[600px] bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in hidden">
+          <div id="${this.prefixId}" class="max-w-[1000px] bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in hidden">
             <div class="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center">
               <button class="close-button hover:bg-purple-700 p-1 rounded-full transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -108,8 +113,8 @@ class SmartCoinAnalysCard {
               <div class="space-y-2">
                 <label class="text-gray-700">📊 استفاده از اندیکاتورها:</label>
                 <select id="${this.prefixId}_useIndicator" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="true" selected>✅ بله</option>
-                  <option value="false">❌ خیر</option>
+                  <option value="true" >✅ بله</option>
+                  <option value="false" selected>❌ خیر</option>
                 </select>
               </div>
 
@@ -145,11 +150,21 @@ class SmartCoinAnalysCard {
                   <span class="text-gray-700">📅 آخرین بروزرسانی:</span>
                   <span id="${this.prefixId}_updatedAt">-</span>
                 </div>
+
+                <div class="flex flex-col justify-between">
+                  <span class="text-gray-700">✨ آنالیز:</span>
+                  <span id="${this.prefixId}_analyse">-</span>
+                </div>
+
+                <div class="flex flex-col justify-between">
+                  <span class="text-gray-700">📝 خلاصه اخبار:</span>
+                  <span id="${this.prefixId}_summery">-</span>
+                </div>
               </div>
 
               <div class="space-y-2">
                 <label class="text-gray-700">📰 اخبار مرتبط:</label>
-                <div class="news-container bg-gray-50 p-2 rounded-lg">
+                <div class="news-container bg-gray-50 p-2 rounded-lg" dir='ltr'>
                   <div id="${this.prefixId}_newsList" class="space-y-2"></div>
                 </div>
                 <button id="${this.prefixId}_showMoreNews" class="w-full py-1 text-purple-600 hover:text-purple-700 transition-colors hidden">
@@ -174,11 +189,14 @@ class SmartCoinAnalysCard {
     // Populate the coin pair <select> options using the coinList data
     const coinPairSelect = tempDiv.querySelector(`#${this.prefixId}_coinPair`);
     this.Pair_coins_name.forEach((element, index) => {
+      
+      
       let option = document.createElement("option");
       option.value = this.Pair_coins_value[index];
+      option.id = this.Pair_coins_ids[index]
       option.innerHTML = element;
       // Set the default selected option if it matches the card’s coin pair
-      if (this.Pair_coins_value[index] === `${this.coin_one}/${this.coin_two}`) {
+      if (this.Pair_coins_value[index] === `${this.coin_one}-${this.coin_two}`) {
         option.selected = "true";
       }
       coinPairSelect.appendChild(option);
@@ -195,6 +213,8 @@ class SmartCoinAnalysCard {
   }
 
   renderNews() {
+    console.log(this.newsItems);
+
     const newsList = this.cardElement.querySelector(
       `#${this.prefixId}_newsList`
     );
@@ -204,11 +224,15 @@ class SmartCoinAnalysCard {
     newsList.innerHTML = "";
     this.newsItems.slice(0, this.visibleNewsCount).forEach((news) => {
       const newsItem = document.createElement("a");
-      newsItem.href = news.link;
+      // newsItem.href = news.link;
+      newsItem.href = 'https://example.com/news/';
+
       newsItem.target = "_blank";
       newsItem.className =
         "block text-purple-600 hover:text-purple-700 transition-colors";
-      newsItem.textContent = news.title;
+      // newsItem.textContent = news.title;
+      newsItem.textContent = news;
+
       newsList.appendChild(newsItem);
     });
     showMoreButton.classList.toggle(
@@ -236,51 +260,70 @@ class SmartCoinAnalysCard {
         },
       });
 
-      console.log(sendResponse.data , params);
-      
+      console.log(sendResponse.data, params);
+
       // Assume the response returns an analysis ID
       const analysisId = sendResponse.data.data;
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      while(true) {
+      let my_json
 
-        
-            // 2. Retrieve the analysis result using the analysisId
-          let getResponse = await axios.post(getUrl, {
-            params: { task_id: '67acea7ef373038717da13fe' ,  t: new Date().getTime() }
-          }, {
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json; charset=utf-8",
-              Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
-            },
-          });
-          
-          console.log(getResponse.data);
-          console.log(analysisId);
 
-          if (getResponse.data.message !== 'pending') {
-            console.log('not pending?');
-            console.log(getResponse.data.message);
-            my_json = {
-            pair: getResponse.data.data.name,
-            decision: getResponse.data.data.result.rec_position,
-            pattern: getResponse.data.data.result.chart_Pattern,
-            duration: `${getResponse.data.data} کندل`,
-            updatedAt: getResponse.data.data.status,
+      while (true) {
+
+        const params = {
+          task_id: `${analysisId}`, // Ensure analysisId is a string
+        }
+
+        // qwefetchCoinList(`${analysisId}`)
+
+        // 2. Retrieve the analysis result using the analysisId
+        const getResponse = await axios.post(getUrl, params, {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json; charset=utf-8",
+            Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
+          },
+
+        });
+
+        console.log(getResponse.data);
+        console.log(analysisId);
+
+        if (getResponse.data.message == 'completed') {
+          console.log('not pending?');
+          console.log(getResponse.data.message);
+          console.log(getResponse.data.data[0].result);
+
+          this.newsItems = getResponse.data.data[0].result.newsTitles;
+
+
+          my_json = {
+
+            pair: getResponse.data.data[0].name,
+            decision: getResponse.data.data[0].result.response.rec_position,
+            pattern: getResponse.data.data[0].result.response.chart_Pattern,
+            duration: `${getResponse.data.data[0].result.response.duration}`,
+            updatedAt: getResponse.data.data[0].result.response.timestamp,
+            news: getResponse.data.data[0].result.newsTitles,
+            analyse: getResponse.data.data[0].result.response.analysis,
+            summery: getResponse.data.data[0].result.response.summaryFa,
+
+
 
           }
 
-          break ;
-            
-          }
+          break;
 
-          console.log("Still pending, retrying in 2 seconds...");
-          await new Promise((resolve) => setTimeout(resolve, 2000)); 
-          
-          
+        }
+
+        console.log("Still pending, retrying in 2 seconds...");
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+
       }
-      
-      return getResponse.data.data;
+
+      return my_json;
     } catch (error) {
       console.error("Error fetching analysis data", error);
       // For template purposes, return mocked data if an error occurs
@@ -328,6 +371,9 @@ class SmartCoinAnalysCard {
       analysisButton.classList.replace("bg-purple-600", "bg-gray-400");
       analysisButton.classList.replace("hover:bg-purple-700", "cursor-not-allowed");
       this.triggerButton.classList.replace("bg-purple-600", "bg-gray-400");
+      analysisButton.classList.replace("bg-teal-600", "bg-gray-400");
+      analysisButton.classList.replace("hover:bg-teal-700", "cursor-not-allowed");
+      this.triggerButton.classList.replace("bg-teal-600", "bg-gray-400");
 
       const params = {
         symbol: this.cardElement.querySelector(
@@ -356,6 +402,7 @@ class SmartCoinAnalysCard {
         .classList.remove("hidden");
 
       try {
+
         const data = await this.fetchData(params);
         this.cardElement.querySelector(
           `#${this.prefixId}_pairName`
@@ -372,12 +419,20 @@ class SmartCoinAnalysCard {
         this.cardElement.querySelector(
           `#${this.prefixId}_updatedAt`
         ).textContent = data.updatedAt;
+
+        this.cardElement.querySelector(
+          `#${this.prefixId}_analyse`
+        ).textContent = data.analyse;
+
+        this.cardElement.querySelector(
+          `#${this.prefixId}_summery`
+        ).textContent = data.summery;
         this.renderNews();
       } finally {
         analysisButton.disabled = false;
-        analysisButton.classList.replace("bg-gray-400", "bg-purple-600");
-        analysisButton.classList.replace("cursor-not-allowed", "hover:bg-purple-700");
-        this.triggerButton.classList.replace("bg-gray-400", "bg-purple-600");
+        analysisButton.classList.replace("bg-gray-400", "bg-teal-600");
+        analysisButton.classList.replace("cursor-not-allowed", "hover:bg-teal-700");
+        this.triggerButton.classList.replace("bg-gray-400", "bg-teal-600");
 
         this.cardElement
           .querySelector(".waiting-message")
@@ -394,7 +449,14 @@ class SmartCoinAnalysCard {
     });
 
     moreInfoButton.addEventListener("click", () => {
-      window.open("https://example.com/more-info", "_blank");
+      let id = this.cardElement.querySelector(
+          `#${this.prefixId}_coinPair`
+        ).options[document.querySelector(`#${this.prefixId}_coinPair`).selectedIndex].id
+      
+      let url = "./MainCoinPair.html?" + new URLSearchParams({ id: id}).toString();
+      // location.href = url;
+      window.open(url, '_blank');
+      
     });
 
     this.cardElement
@@ -422,7 +484,9 @@ function showSmartCoinAnalysCard(COIN_ONE, COIN_TWO, coinList, container = docum
 // ===========================================================================
 document.addEventListener("DOMContentLoaded", async () => {
   const coinList = await fetchCoinList();
-  showSmartCoinAnalysCard("XRP", "USDT", coinList, document.getElementById("modal-container"));
+  showSmartCoinAnalysCard("ETH", "USDT", coinList, document.getElementById("modal-container"));
   showSmartCoinAnalysCard("BTC", "USDT", coinList, document.getElementById("modal-container2"));
-  showSmartCoinAnalysCard("ETC", "USDT", coinList, document.getElementById("modal-container3"));
+  showSmartCoinAnalysCard("BNB", "USDT", coinList, document.getElementById("modal-container3"));
+  showSmartCoinAnalysCard("ETC", "USDT", coinList, document.getElementById("modal-container4"));
+
 });
