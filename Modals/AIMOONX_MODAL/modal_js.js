@@ -90,7 +90,14 @@ class SmartCoinAnalysCard {
                 <div class="space-y-2">
                   <label class="text-gray-700">⏱️ تایم فریم:</label>
                   <select id="${this.prefixId}_timeFrame" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="1m">1Min</option>
+                    <option value="5m">5Min</option>
+                    <option value="15m">15Min</option>
+                    <option value="30m">30Min</option>
+                    
                     <option value="1h">1H</option>
+                    <option value="2h">2H</option>
+
                     <option value="4h" selected>4H</option>
                     <option value="1d">1D</option>
                     <option value="1w">1W</option>
@@ -304,7 +311,7 @@ class SmartCoinAnalysCard {
             decision: getResponse.data.data[0].result.response.rec_position,
             pattern: getResponse.data.data[0].result.response.chart_Pattern,
             duration: `${getResponse.data.data[0].result.response.duration}`,
-            updatedAt: getResponse.data.data[0].result.response.timestamp,
+            updatedAt: moment.unix(getResponse.data.data[0].result.response.timestamp).format("YYYY/MM/DD HH:mm:ss"), 
             news: getResponse.data.data[0].result.newsTitles,
             analyse: getResponse.data.data[0].result.response.analysis,
             summery: getResponse.data.data[0].result.response.summaryFa,
