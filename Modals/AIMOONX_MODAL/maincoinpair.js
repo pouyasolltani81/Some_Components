@@ -149,13 +149,13 @@ function populateMarketSelect() {
       option.selected = "true";
       currentMarketId = market.id;
       updateMarketInfo(market);
-      
+
     }
     select.appendChild(option);
   });
 
 
-  
+
 
 }
 
@@ -183,17 +183,17 @@ async function fetchOHLCVData() {
 
     let chart_type = document.getElementById('chart_type').checked;
     let url
-    
+
     if (chart_type) {
 
 
       url = "http://188.34.202.221:8000/Market/exGetTrendWithOHLCV/"
-      document.getElementById('advanced_chart_tools').classList.add('hidden')
-      
+      document.getElementById('advanced_chart_tools').classList.remove('hidden')
+
 
     } else {
       url = "http://188.34.202.221:8000/Market/exGetOHLCV/"
-      document.getElementById('advanced_chart_tools').classList.remove('hidden')
+      document.getElementById('advanced_chart_tools').classList.add('hidden')
 
     }
 
@@ -211,7 +211,7 @@ async function fetchOHLCVData() {
     });
 
     console.log(response);
-    
+
 
     if (response.data.return) {
 
@@ -223,19 +223,19 @@ async function fetchOHLCVData() {
 
         ohlcv = response.data.data;
         time_interval_for_chart = 5000
-        
-  
+
+
       } else {
         ohlcv = response.data.ohlcv;
         time_interval_for_chart = 2000
       }
 
 
-      console.log(ohlcv , time_interval_for_chart);
-      
-  
+      console.log(ohlcv, time_interval_for_chart);
+
+
       // const ohlcv = response.data.ohlcv;
-     
+
       // Transform OHLCV data for the candlestick chart plugin
       let candleData = ohlcv.map(item => ({
         x: new Date(item.timestamp),
@@ -265,12 +265,18 @@ setInterval(fetchOHLCVData, time_interval_for_chart);
 if (Chart.FinancialController && Chart.CandlestickElement) {
   Chart.register(Chart.FinancialController, Chart.CandlestickElement);
 }
+// Global variables.
+let drawnLines = [];  // Array of { price, alertOn, alertTriggered }
+let drawingMode = false;
+// We'll use separate transforms for x (time) and y (price)
+let currentXTransform = d3.zoomIdentity;
+let currentYTransform = d3.zoomIdentity;
 
 function updateCandleChart(data) {
-  // Remove any existing tooltip to avoid duplicates
+  // Remove any existing tooltip.
   d3.selectAll(".tooltip").remove();
 
-  // Read user settings from the UI
+  // Read user settings.
   const showSMA = document.getElementById("show-sma").checked;
   const showEMA = document.getElementById("show-ema").checked;
   const showFib = document.getElementById("show-fib").checked;
@@ -278,79 +284,101 @@ function updateCandleChart(data) {
   const bullishColor = document.getElementById("bullish-color").value || "green";
   const bearishColor = document.getElementById("bearish-color").value || "red";
   const additionalIndicators = Array.from(document.getElementById("additional-indicators").selectedOptions)
-                                    .map(opt => opt.value);
+    .map(opt => opt.value);
 
-  // Configuration
+  // Configuration.
   const width = 1200,
-        height = 600,
-        margin = { top: 30, right: 40, bottom: 50, left: 60 },
-        chartWidth = width - margin.left - margin.right,
-        chartHeight = height - margin.top - margin.bottom;
+    height = 600,
+    margin = { top: 30, right: 60, bottom: 50, left: 60 },
+    chartWidth = width - margin.left - margin.right,
+    chartHeight = height - margin.top - margin.bottom;
 
-  // Clear previous chart
+  // Extend the x-domain for white space on the right.
+  const xMin = d3.min(data, d => new Date(d.datetime));
+  const xMax = d3.max(data, d => new Date(d.datetime));
+  const extraPadding = (xMax - xMin) * 0.1; // 10% extra
+  const xDomain = [xMin, new Date(xMax.getTime() + extraPadding)];
+
+  // Clear previous chart.
   d3.select("#candle-chart").html("");
 
-  // Create SVG container
+  // Create SVG.
   const svg = d3.select("#candle-chart")
     .append("svg")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .append("g")
+    .attr("viewBox", `0 0 ${width} ${height}`);
+
+  // Define clipPath.
+  svg.append("defs").append("clipPath")
+    .attr("id", "clip")
+    .append("rect")
+    .attr("width", chartWidth)
+    .attr("height", chartHeight);
+
+  // Main group translated by margins.
+  const mainGroup = svg.append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // Scales (using datetime from data)
-  const xScale = d3.scaleTime()
-    .domain(d3.extent(data, d => new Date(d.datetime)))
-    .range([0, chartWidth]);
+  // Create x-axis group at the bottom.
+  const xAxisGroup = mainGroup.append("g")
+    .attr("class", "x-axis")
+    .attr("transform", `translate(0,${chartHeight})`);
 
+  // Create nested groups to support independent x and y transforms.
+  const xGroup = mainGroup.append("g")
+    .attr("class", "xGroup")
+    .attr("transform", `translate(${currentXTransform.x},0) scale(${currentXTransform.k},1)`);
+  const chartGroup = xGroup.append("g")
+    .attr("class", "chartGroup")
+    .attr("clip-path", "url(#clip)")
+    .attr("transform", `translate(0, ${currentYTransform.y}) scale(1, ${currentYTransform.k})`);
+
+  // Scales.
+  const xScale = d3.scaleTime()
+    .domain(xDomain)
+    .range([0, chartWidth]);
   const yScale = d3.scaleLinear()
     .domain([d3.min(data, d => d.low), d3.max(data, d => d.high)])
     .nice()
     .range([chartHeight, 0]);
 
-  // Axes
+  // Create x-axis.
   const xAxis = d3.axisBottom(xScale)
     .tickFormat(d3.timeFormat("%a %H:%M"))
     .tickSizeOuter(0);
+  xAxisGroup.call(xAxis.scale(currentXTransform.rescaleX(xScale)));
 
+
+  
+
+  // Create y-axis on the right.
   const yAxis = d3.axisRight(yScale)
-    .tickSize(chartWidth)
+    .tickSize(-chartWidth)
     .tickFormat(d3.format("$,.2f"));
-
-  // Y-axis grid
-  svg.append("g")
+  mainGroup.append("g")
     .attr("class", "y-axis")
-    .call(yAxis)
-    .select(".domain").remove()
-    .selectAll(".tick line")
+    .attr("transform", `translate(${chartWidth},0)`)
+    .call(yAxis.scale(currentYTransform.rescaleY(yScale)))
+    .call(g => g.select(".domain").remove()); // Remove extra top line.
+  mainGroup.selectAll(".y-axis .tick line")
     .attr("stroke", "#ccc")
     .attr("stroke-opacity", 0.3);
 
-  // X-axis
-  svg.append("g")
-    .attr("class", "x-axis")
-    .attr("transform", `translate(0,${chartHeight})`)
-    .call(xAxis)
-    .selectAll("text")
-    .style("text-anchor", "middle");
 
-  // Draw candles
+    
+
+  // Draw candles.
   const candleWidth = chartWidth / data.length * 0.7;
-  const candles = svg.append("g")
-    .selectAll("g")
+  const candles = chartGroup.selectAll(".candle")
     .data(data)
     .join("g")
     .attr("class", "candle")
     .attr("transform", d => `translate(${xScale(new Date(d.datetime))},0)`);
-
-  // Candle bodies (colors based on user selection)
   candles.append("rect")
     .attr("x", -candleWidth / 2)
     .attr("width", candleWidth)
     .attr("fill", d => d.close > d.open ? bullishColor : bearishColor)
     .attr("y", d => yScale(Math.max(d.open, d.close)))
     .attr("height", d => Math.abs(yScale(d.open) - yScale(d.close)));
-
-  // Candle wicks
   candles.append("line")
     .attr("class", "wick")
     .attr("stroke", d => d.close > d.open ? bullishColor : bearishColor)
@@ -359,46 +387,24 @@ function updateCandleChart(data) {
     .attr("x1", 0)
     .attr("x2", 0);
 
-  // Use last candle for trend, support/resistance, etc.
+  // Get last candle for trend info.
   const lastCandle = data[data.length - 1];
   const currentPrice = lastCandle.close;
   const currentPriceColor = lastCandle.close > lastCandle.open ? bullishColor : bearishColor;
 
-  // Draw support/resistance lines if enabled
+  // Draw support/resistance lines (if enabled) with labels on the right.
   if (showSupportResistance) {
-    const supportLevels = [
+    const srLevels = [
       { label: "S1", value: lastCandle.S1 },
       { label: "S2", value: lastCandle.S2 },
-      { label: "S3", value: lastCandle.S3 }
-    ];
-    supportLevels.forEach(level => {
-      if(level.value != null) {
-        svg.append("line")
-          .attr("x1", 0)
-          .attr("x2", chartWidth)
-          .attr("y1", yScale(level.value))
-          .attr("y2", yScale(level.value))
-          .attr("stroke", "rgba(255, 0, 0, 0.3)")
-          .attr("stroke-width", 1)
-          .attr("stroke-dasharray", "4,4");
-        // Draw label on the left (outside candle area)
-        svg.append("text")
-          .attr("x", -margin.left + 10)
-          .attr("y", yScale(level.value) + 4)
-          .attr("fill", "rgba(255, 0, 0, 0.5)")
-          .attr("font-size", "12px")
-          .text(level.label);
-      }
-    });
-
-    const resistanceLevels = [
+      { label: "S3", value: lastCandle.S3 },
       { label: "R1", value: lastCandle.R1 },
       { label: "R2", value: lastCandle.R2 },
       { label: "R3", value: lastCandle.R3 }
     ];
-    resistanceLevels.forEach(level => {
-      if(level.value != null) {
-        svg.append("line")
+    srLevels.forEach(level => {
+      if (level.value != null) {
+        chartGroup.append("line")
           .attr("x1", 0)
           .attr("x2", chartWidth)
           .attr("y1", yScale(level.value))
@@ -406,8 +412,8 @@ function updateCandleChart(data) {
           .attr("stroke", "rgba(255, 0, 0, 0.3)")
           .attr("stroke-width", 1)
           .attr("stroke-dasharray", "4,4");
-        svg.append("text")
-          .attr("x", -margin.left + 10)
+        mainGroup.append("text")
+          .attr("x",  (-10))
           .attr("y", yScale(level.value) + 4)
           .attr("fill", "rgba(255, 0, 0, 0.5)")
           .attr("font-size", "12px")
@@ -416,8 +422,8 @@ function updateCandleChart(data) {
     });
   }
 
-  // Draw current price dotted line (with same color as candle)
-  svg.append("line")
+  // Draw current price dotted line.
+  chartGroup.append("line")
     .attr("x1", 0)
     .attr("x2", chartWidth)
     .attr("y1", yScale(currentPrice))
@@ -426,15 +432,15 @@ function updateCandleChart(data) {
     .attr("stroke-width", 1)
     .attr("stroke-dasharray", "5,5");
 
-  // Conditionally draw SMA_20 using provided data
+  // Conditionally draw SMA_20.
   if (showSMA) {
     const smaData = data.filter(d => d.SMA_20 != null)
       .map(d => ({ datetime: new Date(d.datetime), value: d.SMA_20 }));
     if (smaData.length) {
       const smaLine = d3.line()
-        .x(d => xScale(d.datetime))
-        .y(d => yScale(d.value));
-      svg.append("path")
+        .x(d => currentXTransform.rescaleX(xScale)(d.datetime))
+        .y(d => currentYTransform.rescaleY(yScale)(d.value));
+      chartGroup.append("path")
         .datum(smaData)
         .attr("class", "sma-line")
         .attr("d", smaLine)
@@ -444,15 +450,15 @@ function updateCandleChart(data) {
     }
   }
 
-  // Conditionally draw EMA_20 using provided data
+  // Conditionally draw EMA_20.
   if (showEMA) {
     const emaData = data.filter(d => d.EMA_20 != null)
       .map(d => ({ datetime: new Date(d.datetime), value: d.EMA_20 }));
     if (emaData.length) {
       const emaLine = d3.line()
-        .x(d => xScale(d.datetime))
-        .y(d => yScale(d.value));
-      svg.append("path")
+        .x(d => currentXTransform.rescaleX(xScale)(d.datetime))
+        .y(d => currentYTransform.rescaleY(yScale)(d.value));
+      chartGroup.append("path")
         .datum(emaData)
         .attr("class", "ema-line")
         .attr("d", emaLine)
@@ -462,7 +468,7 @@ function updateCandleChart(data) {
     }
   }
 
-  // Conditionally draw Fibonacci lines using provided FIB values
+  // Conditionally draw Fibonacci lines.
   if (showFib) {
     const fibLevels = [
       { label: "FIB_S3", value: lastCandle.FIB_S3 },
@@ -474,8 +480,8 @@ function updateCandleChart(data) {
       { label: "FIB_R3", value: lastCandle.FIB_R3 }
     ];
     fibLevels.forEach(level => {
-      if(level.value != null) {
-        svg.append("line")
+      if (level.value != null) {
+        chartGroup.append("line")
           .attr("x1", 0)
           .attr("x2", chartWidth)
           .attr("y1", yScale(level.value))
@@ -483,8 +489,8 @@ function updateCandleChart(data) {
           .attr("stroke", "lightblue")
           .attr("stroke-width", 1)
           .attr("stroke-dasharray", "4,4");
-        svg.append("text")
-          .attr("x", -margin.left + 10)
+        chartGroup.append("text")
+          .attr("x", (-10))
           .attr("y", yScale(level.value) - 5)
           .attr("fill", "lightblue")
           .attr("font-size", "12px")
@@ -493,15 +499,15 @@ function updateCandleChart(data) {
     });
   }
 
-  // Draw additional indicators from the multi-select
+  // Draw additional indicators.
   additionalIndicators.forEach(indicatorName => {
     const indData = data.filter(d => d[indicatorName] != null)
-                         .map(d => ({ datetime: new Date(d.datetime), value: d[indicatorName] }));
+      .map(d => ({ datetime: new Date(d.datetime), value: d[indicatorName] }));
     if (indData.length) {
       const indLine = d3.line()
-        .x(d => xScale(d.datetime))
-        .y(d => yScale(d.value));
-      svg.append("path")
+        .x(d => currentXTransform.rescaleX(xScale)(d.datetime))
+        .y(d => currentYTransform.rescaleY(yScale)(d.value));
+      chartGroup.append("path")
         .datum(indData)
         .attr("class", `indicator-line ${indicatorName}`)
         .attr("d", indLine)
@@ -511,53 +517,192 @@ function updateCandleChart(data) {
     }
   });
 
-  // Crosshair and tooltip (maintaining a single tooltip element)
-  if (!d3.select("body").select(".tooltip").node()) {
-    d3.select("body").append("div")
-      .attr("class", "tooltip")
-      .style("opacity", 0)
-      .style("position", "absolute")
-      .style("background", "rgba(0,0,0,0.7)")
-      .style("color", "#fff")
-      .style("padding", "8px")
-      .style("border-radius", "4px")
-      .style("pointer-events", "none");
-  }
-  const overlay = svg.append("rect")
+  // Re-draw user-drawn lines (data join).
+  const drawnLineSelection = chartGroup.selectAll(".drawn-line-group")
+    .data(drawnLines, (d, i) => i);
+  const drawnLineEnter = drawnLineSelection.enter()
+    .append("g")
+    .attr("class", "drawn-line-group");
+  drawnLineEnter.append("line")
+    .attr("x1", 0)
+    .attr("x2", chartWidth)
+    .attr("y1", d => yScale(d.price))
+    .attr("y2", d => yScale(d.price))
+    .attr("stroke", d => d.alertOn ? "orange" : "gray")
+    .attr("stroke-width", 2)
+    .attr("stroke-dasharray", "4,4");
+  drawnLineEnter.append("text")
+    .attr("x", chartWidth - 40)
+    .attr("y", d => yScale(d.price) - 5)
+    .attr("fill", d => d.alertOn ? "orange" : "gray")
+    .attr("font-size", "12px")
+    .text((d, i) => `Line ${i + 1}`);
+
+  // Check drawn lines for alert conditions.
+  drawnLines.forEach(line => {
+    if (line.alertOn && !line.alertTriggered && Math.abs(currentPrice - line.price) < (currentPrice * 0.001)) {
+      alert(`Price reached drawn line at ${line.price.toFixed(2)}, price :${currentPrice * 0.001} , bobo : ${Math.abs(currentPrice - line.price)} condition : ${Math.abs(currentPrice - line.price) < (currentPrice * 0.001)}` );
+      line.alertTriggered = true;
+    }
+  });
+
+  // Crosshair for drawing mode.
+  const crosshair = chartGroup.append("g")
+    .attr("class", "crosshair")
+    .style("display", "none");
+  crosshair.append("line")
+    .attr("id", "crosshairX")
+    .attr("stroke", "gray")
+    .attr("stroke-width", 1)
+    .attr("stroke-dasharray", "3,3");
+  crosshair.append("line")
+    .attr("id", "crosshairY")
+    .attr("stroke", "gray")
+    .attr("stroke-width", 1)
+    .attr("stroke-dasharray", "3,3");
+  crosshair.append("text")
+    .attr("id", "crosshairInfo")
+    .attr("x", 10)
+    .attr("y", 10)
+    .attr("fill", "black")
+    .attr("font-size", "12px");
+
+  // Overlay for tooltip, drawing, and crosshair.
+  const chartOverlay = chartGroup.append("rect")
     .attr("class", "overlay")
     .attr("width", chartWidth)
     .attr("height", chartHeight)
     .style("fill", "none")
     .style("pointer-events", "all")
-    .on("mousemove", (event) => {
-      const [xCoord] = d3.pointer(event);
-      const bisectDate = d3.bisector(d => new Date(d.datetime)).left;
-      const x0 = xScale.invert(xCoord);
-      const i = bisectDate(data, x0, 1);
-      const d0 = data[i - 1],
-            d1 = data[i];
-      const dSelected = (x0 - new Date(d0.datetime)) > (new Date(d1.datetime) - x0) ? d1 : d0;
+    .style("cursor", drawingMode ? "crosshair" : "default")
+    .on("mousemove", function (event) {
+      // Get pointer coordinates relative to xGroup and chartGroup.
+      const pointerX = d3.pointer(event, xGroup.node())[0];
+      const pointerY = d3.pointer(event, chartGroup.node())[1];
+      // Use the current transforms to invert the scales.
+      const timeVal = currentXTransform.rescaleX(xScale).invert(pointerX);
+      const priceVal = currentYTransform.rescaleY(yScale).invert(pointerY);
       d3.select(".tooltip")
         .style("opacity", 1)
         .html(`
-          <div>Time: ${dateFns.format(new Date(dSelected.datetime), 'MMM d HH:mm')}</div>
-          <div>Open: ${dSelected.open.toFixed(2)}</div>
-          <div>High: ${dSelected.high.toFixed(2)}</div>
-          <div>Low: ${dSelected.low.toFixed(2)}</div>
-          <div>Close: ${dSelected.close.toFixed(2)}</div>
-        `)
+        <div>Time: ${dateFns.format(timeVal, 'MMM d HH:mm')}</div>
+        <div>Price: ${priceVal.toFixed(2)}</div>
+      `)
         .style("left", `${event.pageX + 10}px`)
         .style("top", `${event.pageY - 30}px`);
+      // Show crosshair in drawing mode.
+      if (drawingMode) {
+        crosshair.style("display", null);
+        crosshair.select("#crosshairX")
+          .attr("x1", pointerX)
+          .attr("x2", pointerX)
+          .attr("y1", 0)
+          .attr("y2", chartHeight);
+        crosshair.select("#crosshairY")
+          .attr("x1", 0)
+          .attr("x2", chartWidth)
+          .attr("y1", pointerY)
+          .attr("y2", pointerY);
+        crosshair.select("#crosshairInfo")
+          .attr("x", pointerX + 5)
+          .attr("y", pointerY - 5)
+          .text(`${dateFns.format(timeVal, 'MMM d HH:mm')} | ${priceVal.toFixed(2)}`);
+      } else {
+        crosshair.style("display", "none");
+      }
     })
-    .on("mouseout", () => {
+    .on("mouseout", function () {
       d3.select(".tooltip").style("opacity", 0);
+      crosshair.style("display", "none");
+    })
+    // In drawing mode, clicking adds a new line.
+    .on("click", function (event) {
+      if (drawingMode) {
+        const pointerY = d3.pointer(event, chartGroup.node())[1];
+        const price = currentYTransform.rescaleY(yScale).invert(pointerY);
+        const alertOn = confirm("Enable alert for this line? Click OK for yes, Cancel for no.");
+        drawnLines.push({ price: price, alertOn: alertOn, alertTriggered: false });
+        fetchOHLCVData();
+      }
     });
 
-  // Update container info (trend and current price with candle color)
+  // Zoom behavior for x-axis on the bottom overlay.
+  const zoomX = d3.zoom()
+    .scaleExtent([1, 10])
+    .translateExtent([[0, 0], [chartWidth, chartHeight]])
+    .extent([[0, 0], [chartWidth, chartHeight]])
+    .on("zoom", function (event) {
+      currentXTransform = event.transform;
+      xGroup.attr("transform", `translate(${currentXTransform.x},0) scale(${currentXTransform.k},1)`);
+      xAxisGroup.call(xAxis.scale(currentXTransform.rescaleX(xScale)));
+    });
+  mainGroup.append("rect")
+    .attr("x", 0)
+    .attr("y", chartHeight)
+    .attr("width", chartWidth)
+    .attr("height", margin.bottom)
+    .style("fill", "transparent")
+    .style("cursor", "ew-resize")
+    .call(zoomX)
+    .call(zoomX.transform, currentXTransform);
+
+  // Zoom behavior for y-axis on the right margin.
+  const zoomY = d3.zoom()
+    .scaleExtent([1, 10])
+    .translateExtent([[0, 0], [chartWidth, chartHeight]])
+    .extent([[0, 0], [chartWidth, chartHeight]])
+    .on("zoom", function (event) {
+      currentYTransform = event.transform;
+      chartGroup.attr("transform", `translate(0, ${currentYTransform.y}) scale(1, ${currentYTransform.k})`);
+      mainGroup.select(".y-axis").call(yAxis.scale(currentYTransform.rescaleY(yScale)));
+    });
+  mainGroup.append("rect")
+    .attr("x", chartWidth)
+    .attr("y", 0)
+    .attr("width", margin.right)
+    .attr("height", chartHeight)
+    .style("fill", "transparent")
+    .style("cursor", "ns-resize")
+    .call(zoomY)
+    .call(zoomY.transform, currentYTransform);
+
+  // Update trend and current price info.
   document.getElementById("trend-recommendation").innerText = lastCandle.TREND_RECOMMENDATION || "N/A";
   document.getElementById("trend-strength").innerText = (lastCandle.TREND_STRENGTH !== undefined ? lastCandle.TREND_STRENGTH : "N/A");
   document.getElementById("current-price").innerHTML = `<span style="color: ${currentPriceColor}; font-weight: bold;">${currentPrice.toFixed(2)}</span>`;
 }
+
+// Toggle drawing mode.
+document.getElementById("draw-line-button").addEventListener("click", function () {
+  drawingMode = !drawingMode;
+  if (drawingMode) {
+    alert("Drawing mode enabled. Click on the chart to add a horizontal line.");
+  }
+  this.classList.toggle("bg-blue-600", drawingMode);
+  this.classList.toggle("bg-gray-400", !drawingMode);
+});
+
+// Remove lines via a prompt listing drawn lines.
+document.getElementById("remove-line-button").addEventListener("click", function () {
+  if (drawnLines.length === 0) {
+    alert("No drawn lines to remove.");
+    return;
+  }
+  let listStr = drawnLines.map((line, index) => `${index + 1}: Price = ${line.price.toFixed(2)}`).join("\n");
+  let input = prompt(`Enter the number(s) of the line(s) to remove, separated by commas:\n${listStr}`);
+  if (input) {
+    let numbers = input.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+    numbers.sort((a, b) => b - a);
+    numbers.forEach(n => {
+      if (n > 0 && n <= drawnLines.length) {
+        drawnLines.splice(n - 1, 1);
+      }
+    });
+    fetchOHLCVData();
+  }
+});
+
+
 
 
 

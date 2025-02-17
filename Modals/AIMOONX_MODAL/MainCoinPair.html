@@ -202,6 +202,12 @@
       <div id="coinInfo" class="mb-4">
         <h2 id="marketName" class="text-2xl font-semibold text-gray-800"></h2>
         <p id="marketDesc" class="text-gray-600"></p>
+        <button id="draw-line-button" class="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500">
+          Draw Line
+        </button>
+        <button id="remove-line-button" class="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500">
+          Remove Line
+        </button>
       </div>
       <!-- Candle Chart Canvas -->
       <!-- <canvas id="candleChart" class="w-full h-96"></canvas>
@@ -210,7 +216,7 @@
     </div>
 
 
-    <div class="container mx-auto space-y-4" id="advanced_chart_tools">
+    <div class="container mx-auto space-y-4 hidden" id="advanced_chart_tools">
       <!-- Indicator & Settings Container -->
       <div id="indicator-container" class="p-4 bg-white shadow rounded flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0">
         <div class="flex flex-col space-y-2">
