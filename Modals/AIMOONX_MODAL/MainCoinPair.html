@@ -14,12 +14,7 @@
 
   <!-- Include Moment.js first -->
   <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1"></script>
-  <!-- Then include Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Finally, include the Moment adapter for Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
-
-  <script src="https://d3js.org/d3.v7.js"></script>
+ 
   <script src="https://cdn.jsdelivr.net/npm/date-fns@4.1.0/cdn.min.js"></script>
   <style>
     :root {
@@ -288,30 +283,6 @@
     </div>
   
   </div>
-
-
-  <section id="advanced-chart" class=" rounded-xl container mx-auto p-6" style="height: 900px;">
-    <!-- TradingView Widget BEGIN -->
-    <div class="tradingview-widget-container" style="height:100%;width:100%">
-      <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
-        async>
-          {
-            "autosize": false,
-              "symbol": "BINANCE:ETHUSDT",
-                "interval": "D",
-                  "timezone": "Etc/UTC",
-                    "theme": "light",
-                      "style": "1",
-                        "locale": "en",
-                          "allow_symbol_change": true,
-                            "calendar": false,
-                              "support_host": "https://www.tradingview.com"
-          }
-        </script>
-    </div>
-    <!-- TradingView Widget END -->
-  </section>
 
   <script src="maincoinpair.js"></script>
 
