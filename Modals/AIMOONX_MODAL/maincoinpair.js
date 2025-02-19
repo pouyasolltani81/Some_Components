@@ -1,4 +1,4 @@
-
+import ApexCharts from 'apexcharts'
 let params = new URLSearchParams(window.location.search);
 let id = params.get("id");
 console.log(id); // Outputs: "Foo Bar"
@@ -276,6 +276,7 @@ let drawnLines = [];  // Array of { price, alertOn, alertTriggered }
 let drawingMode = false;
 // To preserve zoom state, store current x and y axis min/max.
 let currentXMin = null, currentXMax = null, currentYMin = null, currentYMax = null;
+let macdlastsignal = 0;
 
 
 // Build annotations for drawn lines, support/resistance, and Fibonacci.
@@ -370,22 +371,22 @@ async function updateChart() {
     { name: 'Candlestick', type: 'candlestick', data: candlestickData }
   ];
 
-  if (data[0].SMA_20) {
+  // if (data[0].SMA_20) {
 
-    // If SMA_20 is toggled, add its series.
-    if (document.getElementById('show-sma').checked) {
-      let smaData = [];
-      for (let i = 19; i < data.length; i++) {
-        smaData.push({ x: new Date(data[i].datetime), y: data[i].SMA_20 });
-      }
-      series.push({ name: 'SMA_20', type: 'line', data: smaData });
+  // If SMA_20 is toggled, add its series.
+  if (document.getElementById('show-sma').checked) {
+    let smaData = [];
+    for (let i = 19; i < data.length; i++) {
+      smaData.push({ x: new Date(data[i].datetime), y: data[i].SMA_20 });
     }
-
+    series.push({ name: 'SMA_20', type: 'line', data: smaData });
   }
 
+  // }
 
 
-  if (data[0].EMA_20) {
+
+  // if (data[0].EMA_20) {
 
   // If EMA_20 is toggled, add its series.
   if (document.getElementById('show-ema').checked) {
@@ -398,7 +399,20 @@ async function updateChart() {
     series.push({ name: 'EMA_20', type: 'line', data: emaData });
   }
 
-  }
+
+
+  // // If MACD is toggled, add its series.
+  // if (document.getElementById('show-MACD').checked) {
+  //   let MACD = [];
+  //   for (let i = 0; i < data.length; i++) {
+  //     if (i >= 19) {
+  //       MACD.push({ x: new Date(data[i].datetime), y: data[i].MACD });
+  //     }
+  //   }
+  //   series.push({ name: 'MACD', type: 'line', data: MACD });
+  // }
+
+  // }
 
   // (Additional indicators can be added similarly using the multi-select.)
 
@@ -474,6 +488,33 @@ async function updateChart() {
 
   // Update trend and current price in the control panel using the last candle.
   let lastCandle = data[data.length - 1];
+  let macdSignal = data[data.length - 1].MACD_signal == data[data.length - 1].MACD ? true : false;
+  console.log(macdSignal , 'because : ' );
+  
+  console.log('mac signal : ' ,data[data.length - 1].MACD_signal);
+  console.log('mac  : ' ,data[data.length - 1].MACD);
+
+  
+
+
+  if (macdSignal) {
+    macdlastsignal = data[data.length - 1].MACD_signal
+  } else if(macdlastsignal == 0){
+
+    document.getElementById('macd-recommendation').innerText = 'Waiting ...' || "N/A";
+
+
+  } else if (macdlastsignal > data[data.length - 1].MACD_signal) {
+
+    document.getElementById('macd-recommendation').innerText = 'BUY' || "N/A";
+
+
+  } else {
+
+    document.getElementById('macd-recommendation').innerText = 'SELL' || "N/A";
+
+  }
+
   let currentPrice = lastCandle.close;
   let currentPriceColor = lastCandle.close > lastCandle.open ? bullishColor : bearishColor;
   document.getElementById('trend-recommendation').innerText = lastCandle.TREND_RECOMMENDATION || "N/A";

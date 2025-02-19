@@ -10,6 +10,7 @@
   <!-- Axios for API calls -->
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
    <!-- ApexCharts -->
+   <!-- <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> -->
    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
   <!-- Include Moment.js first -->
@@ -209,7 +210,7 @@
       <!-- Candle Chart Canvas -->
       <!-- <canvas id="candleChart" class="w-full h-96"></canvas>
             -->
-      <div id="candle-chart"></div>
+      <!-- <div id="candle-chart"></div> -->
       <div id="chart"></div>
 
     </div>
@@ -230,6 +231,10 @@
               EMA_20
             </label>
             <label class="flex items-center">
+              <input type="checkbox" id="show-MACD" class="mr-1" checked>
+              MACD
+            </label>
+            <label class="flex items-center">
               <input type="checkbox" id="show-fib" class="mr-1">
               Fibonacci
             </label>
@@ -238,28 +243,7 @@
               Support/Resistance
             </label>
           </div>
-          <div class="flex items-center gap-4">
-            <label class="flex items-center">
-              Additional Indicators:
-              <select id="additional-indicators" class="ml-2 border rounded px-1 py-0.5" multiple>
-                <!-- Add as many as you want -->
-                <option value="MACD">MACD</option>
-                <option value="MACD_signal">MACD_signal</option>
-                <option value="ADX">ADX</option>
-                <option value="RSI">RSI</option>
-                <option value="STOCH">STOCH</option>
-                <option value="STOCH_signal">STOCH_signal</option>
-                <option value="TSI">TSI</option>
-                <option value="BB_high">BB_high</option>
-                <option value="BB_low">BB_low</option>
-                <option value="BB_mavg">BB_mavg</option>
-                <option value="ATR">ATR</option>
-                <option value="VWA">VWA</option>
-                <option value="FI">FI</option>
-                <option value="EMV">EMV</option>
-              </select>
-            </label>
-          </div>
+         
         </div>
         <div class="flex flex-col items-end">
           <div class="mb-1">
@@ -272,6 +256,8 @@
           </div>
           <div class="text-right">
             <div class="text-lg font-semibold">Trend: <span id="trend-recommendation">NEUTRAL</span></div>
+            <div class="text-lg font-semibold">MACD Signal: <span id="macd-recommendation">NEUTRAL</span></div>
+
             <div class="text-sm text-gray-600">Strength: <span id="trend-strength">0</span></div>
             <div class="text-sm text-gray-600">
               Current Price: <span id="current-price">0</span>
