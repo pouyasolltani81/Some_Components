@@ -1,4 +1,4 @@
-import ApexCharts from 'apexcharts'
+// import ApexCharts from 'apexcharts'
 let params = new URLSearchParams(window.location.search);
 let id = params.get("id");
 console.log(id); // Outputs: "Foo Bar"
@@ -37,12 +37,13 @@ const maxDataPoints = 20;
 //     }
 //   }
 // });
-
+let firsttime = true
 async function fetchCoinList() {
   const url = "http://188.34.202.221:8000/Market/GetMarketPair/";
   const token = "6ae3d79118083127c5442c7c6bfaf0b9";
   const params = { marketpair_id: id };
   try {
+   
     axios.post(url, params, {
       headers: {
         'Accept': "application/json",
@@ -50,6 +51,8 @@ async function fetchCoinList() {
       },
     })
       .then(response => {
+
+       
         const data = response.data.market_pair;
         if (data) {
           // Update data cards
@@ -75,7 +78,7 @@ async function fetchCoinList() {
 
           // Update chart: use the main price (formatted_price) as our data point
           const currentPrice = parseFloat(data.price);
-          const currentTime = new Date();
+          const currentTime = new Date().getTime() / 1000;
 
           // Add new data point
           priceHistory.push({ time: currentTime, price: currentPrice });
@@ -83,6 +86,24 @@ async function fetchCoinList() {
           if (priceHistory.length > maxDataPoints) {
             priceHistory.shift();
           }
+
+      //     let candleData ={
+      //   time:currentTime,
+      //   open: data.open_price,
+      //   high: data.high_price,
+      //   low: data.low_price,
+      //   close:data.close_price
+      // };
+      // candleData.push({
+      //   x: new Date(),
+      //   o: 97000,
+      //   h: 97000,
+      //   l: 97000,
+      //   c: 97000
+      // })
+
+  
+    // chart.timeScale().fitContent();
 
           // // Update chart labels and data arrays
           // priceChart.data.labels = priceHistory.map(point => point.time);
@@ -233,30 +254,42 @@ async function fetchOHLCVData() {
       }
 
 
-      return ohlcv
 
 
 
-      // console.log(ohlcv, time_interval_for_chart);
 
 
-      // // const ohlcv = response.data.ohlcv;
+      // const ohlcv = response.data.ohlcv;
 
-      // // Transform OHLCV data for the candlestick chart plugin
-      // let candleData = ohlcv.map(item => ({
-      //   x: new Date(item.timestamp),
-      //   o: item.open,
-      //   h: item.high,
-      //   l: item.low,
-      //   c: item.close
-      // }));
-      // // candleData.push({
-      // //   x: new Date(),
-      // //   o: 97000,
-      // //   h: 97000,
-      // //   l: 97000,
-      // //   c: 97000
-      // // })
+      // Transform OHLCV data for the candlestick chart plugin
+      let candleData = ohlcv.map(item => ({
+        time: new Date(item.timestamp).getTime() / 1000,
+        open: item.open,
+        high: item.high,
+        low: item.low,
+        close: item.close
+      }));
+      // candleData.push({
+      //   x: new Date(),
+      //   o: 97000,
+      //   h: 97000,
+      //   l: 97000,
+      //   c: 97000
+      // })
+
+        if (firsttime) {
+            console.log(candleData);
+    
+    candleSeries.setData(candleData);
+    chart.timeScale().fitContent();
+          firsttime = false
+        } else {
+          candleSeries.update(candleData[candleData.length - 1]);
+        }
+
+
+  
+
 
       // updateCandleChart(ohlcv);
     }
@@ -265,348 +298,40 @@ async function fetchOHLCVData() {
   }
 }
 
+
+
+// trading view light test chart 
+
+
+
+const chartProperties = {
+  // width:100%,
+  height:600,
+  timeScale:{
+    timeVisible:true,
+    secondsVisible:false,
+  }
+}
+
+const domElement = document.getElementById('chart');
+const chart = LightweightCharts.createChart(domElement,chartProperties);
+const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+    upColor: '#26a69a', downColor: '#ef5350', borderVisible: false,
+    wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+});
+
+setInterval(fetchOHLCVData, time_interval_for_chart);
 // fetchOHLCVData()
-setInterval(updateChart, time_interval_for_chart);
-
-
-
-// Global state variables
-let chart;
-let drawnLines = [];  // Array of { price, alertOn, alertTriggered }
-let drawingMode = false;
-// To preserve zoom state, store current x and y axis min/max.
-let currentXMin = null, currentXMax = null, currentYMin = null, currentYMax = null;
-let macdlastsignal = 0;
-
-
-// Build annotations for drawn lines, support/resistance, and Fibonacci.
-function getAnnotations(data) {
-  let annotations = [];
-  // Add drawn lines.
-  drawnLines.forEach((line, index) => {
-    annotations.push({
-      y: line.price,
-      borderColor: line.alertOn ? 'orange' : 'gray',
-      label: {
-        borderColor: line.alertOn ? 'orange' : 'gray',
-        style: { color: '#fff', background: line.alertOn ? 'orange' : 'gray' },
-        text: `Line ${index + 1}`
-      }
-    });
-  });
-  // Add support/resistance lines from the last candle.
-  if (document.getElementById('show-support-resistance').checked && data.length > 0) {
-    let lastCandle = data[data.length - 1];
-    let sr = [
-      { label: 'S1', value: lastCandle.S1 },
-      { label: 'S2', value: lastCandle.S2 },
-      { label: 'S3', value: lastCandle.S3 },
-      { label: 'R1', value: lastCandle.R1 },
-      { label: 'R2', value: lastCandle.R2 },
-      { label: 'R3', value: lastCandle.R3 }
-    ];
-    sr.forEach(item => {
-      if (item.value != null) {
-        annotations.push({
-          y: item.value,
-          borderColor: 'rgba(255,0,0,0.3)',
-          label: {
-            borderColor: 'rgba(255,0,0,0.3)',
-            style: { color: '#fff', background: 'rgba(255,0,0,0.3)' },
-            text: item.label,
-            position: 'left'
-          }
-        });
-      }
-    });
-  }
-  // Add Fibonacci lines.
-  if (document.getElementById('show-fib').checked && data.length > 0) {
-    let lastCandle = data[data.length - 1];
-    let fib = [
-      { label: 'FIB_S3', value: lastCandle.FIB_S3 },
-      { label: 'FIB_S2', value: lastCandle.FIB_S2 },
-      { label: 'FIB_S1', value: lastCandle.FIB_S1 },
-      { label: 'FIB_PP', value: lastCandle.FIB_PP },
-      { label: 'FIB_R1', value: lastCandle.FIB_R1 },
-      { label: 'FIB_R2', value: lastCandle.FIB_R2 },
-      { label: 'FIB_R3', value: lastCandle.FIB_R3 }
-    ];
-    fib.forEach(item => {
-      if (item.value != null) {
-        annotations.push({
-          y: item.value,
-          borderColor: 'lightblue',
-          label: {
-            borderColor: 'lightblue',
-            style: { color: '#fff', background: 'lightblue' },
-            text: item.label,
-            position: 'left'
-
-          }
-        });
-      }
-    });
-  }
-  return annotations;
-}
-
-// Update only the annotations (for drawn lines, etc.)
-async function updateAnnotations(data) {
-
-  let ann = { yaxis: getAnnotations(data) };
-  chart.updateOptions({ annotations: ann });
-}
-
-// Main function to update the chart
-async function updateChart() {
-  let data = await fetchOHLCVData();
-  // Prepare candlestick data for ApexCharts.
-  let candlestickData = data.map(d => ({
-    x: new Date(d.datetime),
-    y: [d.open, d.high, d.low, d.close]
-  }));
-  // Build series array.
-  let series = [
-    { name: 'Candlestick', type: 'candlestick', data: candlestickData }
-  ];
-
-  // if (data[0].SMA_20) {
-
-  // If SMA_20 is toggled, add its series.
-  if (document.getElementById('show-sma').checked) {
-    let smaData = [];
-    for (let i = 19; i < data.length; i++) {
-      smaData.push({ x: new Date(data[i].datetime), y: data[i].SMA_20 });
-    }
-    series.push({ name: 'SMA_20', type: 'line', data: smaData });
-  }
-
-  // }
-
-
-
-  // if (data[0].EMA_20) {
-
-  // If EMA_20 is toggled, add its series.
-  if (document.getElementById('show-ema').checked) {
-    let emaData = [];
-    for (let i = 0; i < data.length; i++) {
-      if (i >= 19) {
-        emaData.push({ x: new Date(data[i].datetime), y: data[i].EMA_20 });
-      }
-    }
-    series.push({ name: 'EMA_20', type: 'line', data: emaData });
-  }
-
-
-
-  // // If MACD is toggled, add its series.
-  // if (document.getElementById('show-MACD').checked) {
-  //   let MACD = [];
-  //   for (let i = 0; i < data.length; i++) {
-  //     if (i >= 19) {
-  //       MACD.push({ x: new Date(data[i].datetime), y: data[i].MACD });
-  //     }
-  //   }
-  //   series.push({ name: 'MACD', type: 'line', data: MACD });
-  // }
-
-  // }
-
-  // (Additional indicators can be added similarly using the multi-select.)
-
-  // Update series.
-  chart.updateSeries(series, true);
-
-  // Read color settings.
-  let bullishColor = document.getElementById('bullish-color').value;
-  let bearishColor = document.getElementById('bearish-color').value;
-
-  // Prepare new options.
-  let newOptions = {
-    chart: {
-      animations: { enabled: false },
-      toolbar: { autoSelected: 'zoom' },
-      zoom: { enabled: true, type: 'xy' },
-      events: {
-        // Preserve zoom state.
-        zoomed: function (chartContext, { xaxis, yaxis }) {
-          currentXMin = xaxis.min;
-          currentXMax = xaxis.max;
-          currentYMin = yaxis.min;
-          currentYMax = yaxis.max;
-        },
-        // If drawing mode is active, add a drawn line on click.
-        click: function (event, chartContext, config) {
-          if (drawingMode) {
-            let globals = chartContext.w.globals;
-            let offsetY = event.offsetY;
-            let gridHeight = globals.gridHeight;
-            let minY = globals.minY;
-            let maxY = globals.maxY;
-            // Invert offsetY to compute the price.
-            let price = maxY - (offsetY / gridHeight) * (maxY - minY);
-            let alertOn = confirm("Enable alert for this line? OK for yes, Cancel for no.");
-            drawnLines.push({ price: price, alertOn: alertOn, alertTriggered: false });
-            updateAnnotations();
-          }
-        }
-      }
-    },
-    plotOptions: {
-      candlestick: {
-        colors: {
-          upward: bullishColor,
-          downward: bearishColor
-        }
-      }
-    },
-    xaxis: {
-      type: 'datetime',
-      // Preserve zoom state if available.
-      min: currentXMin,
-      max: currentXMax
-    },
-    yaxis: {
-      tooltip: { enabled: true },
-      opposite: true,
-      min: currentYMin,
-      max: currentYMax
-    },
-    annotations: {
-      yaxis: getAnnotations(data)
-    },
-    tooltip: {
-      shared: true,
-      intersect: false
-    }
-  };
-
-  // Update chart options.
-  chart.updateOptions(newOptions);
-
-  // Update trend and current price in the control panel using the last candle.
-  let lastCandle = data[data.length - 1];
-  let macdSignal = data[data.length - 1].MACD_signal == data[data.length - 1].MACD ? true : false;
-  console.log(macdSignal , 'because : ' );
-  
-  console.log('mac signal : ' ,data[data.length - 1].MACD_signal);
-  console.log('mac  : ' ,data[data.length - 1].MACD);
-
-  
-
-
-  if (macdSignal) {
-    macdlastsignal = data[data.length - 1].MACD_signal
-  } else if(macdlastsignal == 0){
-
-    document.getElementById('macd-recommendation').innerText = 'Waiting ...' || "N/A";
-
-
-  } else if (macdlastsignal > data[data.length - 1].MACD_signal) {
-
-    document.getElementById('macd-recommendation').innerText = 'BUY' || "N/A";
-
-
-  } else {
-
-    document.getElementById('macd-recommendation').innerText = 'SELL' || "N/A";
-
-  }
-
-  let currentPrice = lastCandle.close;
-  let currentPriceColor = lastCandle.close > lastCandle.open ? bullishColor : bearishColor;
-  document.getElementById('trend-recommendation').innerText = lastCandle.TREND_RECOMMENDATION || "N/A";
-  document.getElementById('trend-strength').innerText = (lastCandle.TREND_STRENGTH !== undefined ? lastCandle.TREND_STRENGTH : "N/A");
-  document.getElementById('current-price').innerHTML = `<span style="color:${currentPriceColor}; font-weight:bold;">${currentPrice.toFixed(2)}</span>`;
-}
-
-// Initialize chart options and create the chart.
-let chartOptions = {
-  chart: {
-    type: 'candlestick',
-    height: 600,
-    animations: { enabled: false },
-    zoom: { enabled: true, type: 'xy' },
-    toolbar: { autoSelected: 'zoom' },
-    events: {
-      zoomed: function (chartContext, { xaxis, yaxis }) {
-        currentXMin = xaxis.min;
-        currentXMax = xaxis.max;
-        currentYMin = yaxis.min;
-        currentYMax = yaxis.max;
-      },
-      click: function (event, chartContext, config) {
-        if (drawingMode) {
-          let globals = chartContext.w.globals;
-          let offsetY = event.offsetY;
-          let gridHeight = globals.gridHeight;
-          let minY = globals.minY;
-          let maxY = globals.maxY;
-          let price = maxY - (offsetY / gridHeight) * (maxY - minY);
-          let alertOn = confirm("Enable alert for this line? OK for yes, Cancel for no.");
-          drawnLines.push({ price: price, alertOn: alertOn, alertTriggered: false });
-          updateAnnotations();
-        }
-      }
-    }
-  },
-  series: [],
-  xaxis: { type: 'datetime' },
-  yaxis: { tooltip: { enabled: true }, opposite: true },
-  plotOptions: {
-    candlestick: {
-      colors: {
-        upward: '#008000',
-        downward: '#ff0000'
-      }
-    }
-  },
-  annotations: { yaxis: [] },
-  tooltip: { shared: true, intersect: false }
-};
-
-chart = new ApexCharts(document.querySelector("#chart"), chartOptions);
-chart.render();
-
-
-// Toggle drawing mode when "Draw Line" is clicked.
-document.getElementById("draw-line-button").addEventListener("click", function () {
-  drawingMode = !drawingMode;
-  if (drawingMode) {
-    alert("Drawing mode enabled. Click on the chart to add a horizontal line.");
-  }
-  this.classList.toggle("bg-blue-600", drawingMode);
-  this.classList.toggle("bg-gray-400", !drawingMode);
-});
-
-// Remove lines via a prompt listing drawn lines.
-document.getElementById("remove-line-button").addEventListener("click", function () {
-  if (drawnLines.length === 0) {
-    alert("No drawn lines to remove.");
-    return;
-  }
-  let listStr = drawnLines.map((line, index) => `${index + 1}: Price = ${line.price.toFixed(2)}`).join("\n");
-  let input = prompt(`Enter the number(s) of the line(s) to remove, separated by commas:\n${listStr}`);
-  if (input) {
-    let numbers = input.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-    numbers.sort((a, b) => b - a);
-    numbers.forEach(n => {
-      if (n > 0 && n <= drawnLines.length) {
-        drawnLines.splice(n - 1, 1);
-      }
-    });
-    updateAnnotations();
-  }
-});
 
 
 
 
 
 // Event listeners for the Update button and market selection
-document.getElementById('updateBtn').addEventListener('click', updateChart);
+document.getElementById('updateBtn').addEventListener('click', () => {
+    firsttime = true ;
+    fetchOHLCVData()
+});
 document.getElementById('marketSelect').addEventListener('change', function (e) {
   const selectedId = parseInt(e.target.value);
   currentMarketId = selectedId;
