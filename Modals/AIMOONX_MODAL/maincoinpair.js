@@ -1,4 +1,4 @@
-import ApexCharts from 'apexcharts'
+// import ApexCharts from 'apexcharts'
 let params = new URLSearchParams(window.location.search);
 let id = params.get("id");
 console.log(id); // Outputs: "Foo Bar"
@@ -264,272 +264,364 @@ async function fetchOHLCVData() {
     console.error("Error fetching OHLCV data:", error);
   }
 }
-
-// fetchOHLCVData()
-setInterval(updateChart, time_interval_for_chart);
-
-
-
 // Global state variables
-let chart;
-let drawnLines = [];  // Array of { price, alertOn, alertTriggered }
+let chart, volumeChart;
+let drawnLines = []; // Each drawn line: { price, alertOn, alertTriggered }
 let drawingMode = false;
-// To preserve zoom state, store current x and y axis min/max.
+let alertDrawingMode = false; // When true, drawn lines will have alerts enabled
+// Preserve zoom state
 let currentXMin = null, currentXMax = null, currentYMin = null, currentYMax = null;
 let macdlastsignal = 0;
+let currentCandleCount = 0;
+let currentVolumeCount = 0;
 
+// Create a simple removal modal using Tailwind CSS if not already present.
+if (!document.getElementById("removal-modal")) {
+  const modal = document.createElement("div");
+  modal.id = "removal-modal";
+  // The overlay here uses pointer-events-none so that only the modal content receives clicks.
+  modal.className =
+    "fixed inset-0 flex items-center justify-center z-50 hidden";
+  modal.innerHTML = `
+    <div class="relative bg-white rounded-lg shadow-lg w-full max-w-md p-6 z-50">
+      <h3 class="text-xl font-bold mb-4">Remove drawn lines</h3>
+      <p id="modal-lines" class="text-gray-700 mb-4"></p>
+      <input id="remove-input" type="text" placeholder="Enter line numbers (e.g., 1,3)"
+        class="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <div class="flex justify-end space-x-2">
+        <button id="cancel-remove" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none">Cancel</button>
+        <button id="confirm-remove" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none">Remove</button>
+      </div>
+    </div>
+    <div class="absolute inset-0 bg-black opacity-50 pointer-events-none"></div>
+  `;
+  document.body.appendChild(modal);
+}
 
 // Build annotations for drawn lines, support/resistance, and Fibonacci.
 function getAnnotations(data) {
   let annotations = [];
-  // Add drawn lines.
-  drawnLines.forEach((line, index) => {
-    annotations.push({
-      y: line.price,
-      borderColor: line.alertOn ? 'orange' : 'gray',
-      label: {
-        borderColor: line.alertOn ? 'orange' : 'gray',
-        style: { color: '#fff', background: line.alertOn ? 'orange' : 'gray' },
-        text: `Line ${index + 1}`
-      }
+  try {
+    // Add drawn lines.
+    drawnLines.forEach((line, index) => {
+      annotations.push({
+        y: line.price,
+        borderColor: line.alertOn ? "orange" : "gray",
+        label: {
+          borderColor: line.alertOn ? "orange" : "gray",
+          style: { color: "#fff", background: line.alertOn ? "orange" : "gray" },
+          text: `Line ${index + 1}`,
+        },
+      });
     });
-  });
-  // Add support/resistance lines from the last candle.
-  if (document.getElementById('show-support-resistance').checked && data.length > 0) {
-    let lastCandle = data[data.length - 1];
-    let sr = [
-      { label: 'S1', value: lastCandle.S1 },
-      { label: 'S2', value: lastCandle.S2 },
-      { label: 'S3', value: lastCandle.S3 },
-      { label: 'R1', value: lastCandle.R1 },
-      { label: 'R2', value: lastCandle.R2 },
-      { label: 'R3', value: lastCandle.R3 }
-    ];
-    sr.forEach(item => {
-      if (item.value != null) {
-        annotations.push({
-          y: item.value,
-          borderColor: 'rgba(255,0,0,0.3)',
-          label: {
-            borderColor: 'rgba(255,0,0,0.3)',
-            style: { color: '#fff', background: 'rgba(255,0,0,0.3)' },
-            text: item.label,
-            position: 'left'
-          }
-        });
-      }
-    });
-  }
-  // Add Fibonacci lines.
-  if (document.getElementById('show-fib').checked && data.length > 0) {
-    let lastCandle = data[data.length - 1];
-    let fib = [
-      { label: 'FIB_S3', value: lastCandle.FIB_S3 },
-      { label: 'FIB_S2', value: lastCandle.FIB_S2 },
-      { label: 'FIB_S1', value: lastCandle.FIB_S1 },
-      { label: 'FIB_PP', value: lastCandle.FIB_PP },
-      { label: 'FIB_R1', value: lastCandle.FIB_R1 },
-      { label: 'FIB_R2', value: lastCandle.FIB_R2 },
-      { label: 'FIB_R3', value: lastCandle.FIB_R3 }
-    ];
-    fib.forEach(item => {
-      if (item.value != null) {
-        annotations.push({
-          y: item.value,
-          borderColor: 'lightblue',
-          label: {
-            borderColor: 'lightblue',
-            style: { color: '#fff', background: 'lightblue' },
-            text: item.label,
-            position: 'left'
-
-          }
-        });
-      }
-    });
+    // Add support/resistance lines from the last candle.
+    const srToggle = document.getElementById("show-support-resistance");
+    if (srToggle && srToggle.checked && data.length > 0) {
+      let lastCandle = data[data.length - 1];
+      let sr = [
+        { label: "S1", value: lastCandle.S1 },
+        { label: "S2", value: lastCandle.S2 },
+        { label: "S3", value: lastCandle.S3 },
+        { label: "R1", value: lastCandle.R1 },
+        { label: "R2", value: lastCandle.R2 },
+        { label: "R3", value: lastCandle.R3 },
+      ];
+      sr.forEach((item) => {
+        if (item.value != null) {
+          annotations.push({
+            y: item.value,
+            borderColor: "rgba(255,0,0,0.3)",
+            label: {
+              borderColor: "rgba(255,0,0,0.3)",
+              style: { color: "#fff", background: "rgba(255,0,0,0.3)" },
+              text: item.label,
+              position: "left",
+            },
+          });
+        }
+      });
+    }
+    // Add Fibonacci lines.
+    const fibToggle = document.getElementById("show-fib");
+    if (fibToggle && fibToggle.checked && data.length > 0) {
+      let lastCandle = data[data.length - 1];
+      let fib = [
+        { label: "FIB_S3", value: lastCandle.FIB_S3 },
+        { label: "FIB_S2", value: lastCandle.FIB_S2 },
+        { label: "FIB_S1", value: lastCandle.FIB_S1 },
+        { label: "FIB_PP", value: lastCandle.FIB_PP },
+        { label: "FIB_R1", value: lastCandle.FIB_R1 },
+        { label: "FIB_R2", value: lastCandle.FIB_R2 },
+        { label: "FIB_R3", value: lastCandle.FIB_R3 },
+      ];
+      fib.forEach((item) => {
+        if (item.value != null) {
+          annotations.push({
+            y: item.value,
+            borderColor: "lightblue",
+            label: {
+              borderColor: "lightblue",
+              style: { color: "#fff", background: "lightblue" },
+              text: item.label,
+              position: "left",
+            },
+          });
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Error in getAnnotations:", err);
   }
   return annotations;
 }
 
-// Update only the annotations (for drawn lines, etc.)
-async function updateAnnotations(data) {
-
-  let ann = { yaxis: getAnnotations(data) };
-  chart.updateOptions({ annotations: ann });
+// Update annotations.
+async function updateAnnotationsWrapper(data) {
+  try {
+    let ann = { yaxis: getAnnotations(data) };
+    chart.updateOptions({ annotations: ann });
+  } catch (err) {
+    console.error("Error updating annotations:", err);
+  }
 }
 
-// Main function to update the chart
+// Main updateChart function.
 async function updateChart() {
-  let data = await fetchOHLCVData();
-  // Prepare candlestick data for ApexCharts.
-  let candlestickData = data.map(d => ({
-    x: new Date(d.datetime),
-    y: [d.open, d.high, d.low, d.close]
-  }));
-  // Build series array.
-  let series = [
-    { name: 'Candlestick', type: 'candlestick', data: candlestickData }
-  ];
-
-  // if (data[0].SMA_20) {
-
-  // If SMA_20 is toggled, add its series.
-  if (document.getElementById('show-sma').checked) {
-    let smaData = [];
-    for (let i = 19; i < data.length; i++) {
-      smaData.push({ x: new Date(data[i].datetime), y: data[i].SMA_20 });
+  try {
+    let data = await fetchOHLCVData();
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn("No OHLCV data available.");
+      return;
     }
-    series.push({ name: 'SMA_20', type: 'line', data: smaData });
-  }
-
-  // }
-
-
-
-  // if (data[0].EMA_20) {
-
-  // If EMA_20 is toggled, add its series.
-  if (document.getElementById('show-ema').checked) {
-    let emaData = [];
-    for (let i = 0; i < data.length; i++) {
-      if (i >= 19) {
+    // Prepare candlestick data.
+    let candlestickData = data.map((d) => ({
+      x: new Date(d.datetime),
+      y: [d.open, d.high, d.low, d.close],
+    }));
+    // Prepare volume data.
+    let bullishColor = document.getElementById("bullish-color")
+      ? document.getElementById("bullish-color").value
+      : "#008000";
+    let bearishColor = document.getElementById("bearish-color")
+      ? document.getElementById("bearish-color").value
+      : "#ff0000";
+    let volumeData = data.map((d) => ({
+      x: new Date(d.datetime),
+      y: d.volume,
+      fillColor: d.close > d.open ? bullishColor : bearishColor,
+    }));
+    // Compute extra x-axis spacing: add space equivalent to 5 candle intervals.
+    let newXMax = null;
+    if (candlestickData.length >= 2) {
+      let lastTime = candlestickData[candlestickData.length - 1].x.getTime();
+      let secondLastTime = candlestickData[candlestickData.length - 2].x.getTime();
+      let diff = lastTime - secondLastTime;
+      newXMax = lastTime + diff * 5;
+    }
+    // Build series for candlestick.
+    let series = [
+      { name: "Candlestick", type: "candlestick", data: candlestickData },
+    ];
+    // Optionally add SMA.
+    const smaToggle = document.getElementById("show-sma");
+    if (smaToggle && smaToggle.checked) {
+      let smaData = [];
+      for (let i = 19; i < data.length; i++) {
+        smaData.push({ x: new Date(data[i].datetime), y: data[i].SMA_20 });
+      }
+      series.push({ name: "SMA_20", type: "line", data: smaData });
+    }
+    // Optionally add EMA.
+    const emaToggle = document.getElementById("show-ema");
+    if (emaToggle && emaToggle.checked) {
+      let emaData = [];
+      for (let i = 19; i < data.length; i++) {
         emaData.push({ x: new Date(data[i].datetime), y: data[i].EMA_20 });
       }
+      series.push({ name: "EMA_20", type: "line", data: emaData });
     }
-    series.push({ name: 'EMA_20', type: 'line', data: emaData });
-  }
-
-
-
-  // // If MACD is toggled, add its series.
-  // if (document.getElementById('show-MACD').checked) {
-  //   let MACD = [];
-  //   for (let i = 0; i < data.length; i++) {
-  //     if (i >= 19) {
-  //       MACD.push({ x: new Date(data[i].datetime), y: data[i].MACD });
-  //     }
-  //   }
-  //   series.push({ name: 'MACD', type: 'line', data: MACD });
-  // }
-
-  // }
-
-  // (Additional indicators can be added similarly using the multi-select.)
-
-  // Update series.
-  chart.updateSeries(series, true);
-
-  // Read color settings.
-  let bullishColor = document.getElementById('bullish-color').value;
-  let bearishColor = document.getElementById('bearish-color').value;
-
-  // Prepare new options.
-  let newOptions = {
-    chart: {
-      animations: { enabled: false },
-      toolbar: { autoSelected: 'zoom' },
-      zoom: { enabled: true, type: 'xy' },
-      events: {
-        // Preserve zoom state.
-        zoomed: function (chartContext, { xaxis, yaxis }) {
-          currentXMin = xaxis.min;
-          currentXMax = xaxis.max;
-          currentYMin = yaxis.min;
-          currentYMax = yaxis.max;
+    // Update candlestick chart partially if possible.
+    if (
+      chart &&
+      chart.w &&
+      chart.w.config &&
+      chart.w.config.series &&
+      chart.w.config.series.length > 0 &&
+      chart.w.config.series[0].data &&
+      chart.w.config.series[0].data.length === candlestickData.length
+    ) {
+      let idx = candlestickData.length - 1;
+      chart.w.config.series[0].data[idx] = candlestickData[idx];
+      if (smaToggle && smaToggle.checked) {
+        let smaSeries = chart.w.config.series.find((s) => s.name === "SMA_20");
+        if (smaSeries && smaSeries.data && smaSeries.data.length > 0) {
+          smaSeries.data[smaSeries.data.length - 1] = {
+            x: new Date(data[data.length - 1].datetime),
+            y: data[data.length - 1].SMA_20,
+          };
+        }
+      }
+      if (emaToggle && emaToggle.checked) {
+        let emaSeries = chart.w.config.series.find((s) => s.name === "EMA_20");
+        if (emaSeries && emaSeries.data && emaSeries.data.length > 0) {
+          emaSeries.data[emaSeries.data.length - 1] = {
+            x: new Date(data[data.length - 1].datetime),
+            y: data[data.length - 1].EMA_20,
+          };
+        }
+      }
+      chart.updateSeries(chart.w.config.series, true).catch((err) =>
+        console.error("Error in partial series update:", err)
+      );
+    } else {
+      chart.updateSeries(series, true).catch((err) =>
+        console.error("Error in full series update:", err)
+      );
+      currentCandleCount = candlestickData.length;
+    }
+    // Build volume series.
+    let volSeries = [{ name: "Volume", type: "bar", data: volumeData }];
+    if (
+      volumeChart &&
+      volumeChart.w &&
+      volumeChart.w.config &&
+      volumeChart.w.config.series &&
+      volumeChart.w.config.series.length > 0 &&
+      volumeChart.w.config.series[0].data &&
+      volumeChart.w.config.series[0].data.length === volumeData.length
+    ) {
+      let vidx = volumeData.length - 1;
+      volumeChart.w.config.series[0].data[vidx] = volumeData[vidx];
+      volumeChart
+        .updateSeries(volumeChart.w.config.series, true)
+        .catch((err) =>
+          console.error("Error updating volume chart partially:", err)
+        );
+    } else {
+      volumeChart
+        .updateSeries(volSeries, true)
+        .catch((err) => console.error("Error updating volume chart:", err));
+      currentVolumeCount = volumeData.length;
+    }
+    // Update chart options (preserving zoom state, and adding extra x-axis space).
+    let newOptions = {
+      chart: {
+        animations: { enabled: true },
+        toolbar: { autoSelected: "zoom" },
+        zoom: { enabled: true, type: "xy" },
+        // Use the chart id for brush linking.
+        id: "candlestick-chart",
+        events: {
+          zoomed: function (chartContext, { xaxis, yaxis }) {
+            currentXMin = xaxis.min;
+            currentXMax = xaxis.max;
+            currentYMin = yaxis.min;
+            currentYMax = yaxis.max;
+          },
+          // Allow drawing if drawing mode or alert mode is active.
+          click: function (event, chartContext, config) {
+            if (drawingMode || alertDrawingMode) {
+              try {
+                let globals = chartContext.w.globals;
+                let offsetY = event.offsetY;
+                let gridHeight = globals.gridHeight;
+                if (!gridHeight) return;
+                let minY = globals.minY;
+                let maxY = globals.maxY;
+                // Correction: add 8 units to the computed price.
+                let price =
+                  Math.round(
+                    (maxY - (offsetY / gridHeight) * (maxY - minY)) * 100
+                  ) / 100 + 8;
+                let alertOn = alertDrawingMode ? true : false;
+                drawnLines.push({
+                  price: price,
+                  alertOn: alertOn,
+                  alertTriggered: false,
+                });
+                updateAnnotationsWrapper(data);
+              } catch (err) {
+                console.error("Error during drawing click event:", err);
+              }
+            }
+          },
         },
-        // If drawing mode is active, add a drawn line on click.
-        click: function (event, chartContext, config) {
-          if (drawingMode) {
-            let globals = chartContext.w.globals;
-            let offsetY = event.offsetY;
-            let gridHeight = globals.gridHeight;
-            let minY = globals.minY;
-            let maxY = globals.maxY;
-            // Invert offsetY to compute the price.
-            let price = maxY - (offsetY / gridHeight) * (maxY - minY);
-            let alertOn = confirm("Enable alert for this line? OK for yes, Cancel for no.");
-            drawnLines.push({ price: price, alertOn: alertOn, alertTriggered: false });
-            updateAnnotations();
-          }
-        }
+      },
+      plotOptions: {
+        candlestick: {
+          colors: { upward: bullishColor, downward: bearishColor },
+        },
+      },
+      xaxis: {
+        type: "datetime",
+        min: currentXMin,
+        // If newXMax is computed, use it; otherwise keep currentXMax.
+        max: newXMax ? newXMax : currentXMax,
+      },
+      yaxis: {
+        tooltip: { enabled: true },
+        opposite: true,
+        min: currentYMin,
+        max: currentYMax,
+      },
+      annotations: {
+        yaxis: getAnnotations(data),
+      },
+      tooltip: { shared: true, intersect: false },
+    };
+    chart
+      .updateOptions(newOptions)
+      .catch((err) => console.error("Error updating chart options:", err));
+
+    // Update trend, MACD, and current price info.
+    let lastCandle = data[data.length - 1];
+    let macdSignal = lastCandle.MACD_signal == lastCandle.MACD;
+    if (macdSignal) {
+      macdlastsignal = lastCandle.MACD_signal;
+    } else if (macdlastsignal === 0) {
+      if (document.getElementById("macd-recommendation")) {
+        document.getElementById("macd-recommendation").innerText = "Waiting ...";
       }
-    },
-    plotOptions: {
-      candlestick: {
-        colors: {
-          upward: bullishColor,
-          downward: bearishColor
-        }
+    } else if (macdlastsignal > lastCandle.MACD_signal) {
+      if (document.getElementById("macd-recommendation")) {
+        document.getElementById("macd-recommendation").innerText = "BUY";
       }
-    },
-    xaxis: {
-      type: 'datetime',
-      // Preserve zoom state if available.
-      min: currentXMin,
-      max: currentXMax
-    },
-    yaxis: {
-      tooltip: { enabled: true },
-      opposite: true,
-      min: currentYMin,
-      max: currentYMax
-    },
-    annotations: {
-      yaxis: getAnnotations(data)
-    },
-    tooltip: {
-      shared: true,
-      intersect: false
+    } else {
+      if (document.getElementById("macd-recommendation")) {
+        document.getElementById("macd-recommendation").innerText = "SELL";
+      }
     }
-  };
-
-  // Update chart options.
-  chart.updateOptions(newOptions);
-
-  // Update trend and current price in the control panel using the last candle.
-  let lastCandle = data[data.length - 1];
-  let macdSignal = data[data.length - 1].MACD_signal == data[data.length - 1].MACD ? true : false;
-  console.log(macdSignal , 'because : ' );
-  
-  console.log('mac signal : ' ,data[data.length - 1].MACD_signal);
-  console.log('mac  : ' ,data[data.length - 1].MACD);
-
-  
-
-
-  if (macdSignal) {
-    macdlastsignal = data[data.length - 1].MACD_signal
-  } else if(macdlastsignal == 0){
-
-    document.getElementById('macd-recommendation').innerText = 'Waiting ...' || "N/A";
-
-
-  } else if (macdlastsignal > data[data.length - 1].MACD_signal) {
-
-    document.getElementById('macd-recommendation').innerText = 'BUY' || "N/A";
-
-
-  } else {
-
-    document.getElementById('macd-recommendation').innerText = 'SELL' || "N/A";
-
+    let currentPrice = lastCandle.close;
+    let currentPriceColor =
+      lastCandle.close > lastCandle.open ? bullishColor : bearishColor;
+    if (document.getElementById("trend-recommendation")) {
+      document.getElementById("trend-recommendation").innerText =
+        lastCandle.TREND_RECOMMENDATION || "N/A";
+    }
+    if (document.getElementById("trend-strength")) {
+      document.getElementById("trend-strength").innerText =
+        lastCandle.TREND_STRENGTH !== undefined
+          ? lastCandle.TREND_STRENGTH
+          : "N/A";
+    }
+    if (document.getElementById("current-price")) {
+      document.getElementById("current-price").innerHTML = `<span style="color:${currentPriceColor}; font-weight:bold;">${currentPrice.toFixed(2)}</span>`;
+    }
+  } catch (err) {
+    console.error("Error in updateChart function:", err);
   }
-
-  let currentPrice = lastCandle.close;
-  let currentPriceColor = lastCandle.close > lastCandle.open ? bullishColor : bearishColor;
-  document.getElementById('trend-recommendation').innerText = lastCandle.TREND_RECOMMENDATION || "N/A";
-  document.getElementById('trend-strength').innerText = (lastCandle.TREND_STRENGTH !== undefined ? lastCandle.TREND_STRENGTH : "N/A");
-  document.getElementById('current-price').innerHTML = `<span style="color:${currentPriceColor}; font-weight:bold;">${currentPrice.toFixed(2)}</span>`;
 }
 
-// Initialize chart options and create the chart.
+// Options for candlestick chart.
 let chartOptions = {
   chart: {
-    type: 'candlestick',
+    type: "candlestick",
     height: 600,
-    animations: { enabled: false },
-    zoom: { enabled: true, type: 'xy' },
-    toolbar: { autoSelected: 'zoom' },
+    animations: { enabled: true },
+    zoom: { enabled: true, type: "xy" },
+    // Assign an ID so volume chart can brush it.
+    id: "candlestick-chart",
+    toolbar: { autoSelected: "zoom" },
     events: {
       zoomed: function (chartContext, { xaxis, yaxis }) {
         currentXMin = xaxis.min;
@@ -538,86 +630,183 @@ let chartOptions = {
         currentYMax = yaxis.max;
       },
       click: function (event, chartContext, config) {
-        if (drawingMode) {
-          let globals = chartContext.w.globals;
-          let offsetY = event.offsetY;
-          let gridHeight = globals.gridHeight;
-          let minY = globals.minY;
-          let maxY = globals.maxY;
-          let price = maxY - (offsetY / gridHeight) * (maxY - minY);
-          let alertOn = confirm("Enable alert for this line? OK for yes, Cancel for no.");
-          drawnLines.push({ price: price, alertOn: alertOn, alertTriggered: false });
-          updateAnnotations();
+        if (drawingMode || alertDrawingMode) {
+          try {
+            let globals = chartContext.w.globals;
+            let offsetY = event.offsetY;
+            let gridHeight = globals.gridHeight;
+            if (!gridHeight) return;
+            let minY = globals.minY;
+            let maxY = globals.maxY;
+            let price =
+              Math.round((maxY - (offsetY / gridHeight) * (maxY - minY)) * 100) / 100 + 8;
+            let alertOn = alertDrawingMode ? true : false;
+            drawnLines.push({ price, alertOn, alertTriggered: false });
+            updateAnnotationsWrapper([]);
+          } catch (err) {
+            console.error("Error in chart click event:", err);
+          }
         }
-      }
-    }
+      },
+    },
   },
   series: [],
-  xaxis: { type: 'datetime' },
+  xaxis: { type: "datetime" },
   yaxis: { tooltip: { enabled: true }, opposite: true },
   plotOptions: {
     candlestick: {
-      colors: {
-        upward: '#008000',
-        downward: '#ff0000'
-      }
-    }
+      colors: { upward: "#008000", downward: "#ff0000" },
+    },
   },
   annotations: { yaxis: [] },
-  tooltip: { shared: true, intersect: false }
+  tooltip: { shared: true, intersect: false },
 };
 
-chart = new ApexCharts(document.querySelector("#chart"), chartOptions);
-chart.render();
+// Options for volume chart.
+let volumeOptions = {
+  chart: {
+    type: "bar",
+    height: 150,
+    animations: { enabled: true },
+    toolbar: { show: false },
+    // Enable brush functionality to control main chart.
+    brush: {
+      enabled: true,
+      target: "candlestick-chart",
+    },
+  },
+  series: [],
+  xaxis: { type: "datetime" },
+  plotOptions: {
+    bar: { columnWidth: "60%" },
+  },
+  tooltip: { shared: true, intersect: false },
+  // Remove y-axis labels and position the y-axis on the right.
+  yaxis: { labels: { show: false }, opposite: true },
+};
 
+// Wait for DOM ready.
+document.addEventListener("DOMContentLoaded", function () {
+  try {
+    const chartContainer = document.querySelector("#chart");
+    const volumeContainer = document.querySelector("#volume-chart");
+    if (!chartContainer) throw new Error("Element with id 'chart' not found.");
+    if (!volumeContainer) throw new Error("Element with id 'volume-chart' not found.");
+    chart = new ApexCharts(chartContainer, chartOptions);
+    chart.render().catch((e) =>
+      console.error("Error rendering candlestick chart:", e)
+    );
+    volumeChart = new ApexCharts(volumeContainer, volumeOptions);
+    volumeChart.render().catch((e) =>
+      console.error("Error rendering volume chart:", e)
+    );
 
-// Toggle drawing mode when "Draw Line" is clicked.
-document.getElementById("draw-line-button").addEventListener("click", function () {
-  drawingMode = !drawingMode;
-  if (drawingMode) {
-    alert("Drawing mode enabled. Click on the chart to add a horizontal line.");
+    // Set up control buttons.
+    const drawLineBtn = document.getElementById("draw-line-button");
+    if (drawLineBtn) {
+      drawLineBtn.addEventListener("click", function () {
+        try {
+          drawingMode = !drawingMode;
+          this.classList.toggle("bg-blue-600", drawingMode);
+          this.classList.toggle("bg-gray-400", !drawingMode);
+        } catch (err) {
+          console.error("Error in draw-line-button click handler:", err);
+        }
+      });
+    } else {
+      console.warn("draw-line-button not found.");
+    }
+    const toggleAlertBtn = document.getElementById("toggle-alert-button");
+    if (toggleAlertBtn) {
+      toggleAlertBtn.addEventListener("click", function () {
+        try {
+          alertDrawingMode = !alertDrawingMode;
+          this.classList.toggle("bg-blue-600", alertDrawingMode);
+          this.classList.toggle("bg-gray-400", !alertDrawingMode);
+        } catch (err) {
+          console.error("Error in toggle-alert-button click handler:", err);
+        }
+      });
+    } else {
+      console.warn("toggle-alert-button not found.");
+    }
+    const removeLineBtn = document.getElementById("remove-line-button");
+    if (removeLineBtn) {
+      removeLineBtn.addEventListener("click", function () {
+        try {
+          if (drawnLines.length === 0) {
+            alert("No drawn lines to remove.");
+            return;
+          }
+          let listStr = drawnLines
+            .map((line, index) => `${index + 1}: Price = ${line.price.toFixed(2)}`)
+            .join("<br>");
+          document.getElementById("modal-lines").innerHTML = listStr;
+          document.getElementById("removal-modal").classList.remove("hidden");
+        } catch (err) {
+          console.error("Error in remove-line-button click handler:", err);
+        }
+      });
+    } else {
+      console.warn("remove-line-button not found.");
+    }
+    const cancelRemoveBtn = document.getElementById("cancel-remove");
+    if (cancelRemoveBtn) {
+      cancelRemoveBtn.addEventListener("click", function () {
+        document.getElementById("removal-modal").classList.add("hidden");
+      });
+    }
+    const confirmRemoveBtn = document.getElementById("confirm-remove");
+    if (confirmRemoveBtn) {
+      confirmRemoveBtn.addEventListener("click", function () {
+        try {
+          let input = document.getElementById("remove-input").value;
+          if (input) {
+            let numbers = input
+              .split(",")
+              .map((s) => parseInt(s.trim()))
+              .filter((n) => !isNaN(n));
+            numbers.sort((a, b) => b - a);
+            numbers.forEach((n) => {
+              if (n > 0 && n <= drawnLines.length) {
+                drawnLines.splice(n - 1, 1);
+              }
+            });
+            updateAnnotationsWrapper([]);
+          }
+          document.getElementById("removal-modal").classList.add("hidden");
+        } catch (err) {
+          console.error("Error in confirm-remove click handler:", err);
+        }
+      });
+    }
+    // Update and market selection buttons.
+    const updateBtn = document.getElementById("updateBtn");
+    if (updateBtn) {
+      updateBtn.addEventListener("click", updateChart);
+    }
+    const marketSelect = document.getElementById("marketSelect");
+    if (marketSelect) {
+      marketSelect.addEventListener("change", function (e) {
+        try {
+          const selectedId = parseInt(e.target.value);
+          currentMarketId = selectedId;
+          const market = activeMarkets.find((m) => m.id === selectedId);
+          updateMarketInfo(market);
+          updateChart();
+        } catch (err) {
+          console.error("Error in marketSelect change handler:", err);
+        }
+      });
+    }
+    if (typeof fetchActiveMarkets === "function") {
+      fetchActiveMarkets();
+    }
+    setInterval(updateChart, 10000);
+  } catch (err) {
+    console.error("Error during DOMContentLoaded initialization:", err);
   }
-  this.classList.toggle("bg-blue-600", drawingMode);
-  this.classList.toggle("bg-gray-400", !drawingMode);
 });
-
-// Remove lines via a prompt listing drawn lines.
-document.getElementById("remove-line-button").addEventListener("click", function () {
-  if (drawnLines.length === 0) {
-    alert("No drawn lines to remove.");
-    return;
-  }
-  let listStr = drawnLines.map((line, index) => `${index + 1}: Price = ${line.price.toFixed(2)}`).join("\n");
-  let input = prompt(`Enter the number(s) of the line(s) to remove, separated by commas:\n${listStr}`);
-  if (input) {
-    let numbers = input.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-    numbers.sort((a, b) => b - a);
-    numbers.forEach(n => {
-      if (n > 0 && n <= drawnLines.length) {
-        drawnLines.splice(n - 1, 1);
-      }
-    });
-    updateAnnotations();
-  }
-});
-
-
-
-
-
-// Event listeners for the Update button and market selection
-document.getElementById('updateBtn').addEventListener('click', updateChart);
-document.getElementById('marketSelect').addEventListener('change', function (e) {
-  const selectedId = parseInt(e.target.value);
-  currentMarketId = selectedId;
-  const market = activeMarkets.find(m => m.id === selectedId);
-  updateMarketInfo(market);
-  updateChart();
-});
-
-// Initial calls
-fetchActiveMarkets();
-// Optionally auto-update OHLCV data every 10 seconds
 
 
 
