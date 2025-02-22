@@ -100,7 +100,7 @@ async function fetchCoinList() {
 
 // Initial call and repeat every 2 seconds
 fetchCoinList();
-setInterval(fetchCoinList, 2000);
+setInterval(fetchCoinList, 10000);
 
 
 
@@ -224,12 +224,12 @@ async function fetchOHLCVData() {
 
 
         ohlcv = response.data.data;
-        time_interval_for_chart = 5000
+        time_interval_for_chart = 10000
 
 
       } else {
         ohlcv = response.data.ohlcv;
-        time_interval_for_chart = 2000
+        time_interval_for_chart = 10000
       }
 
 
@@ -338,6 +338,25 @@ function toggleDescription(btn) {
 }
 
 
+
+
+// Returns a sentiment indicator string (using arrows) for a news item.
+function getSentimentIndicator(news) {
+  let pos = (news.Positive !== undefined && news.Positive !== null) ? news.Positive : 0;
+  let neu = (news.Neutral !== undefined && news.Neutral !== null) ? news.Neutral : 0;
+  let neg = (news.Negative !== undefined && news.Negative !== null) ? news.Negative : 0;
+  let maxVal = Math.max(pos, neu, neg);
+  if (maxVal === 0) return '-';
+  if (maxVal === pos) {
+    return `<span class="text-green-500 font-bold">▲ ${pos}</span>`;
+  } else if (maxVal === neg) {
+    return `<span class="text-red-500 font-bold">▼ ${neg}</span>`;
+  } else {
+    return `<span class="text-gray-500 font-bold">→ ${neu}</span>`;
+  }
+}
+
+
 function showNewsModal(relatedNews) {
   let newsContent = document.getElementById("news-content");
   if (!newsContent) return;
@@ -350,7 +369,7 @@ function showNewsModal(relatedNews) {
   initialItems.forEach((news, index) => {
     html += `
       <div class="flex items-center p-2 border rounded-md bg-gray-50 text-xs mb-2">
-        <!-- Image on left -->
+        <!-- News image -->
         <div class="w-16 h-16 flex-shrink-0 mr-2">
           <img src="${news.thImage}" alt="news image" class="w-full h-full object-cover rounded-md">
         </div>
@@ -363,11 +382,9 @@ function showNewsModal(relatedNews) {
           ${news.articleBody && news.articleBody.length > 100 ? `<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>` : ""}
           <a href="${news.link}" target="_blank" class="text-blue-500 underline">Read more</a>
         </div>
-        <!-- Sentiment analysis on right -->
+        <!-- Sentiment indicator -->
         <div class="w-24 text-center ml-2">
-          <div class="text-red-500 font-bold">Neg: ${news.Negative}</div>
-          <div class="text-gray-500 font-bold">Neu: ${news.Neutral}</div>
-          <div class="text-green-500 font-bold">Pos: ${news.Positive}</div>
+          ${getSentimentIndicator(news)}
         </div>
       </div>
     `;
@@ -390,15 +407,13 @@ function showNewsModal(relatedNews) {
             <a href="${news.link}" target="_blank" class="text-blue-500 underline">Read more</a>
           </div>
           <div class="w-24 text-center ml-2">
-            <div class="text-red-500 font-bold">Neg: ${news.Negative}</div>
-            <div class="text-gray-500 font-bold">Neu: ${news.Neutral}</div>
-            <div class="text-green-500 font-bold">Pos: ${news.Positive}</div>
+            ${getSentimentIndicator(news)}
           </div>
         </div>
       `;
     });
     html += `</div>`;
-    html += `<button id="show-more-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none text-xs">Show More</button>`;
+    html += `<button id="show-more-btn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none text-xs">Show More</button>`;
   }
   
   newsContent.innerHTML = html;
@@ -418,7 +433,6 @@ function showNewsModal(relatedNews) {
     });
   }
 }
-
 // Build annotations for drawn lines, support/resistance, and Fibonacci.
 function getAnnotations(data) {
   let annotations = [];
@@ -892,6 +906,13 @@ let chartOptions = {
 let volumeOptions = {
   chart: {
     type: "bar",
+    selection: {
+      enabled: true,
+      xaxis: {
+        min: new Date('20 Jan 2017').getTime(),
+        max: new Date('10 Dec 2017').getTime()
+      }
+    },
     height: 150,
     animations: { enabled: true },
     toolbar: { show: false },
