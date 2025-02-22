@@ -269,6 +269,8 @@ let chart, volumeChart;
 let drawnLines = []; // Each drawn line: { price, alertOn, alertTriggered }
 let drawingMode = false;
 let alertDrawingMode = false; // When true, drawn lines will have alerts enabled
+let newsMode = false; // News mode toggle
+let fetchedNews = null; // Cache for fetched news
 // Preserve zoom state
 let currentXMin = null, currentXMax = null, currentYMin = null, currentYMax = null;
 let macdlastsignal = 0;
@@ -279,7 +281,6 @@ let currentVolumeCount = 0;
 if (!document.getElementById("removal-modal")) {
   const modal = document.createElement("div");
   modal.id = "removal-modal";
-  // The overlay here uses pointer-events-none so that only the modal content receives clicks.
   modal.className =
     "fixed inset-0 flex items-center justify-center z-50 hidden";
   modal.innerHTML = `
@@ -298,11 +299,130 @@ if (!document.getElementById("removal-modal")) {
   document.body.appendChild(modal);
 }
 
+// Create a news modal if not already present.
+if (!document.getElementById("news-modal")) {
+  const newsModal = document.createElement("div");
+  newsModal.id = "news-modal";
+  newsModal.className =
+    "fixed inset-0 flex items-center justify-center z-50 hidden";
+  newsModal.innerHTML = `
+    <div class="relative bg-white rounded-lg shadow-lg w-full max-w-lg p-6 z-50">
+      <h3 class="text-xl font-bold mb-4">News Details</h3>
+      <div id="news-content" class="mb-4"></div>
+      <div class="flex justify-end">
+        <button id="close-news-modal" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none">Close</button>
+      </div>
+    </div>
+    <div class="absolute inset-0 bg-black opacity-50 pointer-events-none"></div>
+  `;
+  document.body.appendChild(newsModal);
+  const closeNewsBtn = document.getElementById("close-news-modal");
+  if (closeNewsBtn) {
+    closeNewsBtn.addEventListener("click", function () {
+      document.getElementById("news-modal").classList.add("hidden");
+    });
+  }
+}
+
+// Toggle the article description between clamped (3 lines) and full view.
+function toggleDescription(btn) {
+  const p = btn.previousElementSibling;
+  if (!p) return;
+  if (p.style.display === "-webkit-box" || p.style.display === "") {
+    p.style.display = "block";
+    btn.innerText = "Show Less";
+  } else {
+    p.style.display = "-webkit-box";
+    btn.innerText = "Show More";
+  }
+}
+
+
+function showNewsModal(relatedNews) {
+  let newsContent = document.getElementById("news-content");
+  if (!newsContent) return;
+  
+  // Limit initial display to five items.
+  let initialItems = relatedNews.slice(0, 5);
+  let extraItems = relatedNews.slice(5);
+  let html = "";
+  
+  initialItems.forEach((news, index) => {
+    html += `
+      <div class="flex items-center p-2 border rounded-md bg-gray-50 text-xs mb-2">
+        <!-- Image on left -->
+        <div class="w-16 h-16 flex-shrink-0 mr-2">
+          <img src="${news.thImage}" alt="news image" class="w-full h-full object-cover rounded-md">
+        </div>
+        <!-- News text -->
+        <div class="flex-1">
+          <h4 class="font-bold">${index + 1}. ${news.title}</h4>
+          <p class="news-description" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+            ${news.articleBody}
+          </p>
+          ${news.articleBody && news.articleBody.length > 100 ? `<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>` : ""}
+          <a href="${news.link}" target="_blank" class="text-blue-500 underline">Read more</a>
+        </div>
+        <!-- Sentiment analysis on right -->
+        <div class="w-24 text-center ml-2">
+          <div class="text-red-500 font-bold">Neg: ${news.Negative}</div>
+          <div class="text-gray-500 font-bold">Neu: ${news.Neutral}</div>
+          <div class="text-green-500 font-bold">Pos: ${news.Positive}</div>
+        </div>
+      </div>
+    `;
+  });
+  
+  if (extraItems.length > 0) {
+    html += `<div id="extra-news" class="hidden">`;
+    extraItems.forEach((news, index) => {
+      html += `
+        <div class="flex items-center p-2 border rounded-md bg-gray-50 text-xs mb-2">
+          <div class="w-16 h-16 flex-shrink-0 mr-2">
+            <img src="${news.thImage}" alt="news image" class="w-full h-full object-cover rounded-md">
+          </div>
+          <div class="flex-1">
+            <h4 class="font-bold">${index + 6}. ${news.title}</h4>
+            <p class="news-description" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+              ${news.articleBody}
+            </p>
+            ${news.articleBody && news.articleBody.length > 100 ? `<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>` : ""}
+            <a href="${news.link}" target="_blank" class="text-blue-500 underline">Read more</a>
+          </div>
+          <div class="w-24 text-center ml-2">
+            <div class="text-red-500 font-bold">Neg: ${news.Negative}</div>
+            <div class="text-gray-500 font-bold">Neu: ${news.Neutral}</div>
+            <div class="text-green-500 font-bold">Pos: ${news.Positive}</div>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+    html += `<button id="show-more-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none text-xs">Show More</button>`;
+  }
+  
+  newsContent.innerHTML = html;
+  document.getElementById("news-modal").classList.remove("hidden");
+
+  const showMoreBtn = document.getElementById("show-more-btn");
+  if (showMoreBtn) {
+    showMoreBtn.addEventListener("click", function () {
+      const extraNewsDiv = document.getElementById("extra-news");
+      if (extraNewsDiv.classList.contains("hidden")) {
+        extraNewsDiv.classList.remove("hidden");
+        this.innerText = "Show Less";
+      } else {
+        extraNewsDiv.classList.add("hidden");
+        this.innerText = "Show More";
+      }
+    });
+  }
+}
+
 // Build annotations for drawn lines, support/resistance, and Fibonacci.
 function getAnnotations(data) {
   let annotations = [];
   try {
-    // Add drawn lines.
     drawnLines.forEach((line, index) => {
       annotations.push({
         y: line.price,
@@ -314,7 +434,6 @@ function getAnnotations(data) {
         },
       });
     });
-    // Add support/resistance lines from the last candle.
     const srToggle = document.getElementById("show-support-resistance");
     if (srToggle && srToggle.checked && data.length > 0) {
       let lastCandle = data[data.length - 1];
@@ -341,7 +460,6 @@ function getAnnotations(data) {
         }
       });
     }
-    // Add Fibonacci lines.
     const fibToggle = document.getElementById("show-fib");
     if (fibToggle && fibToggle.checked && data.length > 0) {
       let lastCandle = data[data.length - 1];
@@ -393,12 +511,48 @@ async function updateChart() {
       console.warn("No OHLCV data available.");
       return;
     }
-    // Prepare candlestick data.
+    // If the candle count has changed (e.g. timeframe change), reset zoom state.
+    if (data.length !== currentCandleCount) {
+      currentXMin = null;
+      currentXMax = null;
+      currentYMin = null;
+      currentYMax = null;
+    }
+    // Get the start date from the first candle.
+    let firstCandleTime = Math.floor(new Date(data[0].datetime).getTime() / 1000);
+
+    // --- Fetch news if not already fetched ---
+    if (!fetchedNews) {
+      try {
+        let params = {
+          symbols: "ETH-USDT",
+          startDate: firstCandleTime,
+          category: "cryptocurrencies"
+        };
+        let newsResponse = await axios.post(
+          "http://79.175.177.113:15800/AimoonxNewsHUB/News/GetNewsbyDateCategory/",
+          params,
+          {
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json; charset=utf-8",
+              Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
+            },
+          }
+        );
+        if (newsResponse.data && newsResponse.data.return) {
+          fetchedNews = newsResponse.data.data;
+        }
+      } catch (err) {
+        console.error("Error fetching news:", err);
+      }
+    }
+
+    // Prepare candlestick and volume data.
     let candlestickData = data.map((d) => ({
       x: new Date(d.datetime),
       y: [d.open, d.high, d.low, d.close],
     }));
-    // Prepare volume data.
     let bullishColor = document.getElementById("bullish-color")
       ? document.getElementById("bullish-color").value
       : "#008000";
@@ -410,7 +564,8 @@ async function updateChart() {
       y: d.volume,
       fillColor: d.close > d.open ? bullishColor : bearishColor,
     }));
-    // Compute extra x-axis spacing: add space equivalent to 5 candle intervals.
+
+    // Compute extra x-axis spacing.
     let newXMax = null;
     if (candlestickData.length >= 2) {
       let lastTime = candlestickData[candlestickData.length - 1].x.getTime();
@@ -418,11 +573,10 @@ async function updateChart() {
       let diff = lastTime - secondLastTime;
       newXMax = lastTime + diff * 5;
     }
-    // Build series for candlestick.
+    // Build series.
     let series = [
       { name: "Candlestick", type: "candlestick", data: candlestickData },
     ];
-    // Optionally add SMA.
     const smaToggle = document.getElementById("show-sma");
     if (smaToggle && smaToggle.checked) {
       let smaData = [];
@@ -431,7 +585,6 @@ async function updateChart() {
       }
       series.push({ name: "SMA_20", type: "line", data: smaData });
     }
-    // Optionally add EMA.
     const emaToggle = document.getElementById("show-ema");
     if (emaToggle && emaToggle.checked) {
       let emaData = [];
@@ -440,7 +593,8 @@ async function updateChart() {
       }
       series.push({ name: "EMA_20", type: "line", data: emaData });
     }
-    // Update candlestick chart partially if possible.
+
+    // Update the candlestick chart.
     if (
       chart &&
       chart.w &&
@@ -479,7 +633,7 @@ async function updateChart() {
       );
       currentCandleCount = candlestickData.length;
     }
-    // Build volume series.
+    // Update volume chart.
     let volSeries = [{ name: "Volume", type: "bar", data: volumeData }];
     if (
       volumeChart &&
@@ -492,24 +646,48 @@ async function updateChart() {
     ) {
       let vidx = volumeData.length - 1;
       volumeChart.w.config.series[0].data[vidx] = volumeData[vidx];
-      volumeChart
-        .updateSeries(volumeChart.w.config.series, true)
-        .catch((err) =>
-          console.error("Error updating volume chart partially:", err)
-        );
+      volumeChart.updateSeries(volumeChart.w.config.series, true).catch((err) =>
+        console.error("Error updating volume chart partially:", err)
+      );
     } else {
-      volumeChart
-        .updateSeries(volSeries, true)
-        .catch((err) => console.error("Error updating volume chart:", err));
+      volumeChart.updateSeries(volSeries, true).catch((err) =>
+        console.error("Error updating volume chart:", err)
+      );
       currentVolumeCount = volumeData.length;
     }
-    // Update chart options (preserving zoom state, and adding extra x-axis space).
+    // Set tooltip options based on news mode.
+    let tooltipOptions = newsMode
+      ? {
+          custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+            let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
+            let timeRange = 3600000;
+            if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
+              let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
+              let currTime = candleTime.getTime();
+              timeRange = currTime - prevTime;
+            }
+            let relatedNews = fetchedNews
+              ? fetchedNews.filter((news) => {
+                  let newsTime = news.pubDate * 1000;
+                  return (
+                    newsTime >= candleTime.getTime() &&
+                    newsTime < candleTime.getTime() + timeRange
+                  );
+                })
+              : [];
+            if (relatedNews.length > 0) {
+              return `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`;
+            }
+            return `<div class="p-2">No news available</div>`;
+          },
+        }
+      : { shared: true, intersect: false, custom: undefined };
+
     let newOptions = {
       chart: {
         animations: { enabled: true },
         toolbar: { autoSelected: "zoom" },
         zoom: { enabled: true, type: "xy" },
-        // Use the chart id for brush linking.
         id: "candlestick-chart",
         events: {
           zoomed: function (chartContext, { xaxis, yaxis }) {
@@ -518,8 +696,34 @@ async function updateChart() {
             currentYMin = yaxis.min;
             currentYMax = yaxis.max;
           },
-          // Allow drawing if drawing mode or alert mode is active.
           click: function (event, chartContext, config) {
+            if (newsMode) {
+              try {
+                let candleIndex = config.dataPointIndex;
+                if (candleIndex >= 0 && data && data[candleIndex]) {
+                  let candleTime = new Date(data[candleIndex].datetime);
+                  let timeRange = 3600000;
+                  if (data.length >= 2 && candleIndex > 0) {
+                    let prevTime = new Date(data[candleIndex - 1].datetime).getTime();
+                    let currTime = candleTime.getTime();
+                    timeRange = currTime - prevTime;
+                  }
+                  let relatedNews = fetchedNews
+                    ? fetchedNews.filter((news) => {
+                        let newsTime = news.pubDate * 1000;
+                        return (
+                          newsTime >= candleTime.getTime() &&
+                          newsTime < candleTime.getTime() + timeRange
+                        );
+                      })
+                    : [];
+                  showNewsModal(relatedNews);
+                }
+              } catch (err) {
+                console.error("Error during news mode click event:", err);
+              }
+              return;
+            }
             if (drawingMode || alertDrawingMode) {
               try {
                 let globals = chartContext.w.globals;
@@ -528,17 +732,12 @@ async function updateChart() {
                 if (!gridHeight) return;
                 let minY = globals.minY;
                 let maxY = globals.maxY;
-                // Correction: add 8 units to the computed price.
+                let gridSpacing = 5;
+                let extraPoints = gridSpacing + 2;
                 let price =
-                  Math.round(
-                    (maxY - (offsetY / gridHeight) * (maxY - minY)) * 100
-                  ) / 100 + 8;
+                  Math.round((maxY - (offsetY / gridHeight) * (maxY - minY)) * 100) / 100 + extraPoints;
                 let alertOn = alertDrawingMode ? true : false;
-                drawnLines.push({
-                  price: price,
-                  alertOn: alertOn,
-                  alertTriggered: false,
-                });
+                drawnLines.push({ price, alertOn, alertTriggered: false });
                 updateAnnotationsWrapper(data);
               } catch (err) {
                 console.error("Error during drawing click event:", err);
@@ -555,7 +754,6 @@ async function updateChart() {
       xaxis: {
         type: "datetime",
         min: currentXMin,
-        // If newXMax is computed, use it; otherwise keep currentXMax.
         max: newXMax ? newXMax : currentXMax,
       },
       yaxis: {
@@ -567,11 +765,11 @@ async function updateChart() {
       annotations: {
         yaxis: getAnnotations(data),
       },
-      tooltip: { shared: true, intersect: false },
+      tooltip: tooltipOptions,
     };
-    chart
-      .updateOptions(newOptions)
-      .catch((err) => console.error("Error updating chart options:", err));
+    chart.updateOptions(newOptions).catch((err) =>
+      console.error("Error updating chart options:", err)
+    );
 
     // Update trend, MACD, and current price info.
     let lastCandle = data[data.length - 1];
@@ -619,7 +817,6 @@ let chartOptions = {
     height: 600,
     animations: { enabled: true },
     zoom: { enabled: true, type: "xy" },
-    // Assign an ID so volume chart can brush it.
     id: "candlestick-chart",
     toolbar: { autoSelected: "zoom" },
     events: {
@@ -630,6 +827,33 @@ let chartOptions = {
         currentYMax = yaxis.max;
       },
       click: function (event, chartContext, config) {
+        if (newsMode) {
+          try {
+            let candleIndex = config.dataPointIndex;
+            if (candleIndex >= 0) {
+              let candleTime = new Date(chartContext.w.globals.seriesX[0][candleIndex]);
+              let timeRange = 3600000;
+              if (chartContext.w.globals.seriesX[0].length >= 2 && candleIndex > 0) {
+                let prevTime = new Date(chartContext.w.globals.seriesX[0][candleIndex - 1]).getTime();
+                let currTime = candleTime.getTime();
+                timeRange = currTime - prevTime;
+              }
+              let relatedNews = fetchedNews
+                ? fetchedNews.filter((news) => {
+                    let newsTime = news.pubDate * 1000;
+                    return (
+                      newsTime >= candleTime.getTime() &&
+                      newsTime < candleTime.getTime() + timeRange
+                    );
+                  })
+                : [];
+              showNewsModal(relatedNews);
+            }
+          } catch (err) {
+            console.error("Error in news mode chart click event:", err);
+          }
+          return;
+        }
         if (drawingMode || alertDrawingMode) {
           try {
             let globals = chartContext.w.globals;
@@ -638,8 +862,10 @@ let chartOptions = {
             if (!gridHeight) return;
             let minY = globals.minY;
             let maxY = globals.maxY;
+            let gridSpacing = 5;
+            let extraPoints = gridSpacing + 2;
             let price =
-              Math.round((maxY - (offsetY / gridHeight) * (maxY - minY)) * 100) / 100 + 8;
+              Math.round((maxY - (offsetY / gridHeight) * (maxY - minY)) * 100) / 100 + extraPoints;
             let alertOn = alertDrawingMode ? true : false;
             drawnLines.push({ price, alertOn, alertTriggered: false });
             updateAnnotationsWrapper([]);
@@ -659,7 +885,7 @@ let chartOptions = {
     },
   },
   annotations: { yaxis: [] },
-  tooltip: { shared: true, intersect: false },
+  tooltip: { shared: true, intersect: false, custom: undefined },
 };
 
 // Options for volume chart.
@@ -669,7 +895,6 @@ let volumeOptions = {
     height: 150,
     animations: { enabled: true },
     toolbar: { show: false },
-    // Enable brush functionality to control main chart.
     brush: {
       enabled: true,
       target: "candlestick-chart",
@@ -681,7 +906,6 @@ let volumeOptions = {
     bar: { columnWidth: "60%" },
   },
   tooltip: { shared: true, intersect: false },
-  // Remove y-axis labels and position the y-axis on the right.
   yaxis: { labels: { show: false }, opposite: true },
 };
 
@@ -780,10 +1004,19 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     }
-    // Update and market selection buttons.
     const updateBtn = document.getElementById("updateBtn");
     if (updateBtn) {
-      updateBtn.addEventListener("click", updateChart);
+      updateBtn.addEventListener("click", function () {
+        try {
+          currentXMin = null;
+          currentXMax = null;
+          currentYMin = null;
+          currentYMax = null;
+          updateChart();
+        } catch (err) {
+          console.error("Error in updateBtn click handler:", err);
+        }
+      });
     }
     const marketSelect = document.getElementById("marketSelect");
     if (marketSelect) {
@@ -799,6 +1032,55 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     }
+    // Set up news mode toggle button.
+    const newsModeBtn = document.getElementById("news-mode-button");
+    if (newsModeBtn) {
+      newsModeBtn.addEventListener("click", function () {
+        try {
+          newsMode = !newsMode;
+          this.classList.toggle("bg-blue-600", newsMode);
+          this.classList.toggle("bg-gray-400", !newsMode);
+          if (newsMode) {
+            chart.updateOptions({
+              tooltip: {
+                custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                  let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
+                  let timeRange = 3600000;
+                  if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
+                    let prevTime = new Date(
+                      w.globals.seriesX[seriesIndex][dataPointIndex - 1]
+                    ).getTime();
+                    let currTime = candleTime.getTime();
+                    timeRange = currTime - prevTime;
+                  }
+                  let relatedNews = fetchedNews
+                    ? fetchedNews.filter((news) => {
+                        let newsTime = news.pubDate * 1000;
+                        return (
+                          newsTime >= candleTime.getTime() &&
+                          newsTime < candleTime.getTime() + timeRange
+                        );
+                      })
+                    : [];
+                  if (relatedNews.length > 0) {
+                    return `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`;
+                  }
+                  return `<div class="p-2">No news available</div>`;
+                },
+              },
+            });
+          } else {
+            // Clear the custom tooltip function when exiting news mode.
+            chart.updateOptions({
+              tooltip: { shared: true, intersect: false, custom: undefined },
+              toolbar: { autoSelected: "zoom" },
+            });
+          }
+        } catch (err) {
+          console.error("Error toggling news mode:", err);
+        }
+      });
+    }
     if (typeof fetchActiveMarkets === "function") {
       fetchActiveMarkets();
     }
@@ -807,7 +1089,6 @@ document.addEventListener("DOMContentLoaded", function () {
     console.error("Error during DOMContentLoaded initialization:", err);
   }
 });
-
 
 
 

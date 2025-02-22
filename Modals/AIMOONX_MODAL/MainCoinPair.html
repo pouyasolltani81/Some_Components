@@ -18,68 +18,7 @@
  
   <script src="https://cdn.jsdelivr.net/npm/date-fns@4.1.0/cdn.min.js"></script>
   <style>
-    :root {
-      --background: #131722;
-      --surface: #2A2E39;
-      --text-primary: #D1D4DC;
-      --bullish: #26A69A;
-      --bearish: #EF5350;
-      --grid-line: #363C4E;
-      --tooltip-bg: rgba(26, 29, 41, 0.9);
-    }
-
-    body {
-      margin: 0;
-      background: var(--background);
-      font-family: 'Roboto', sans-serif;
-      color: var(--text-primary);
-    }
-
-    .chart-container {
-      padding: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-
-    .timeframe-toolbar button {
-      background: var(--surface);
-      border: 1px solid var(--grid-line);
-      color: var(--text-primary);
-      padding: 6px 12px;
-      margin: 0 2px;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-
-    .candle {
-      transition: all 0.2s ease;
-    }
-
-    .candle:hover {
-      filter: brightness(1.2);
-    }
-
-    .crosshair {
-      stroke: var(--text-primary);
-      stroke-dasharray: 4;
-      opacity: 0.7;
-    }
-
-    .tooltip {
-      position: absolute;
-      padding: 8px;
-      background: var(--tooltip-bg);
-      border: 1px solid var(--grid-line);
-      border-radius: 4px;
-      pointer-events: none;
-      font-size: 0.9em;
-    }
+   
   </style>
 
 </head>
@@ -209,6 +148,9 @@
         <button id="remove-line-button" class="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500">
           Remove Line
         </button>
+        <button id="news-mode-button" class="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500">
+          news mode
+        </button>
       </div>
       <!-- Candle Chart Canvas -->
       <!-- <canvas id="candleChart" class="w-full h-96"></canvas>
@@ -228,15 +170,15 @@
           <h2 class="text-xl font-bold">Indicators & Settings</h2>
           <div class="flex flex-wrap gap-4">
             <label class="flex items-center">
-              <input type="checkbox" id="show-sma" class="mr-1" checked>
+              <input type="checkbox" id="show-sma" class="mr-1" unchecked>
               SMA_20
             </label>
             <label class="flex items-center">
-              <input type="checkbox" id="show-ema" class="mr-1" checked>
+              <input type="checkbox" id="show-ema" class="mr-1" unchecked>
               EMA_20
             </label>
             <label class="flex items-center">
-              <input type="checkbox" id="show-MACD" class="mr-1" checked>
+              <input type="checkbox" id="show-MACD" class="mr-1" unchecked>
               MACD
             </label>
             <label class="flex items-center">
@@ -244,7 +186,7 @@
               Fibonacci
             </label>
             <label class="flex items-center">
-              <input type="checkbox" id="show-support-resistance" class="mr-1" checked>
+              <input type="checkbox" id="show-support-resistance" class="mr-1" unchecked>
               Support/Resistance
             </label>
           </div>
