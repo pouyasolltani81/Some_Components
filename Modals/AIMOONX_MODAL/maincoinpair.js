@@ -276,6 +276,8 @@ let currentXMin = null, currentXMax = null, currentYMin = null, currentYMax = nu
 let macdlastsignal = 0;
 let currentCandleCount = 0;
 let currentVolumeCount = 0;
+// Global storage for raw OHLCV data (for custom tooltip)
+let currentChartData = [];
 
 // Create a simple removal modal using Tailwind CSS if not already present.
 if (!document.getElementById("removal-modal")) {
@@ -337,9 +339,6 @@ function toggleDescription(btn) {
   }
 }
 
-
-
-
 // Returns a sentiment indicator string (using arrows) for a news item.
 function getSentimentIndicator(news) {
   let pos = (news.Positive !== undefined && news.Positive !== null) ? news.Positive : 0;
@@ -355,7 +354,6 @@ function getSentimentIndicator(news) {
     return `<span class="text-gray-500 font-bold">→ ${neu}</span>`;
   }
 }
-
 
 function showNewsModal(relatedNews) {
   let newsContent = document.getElementById("news-content");
@@ -433,6 +431,7 @@ function showNewsModal(relatedNews) {
     });
   }
 }
+
 // Build annotations for drawn lines, support/resistance, and Fibonacci.
 function getAnnotations(data) {
   let annotations = [];
@@ -525,6 +524,9 @@ async function updateChart() {
       console.warn("No OHLCV data available.");
       return;
     }
+    // Save the raw data globally for use in our custom tooltip.
+    currentChartData = data;
+    
     // If the candle count has changed (e.g. timeframe change), reset zoom state.
     if (data.length !== currentCandleCount) {
       currentXMin = null;
@@ -669,7 +671,10 @@ async function updateChart() {
       );
       currentVolumeCount = volumeData.length;
     }
-    // Set tooltip options based on news mode.
+    
+    // Set up tooltip options.
+    // When news mode is active, use the news mode tooltip.
+    // Otherwise, show the default candle details.
     let tooltipOptions = newsMode
       ? {
           custom: function ({ series, seriesIndex, dataPointIndex, w }) {
@@ -693,14 +698,38 @@ async function updateChart() {
               return `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`;
             }
             return `<div class="p-2">No news available</div>`;
-          },
+          }
         }
-      : { shared: true, intersect: false, custom: undefined };
+      : {
+          custom: function({ series, seriesIndex, dataPointIndex, w }) {
+            if (!currentChartData || !currentChartData[dataPointIndex]) {
+              return `<div class="apexcharts-tooltip">Loading...</div>`;
+            }
+            let item = currentChartData[dataPointIndex];
+            let dateStr = new Date(item.datetime).toLocaleString();
+            let html = `<div class="apexcharts-tooltip" style="padding:10px;">`;
+            html += `<div><strong>${dateStr}</strong></div>`;
+            html += `<div>Open: ${item.open}</div>`;
+            html += `<div>High: ${item.high}</div>`;
+            html += `<div>Low: ${item.low}</div>`;
+            html += `<div>Close: ${item.close}</div>`;
+            html += `<div>Volume: ${item.volume}</div>`;
+            html += `</div>`;
+            return html;
+          },
+          shared: true,
+          intersect: false,
+      };
 
+    // Update the candlestick chart options.
     let newOptions = {
       chart: {
+        noData: {
+          text: 'Loading...'
+        },
+        group: 'news_charts',
         animations: { enabled: true },
-        toolbar: { autoSelected: "zoom" },
+        toolbar: { autoSelected: "pan" },
         zoom: { enabled: true, type: "xy" },
         id: "candlestick-chart",
         events: {
@@ -824,15 +853,19 @@ async function updateChart() {
   }
 }
 
-// Options for candlestick chart.
+// Options for candlestick chart (initially empty).
 let chartOptions = {
   chart: {
+    noData: {
+      text: 'Loading...'
+    },
+    group: 'news_charts',
     type: "candlestick",
     height: 600,
     animations: { enabled: true },
     zoom: { enabled: true, type: "xy" },
     id: "candlestick-chart",
-    toolbar: { autoSelected: "zoom" },
+    toolbar: { autoSelected: "pan" },
     events: {
       zoomed: function (chartContext, { xaxis, yaxis }) {
         currentXMin = xaxis.min;
@@ -899,12 +932,60 @@ let chartOptions = {
     },
   },
   annotations: { yaxis: [] },
-  tooltip: { shared: true, intersect: false, custom: undefined },
+  tooltip: newsMode
+    ? {
+        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+          let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
+          let timeRange = 3600000;
+          if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
+            let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
+            let currTime = candleTime.getTime();
+            timeRange = currTime - prevTime;
+          }
+          let relatedNews = fetchedNews
+            ? fetchedNews.filter((news) => {
+                let newsTime = news.pubDate * 1000;
+                return (
+                  newsTime >= candleTime.getTime() &&
+                  newsTime < candleTime.getTime() + timeRange
+                );
+              })
+            : [];
+          if (relatedNews.length > 0) {
+            return `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`;
+          }
+          return `<div class="p-2">No news available</div>`;
+        }
+      }
+    : {
+        custom: function({ series, seriesIndex, dataPointIndex, w }) {
+          if (!currentChartData || !currentChartData[dataPointIndex]) {
+            return `<div class="apexcharts-tooltip">Loading...</div>`;
+          }
+          let item = currentChartData[dataPointIndex];
+          let dateStr = new Date(item.datetime).toLocaleString();
+          let html = `<div class="apexcharts-tooltip" style="padding:10px;">`;
+          html += `<div><strong>${dateStr}</strong></div>`;
+          html += `<div>Open: ${item.open}</div>`;
+          html += `<div>High: ${item.high}</div>`;
+          html += `<div>Low: ${item.low}</div>`;
+          html += `<div>Close: ${item.close}</div>`;
+          html += `<div>Volume: ${item.volume}</div>`;
+          html += `</div>`;
+          return html;
+        },
+        shared: true,
+        intersect: false,
+      },
 };
 
-// Options for volume chart.
+// Options for volume chart (initially empty).
 let volumeOptions = {
   chart: {
+    noData: {
+      text: 'Loading...'
+    },
+    group: 'news_charts',
     type: "bar",
     selection: {
       enabled: true,
@@ -1068,9 +1149,7 @@ document.addEventListener("DOMContentLoaded", function () {
                   let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
                   let timeRange = 3600000;
                   if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
-                    let prevTime = new Date(
-                      w.globals.seriesX[seriesIndex][dataPointIndex - 1]
-                    ).getTime();
+                    let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
                     let currTime = candleTime.getTime();
                     timeRange = currTime - prevTime;
                   }
@@ -1087,14 +1166,33 @@ document.addEventListener("DOMContentLoaded", function () {
                     return `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`;
                   }
                   return `<div class="p-2">No news available</div>`;
-                },
+                }
               },
+              toolbar: { autoSelected: "pan" },
             });
           } else {
-            // Clear the custom tooltip function when exiting news mode.
             chart.updateOptions({
-              tooltip: { shared: true, intersect: false, custom: undefined },
-              toolbar: { autoSelected: "zoom" },
+              tooltip: {
+                custom: function({ series, seriesIndex, dataPointIndex, w }) {
+                  if (!currentChartData || !currentChartData[dataPointIndex]) {
+                    return `<div class="apexcharts-tooltip">Loading...</div>`;
+                  }
+                  let item = currentChartData[dataPointIndex];
+                  let dateStr = new Date(item.datetime).toLocaleString();
+                  let html = `<div class="apexcharts-tooltip" style="padding:10px;">`;
+                  html += `<div><strong>${dateStr}</strong></div>`;
+                  html += `<div>Open: ${item.open}</div>`;
+                  html += `<div>High: ${item.high}</div>`;
+                  html += `<div>Low: ${item.low}</div>`;
+                  html += `<div>Close: ${item.close}</div>`;
+                  html += `<div>Volume: ${item.volume}</div>`;
+                  html += `</div>`;
+                  return html;
+                },
+                shared: true,
+                intersect: false,
+              },
+              toolbar: { autoSelected: "pan" },
             });
           }
         } catch (err) {
@@ -1110,7 +1208,6 @@ document.addEventListener("DOMContentLoaded", function () {
     console.error("Error during DOMContentLoaded initialization:", err);
   }
 });
-
 
 
 
