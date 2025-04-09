@@ -3,7 +3,7 @@
 // ===========================================================================
 async function fetchCoinList() {
   const url = "http://188.34.202.221:8000/Pair/ListPairs/";
-  const token = "6ae3d79118083127c5442c7c6bfaf0b9";
+  const token = "23b30428c4102a9280abbbd75762cf01";
   try {
     const response = await axios.get(url, {
       headers: {

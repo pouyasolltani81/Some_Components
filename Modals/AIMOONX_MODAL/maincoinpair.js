@@ -40,7 +40,8 @@ const maxDataPoints = 20;
 
 async function fetchCoinList() {
   const url = "http://188.34.202.221:8000/Market/GetMarketPair/";
-  const token = "6ae3d79118083127c5442c7c6bfaf0b9";
+  const token = "23b30428c4102a9280abbbd75762cf01";
+
   const params = { marketpair_id: id };
   try {
     axios.post(url, params, {
@@ -112,9 +113,9 @@ setInterval(fetchCoinList, 10000);
 
 // candle chart 
 
-const token = "6ae3d79118083127c5442c7c6bfaf0b9";
+const token = "23b30428c4102a9280abbbd75762cf01";
 let activeMarkets = [];
-let currentMarketId = null;
+let currentMarketId = id;
 let candleChart = null;
 
 // Fetch active markets from the API
@@ -130,7 +131,7 @@ async function fetchActiveMarkets() {
       activeMarkets = response.data.pairs;
 
 
-      populateMarketSelect();
+      // populateMarketSelect();
     }
   } catch (error) {
     console.error("Error fetching active markets:", error);
@@ -358,12 +359,12 @@ function getSentimentIndicator(news) {
 function showNewsModal(relatedNews) {
   let newsContent = document.getElementById("news-content");
   if (!newsContent) return;
-  
+
   // Limit initial display to five items.
   let initialItems = relatedNews.slice(0, 5);
   let extraItems = relatedNews.slice(5);
   let html = "";
-  
+
   initialItems.forEach((news, index) => {
     html += `
       <div class="flex items-center p-2 border rounded-md bg-gray-50 text-xs mb-2">
@@ -387,7 +388,7 @@ function showNewsModal(relatedNews) {
       </div>
     `;
   });
-  
+
   if (extraItems.length > 0) {
     html += `<div id="extra-news" class="hidden">`;
     extraItems.forEach((news, index) => {
@@ -413,7 +414,7 @@ function showNewsModal(relatedNews) {
     html += `</div>`;
     html += `<button id="show-more-btn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none text-xs">Show More</button>`;
   }
-  
+
   newsContent.innerHTML = html;
   document.getElementById("news-modal").classList.remove("hidden");
 
@@ -520,13 +521,15 @@ async function updateAnnotationsWrapper(data) {
 async function updateChart() {
   try {
     let data = await fetchOHLCVData();
+    console.log(data);
+
     if (!data || !Array.isArray(data) || data.length === 0) {
       console.warn("No OHLCV data available.");
       return;
     }
     // Save the raw data globally for use in our custom tooltip.
     currentChartData = data;
-    
+
     // If the candle count has changed (e.g. timeframe change), reset zoom state.
     if (data.length !== currentCandleCount) {
       currentXMin = null;
@@ -671,54 +674,54 @@ async function updateChart() {
       );
       currentVolumeCount = volumeData.length;
     }
-    
+
     // Set up tooltip options.
     // When news mode is active, use the news mode tooltip.
     // Otherwise, show the default candle details.
     let tooltipOptions = newsMode
       ? {
-          custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-            let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
-            let timeRange = 3600000;
-            if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
-              let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
-              let currTime = candleTime.getTime();
-              timeRange = currTime - prevTime;
-            }
-            let relatedNews = fetchedNews
-              ? fetchedNews.filter((news) => {
-                  let newsTime = news.pubDate * 1000;
-                  return (
-                    newsTime >= candleTime.getTime() &&
-                    newsTime < candleTime.getTime() + timeRange
-                  );
-                })
-              : [];
-            if (relatedNews.length > 0) {
-              return `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`;
-            }
-            return `<div class="p-2">No news available</div>`;
+        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+          let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
+          let timeRange = 3600000;
+          if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
+            let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
+            let currTime = candleTime.getTime();
+            timeRange = currTime - prevTime;
           }
+          let relatedNews = fetchedNews
+            ? fetchedNews.filter((news) => {
+              let newsTime = news.pubDate * 1000;
+              return (
+                newsTime >= candleTime.getTime() &&
+                newsTime < candleTime.getTime() + timeRange
+              );
+            })
+            : [];
+          if (relatedNews.length > 0) {
+            return `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`;
+          }
+          return `<div class="p-2">No news available</div>`;
         }
+      }
       : {
-          custom: function({ series, seriesIndex, dataPointIndex, w }) {
-            if (!currentChartData || !currentChartData[dataPointIndex]) {
-              return `<div class="apexcharts-tooltip">Loading...</div>`;
-            }
-            let item = currentChartData[dataPointIndex];
-            let dateStr = new Date(item.datetime).toLocaleString();
-            let html = `<div class="apexcharts-tooltip" style="padding:10px;">`;
-            html += `<div><strong>${dateStr}</strong></div>`;
-            html += `<div>Open: ${item.open}</div>`;
-            html += `<div>High: ${item.high}</div>`;
-            html += `<div>Low: ${item.low}</div>`;
-            html += `<div>Close: ${item.close}</div>`;
-            html += `<div>Volume: ${item.volume}</div>`;
-            html += `</div>`;
-            return html;
-          },
-          shared: true,
-          intersect: false,
+        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+          if (!currentChartData || !currentChartData[dataPointIndex]) {
+            return `<div class="apexcharts-tooltip">Loading...</div>`;
+          }
+          let item = currentChartData[dataPointIndex];
+          let dateStr = new Date(item.datetime).toLocaleString();
+          let html = `<div class="apexcharts-tooltip" style="padding:10px;">`;
+          html += `<div><strong>${dateStr}</strong></div>`;
+          html += `<div>Open: ${item.open}</div>`;
+          html += `<div>High: ${item.high}</div>`;
+          html += `<div>Low: ${item.low}</div>`;
+          html += `<div>Close: ${item.close}</div>`;
+          html += `<div>Volume: ${item.volume}</div>`;
+          html += `</div>`;
+          return html;
+        },
+        shared: true,
+        intersect: false,
       };
 
     // Update the candlestick chart options.
@@ -753,12 +756,12 @@ async function updateChart() {
                   }
                   let relatedNews = fetchedNews
                     ? fetchedNews.filter((news) => {
-                        let newsTime = news.pubDate * 1000;
-                        return (
-                          newsTime >= candleTime.getTime() &&
-                          newsTime < candleTime.getTime() + timeRange
-                        );
-                      })
+                      let newsTime = news.pubDate * 1000;
+                      return (
+                        newsTime >= candleTime.getTime() &&
+                        newsTime < candleTime.getTime() + timeRange
+                      );
+                    })
                     : [];
                   showNewsModal(relatedNews);
                 }
@@ -887,12 +890,12 @@ let chartOptions = {
               }
               let relatedNews = fetchedNews
                 ? fetchedNews.filter((news) => {
-                    let newsTime = news.pubDate * 1000;
-                    return (
-                      newsTime >= candleTime.getTime() &&
-                      newsTime < candleTime.getTime() + timeRange
-                    );
-                  })
+                  let newsTime = news.pubDate * 1000;
+                  return (
+                    newsTime >= candleTime.getTime() &&
+                    newsTime < candleTime.getTime() + timeRange
+                  );
+                })
                 : [];
               showNewsModal(relatedNews);
             }
@@ -934,49 +937,49 @@ let chartOptions = {
   annotations: { yaxis: [] },
   tooltip: newsMode
     ? {
-        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-          let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
-          let timeRange = 3600000;
-          if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
-            let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
-            let currTime = candleTime.getTime();
-            timeRange = currTime - prevTime;
-          }
-          let relatedNews = fetchedNews
-            ? fetchedNews.filter((news) => {
-                let newsTime = news.pubDate * 1000;
-                return (
-                  newsTime >= candleTime.getTime() &&
-                  newsTime < candleTime.getTime() + timeRange
-                );
-              })
-            : [];
-          if (relatedNews.length > 0) {
-            return `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`;
-          }
-          return `<div class="p-2">No news available</div>`;
+      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+        let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
+        let timeRange = 3600000;
+        if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
+          let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
+          let currTime = candleTime.getTime();
+          timeRange = currTime - prevTime;
         }
+        let relatedNews = fetchedNews
+          ? fetchedNews.filter((news) => {
+            let newsTime = news.pubDate * 1000;
+            return (
+              newsTime >= candleTime.getTime() &&
+              newsTime < candleTime.getTime() + timeRange
+            );
+          })
+          : [];
+        if (relatedNews.length > 0) {
+          return `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`;
+        }
+        return `<div class="p-2">No news available</div>`;
       }
+    }
     : {
-        custom: function({ series, seriesIndex, dataPointIndex, w }) {
-          if (!currentChartData || !currentChartData[dataPointIndex]) {
-            return `<div class="apexcharts-tooltip">Loading...</div>`;
-          }
-          let item = currentChartData[dataPointIndex];
-          let dateStr = new Date(item.datetime).toLocaleString();
-          let html = `<div class="apexcharts-tooltip" style="padding:10px;">`;
-          html += `<div><strong>${dateStr}</strong></div>`;
-          html += `<div>Open: ${item.open}</div>`;
-          html += `<div>High: ${item.high}</div>`;
-          html += `<div>Low: ${item.low}</div>`;
-          html += `<div>Close: ${item.close}</div>`;
-          html += `<div>Volume: ${item.volume}</div>`;
-          html += `</div>`;
-          return html;
-        },
-        shared: true,
-        intersect: false,
+      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+        if (!currentChartData || !currentChartData[dataPointIndex]) {
+          return `<div class="apexcharts-tooltip">Loading...</div>`;
+        }
+        let item = currentChartData[dataPointIndex];
+        let dateStr = new Date(item.datetime).toLocaleString();
+        let html = `<div class="apexcharts-tooltip" style="padding:10px;">`;
+        html += `<div><strong>${dateStr}</strong></div>`;
+        html += `<div>Open: ${item.open}</div>`;
+        html += `<div>High: ${item.high}</div>`;
+        html += `<div>Low: ${item.low}</div>`;
+        html += `<div>Close: ${item.close}</div>`;
+        html += `<div>Volume: ${item.volume}</div>`;
+        html += `</div>`;
+        return html;
       },
+      shared: true,
+      intersect: false,
+    },
 };
 
 // Options for volume chart (initially empty).
@@ -1155,12 +1158,12 @@ document.addEventListener("DOMContentLoaded", function () {
                   }
                   let relatedNews = fetchedNews
                     ? fetchedNews.filter((news) => {
-                        let newsTime = news.pubDate * 1000;
-                        return (
-                          newsTime >= candleTime.getTime() &&
-                          newsTime < candleTime.getTime() + timeRange
-                        );
-                      })
+                      let newsTime = news.pubDate * 1000;
+                      return (
+                        newsTime >= candleTime.getTime() &&
+                        newsTime < candleTime.getTime() + timeRange
+                      );
+                    })
                     : [];
                   if (relatedNews.length > 0) {
                     return `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`;
@@ -1173,7 +1176,7 @@ document.addEventListener("DOMContentLoaded", function () {
           } else {
             chart.updateOptions({
               tooltip: {
-                custom: function({ series, seriesIndex, dataPointIndex, w }) {
+                custom: function ({ series, seriesIndex, dataPointIndex, w }) {
                   if (!currentChartData || !currentChartData[dataPointIndex]) {
                     return `<div class="apexcharts-tooltip">Loading...</div>`;
                   }
@@ -1258,3 +1261,282 @@ function getDate(limit, timeframe) {
 // If current time is 2025-02-12 23:56:50,
 // getDate(50, '1m') will subtract 50 minutes.
 console.log(getDate(60, "1m"));
+
+
+/***********************************************
+    * TechnicalAnalysisComponent
+    *
+    * This component manages the fetching and display
+    * of technical analysis data. It:
+    * - Starts fetching when the user clicks the button.
+    * - Disables the button and changes its text to "Loading…" during fetch.
+    * - Populates the modal with the fetched data and shows it.
+    * - Closes the modal (when the user clicks outside or clicks close)
+    * - Fetches new data every time the user clicks to open.
+    ***********************************************/
+const TechnicalAnalysisComponent = (function () {
+  // DOM Elements:
+  const fetchBtn = document.getElementById('fetchBtn');
+  const mainModal = document.getElementById('mainModal');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const analysisDateEl = document.getElementById('analysisDate');
+  const signalDataContainer = document.getElementById('signalDataContainer');
+  const supportLevelsContainer = document.getElementById('supportLevelsContainer');
+  const recommendationActionContainer = document.getElementById('recommendationActionContainer');
+  const resistanceLevelsContainer = document.getElementById('resistanceLevelsContainer');
+  const tradingNotesContainer = document.getElementById('tradingNotesContainer');
+  const infoIcon = document.getElementById('infoIcon');
+  const componentsPopover = document.getElementById('componentsPopover');
+  const componentsContent = document.getElementById('componentsContent');
+
+  // Style Helper Functions.
+  function getStatusBgColor(status) {
+    const colors = {
+      NEUTRAL: 'bg-gray-200 text-gray-800',
+      BULLISH: 'bg-green-200 text-green-800',
+      BEARISH: 'bg-red-200 text-red-800',
+      STRONG_TREND: 'bg-purple-200 text-purple-800',
+      OVERBOUGHT: 'bg-orange-200 text-orange-800'
+    };
+    return colors[status] || 'bg-gray-200 text-gray-800';
+  }
+  function getStatusTextColor(status) {
+    const colors = {
+      NEUTRAL: 'text-gray-600',
+      BULLISH: 'text-green-600',
+      BEARISH: 'text-red-600',
+      STRONG_TREND: 'text-purple-600',
+      OVERBOUGHT: 'text-orange-600'
+    };
+    return colors[status] || 'text-gray-600';
+  }
+  function getScoreColor(score) {
+    if (score >= 20) return 'text-green-600';
+    if (score >= 10) return 'text-blue-600';
+    if (score >= 0) return 'text-gray-600';
+    return 'text-red-600';
+  }
+  // Returns an arrow icon based on status.
+  function getTrendIcon(status) {
+    status = status.toUpperCase();
+    if (status === 'BULLISH') {
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline animate-bounce text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+              </svg>`;
+    } else if (status === 'BEARISH') {
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline animate-bounce text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>`;
+    } else {
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline animate-bounce text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16" />
+              </svg>`;
+    }
+  }
+  // Build HTML for components breakdown (for the inline popover).
+  function getComponentsHTML(components) {
+    let html = '';
+    for (const [category, compData] of Object.entries(components)) {
+      html += `<div class="space-y-1 border-b pb-2 mb-2">
+                <h5 class="font-semibold capitalize">${category}</h5>
+                <p><span class="font-semibold">Overall Score:</span> ${compData.score}</p>
+                <ul class="ml-4 list-disc">`;
+      for (const [indicator, indicatorData] of Object.entries(compData.analysis)) {
+        const indicatorName = indicator.replace(/_/g, ' ');
+        html += `<li>
+                  <span class="font-semibold capitalize">${indicatorName}:</span>
+                  <span class="${getStatusTextColor(indicatorData.status)}">${indicatorData.status.replace(/_/g, ' ')}</span>
+                  ${getTrendIcon(indicatorData.status)}
+                  (Score: ${indicatorData.score})
+                 </li>`;
+      }
+      html += `</ul></div>`;
+    }
+    return html;
+  }
+
+  // Fetch technical data.
+  async function fetchTechnicalData() {
+    const url = "http://188.34.202.221:8000/Market/exGetMultipleTechnicalIndicatorSignal/";
+    const token = "23b30428c4102a9280abbbd75762cf01";
+    // Form the POST payload.
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 19)
+      .replace('T', ' ');
+
+    const payload = {
+      marketpair_id: id,
+      timeframe: document.getElementById('timeframe').value,
+      since: twoDaysAgo,
+      limit: 100
+    };
+    try {
+      const response = await axios.post(url, payload, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json; charset=utf-8",
+          Authorization: token
+        }
+      });
+      console.log("Technical data response:", response);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching technical data:", error);
+      return null;
+    }
+  }
+
+  // Update UI with fetched data.
+  function updateUI(fetchedData) {
+    // Update header date.
+    const analysisDate = new Date(fetchedData.signal.signal.timestamp).toLocaleDateString();
+    analysisDateEl.textContent = `(${analysisDate})`;
+
+    // Signal Section.
+    const signal = fetchedData.signal.signal;
+    const signalHTML = `
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-2xl font-bold">$${signal.price.toFixed(1)}</p>
+          <p class="text-gray-500 text-sm">Current Price</p>
+        </div>
+        <div class="text-right">
+          <span class="${getStatusBgColor(signal.value)} px-3 py-1 rounded-full text-sm inline-flex items-center">
+            ${signal.value}
+            <span id="signalArrow" class="ml-1"></span>
+          </span>
+          <p class="mt-1 text-sm ${getScoreColor(signal.score)}">Score: ${signal.score}</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-white p-3 rounded-lg border">
+          <p class="text-gray-500 text-sm">Timestamp</p>
+          <p class="font-medium">${new Date(signal.timestamp).toLocaleString()}</p>
+        </div>
+        <div class="bg-white p-3 rounded-lg border">
+          <p class="text-gray-500 text-sm">Analysis Time</p>
+          <p class="font-medium">${signal.datetime.split(' ')[1]}</p>
+        </div>
+      </div>
+    `;
+    signalDataContainer.innerHTML = signalHTML;
+    document.getElementById('signalArrow').innerHTML = getTrendIcon(signal.value);
+
+    // Support Levels (green styling).
+    const supportHTML = `
+      <h4 class="text-lg font-semibold mb-4 text-green-600">Support Levels</h4>
+      <div class="space-y-3">
+        ${fetchedData.signal.recommendation.support_levels.map(level => `
+          <div class="flex justify-between items-center bg-green-50 p-3 rounded-lg">
+            <div>
+              <span class="font-medium">$${level.price.toFixed(1)}</span>
+              <span class="text-sm text-green-500 ml-2">
+                ${level.distance.toFixed(1)} ${getTrendIcon('BULLISH')}
+              </span>
+            </div>
+            <div class="text-sm text-green-700">Strength: ${level.strength}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    supportLevelsContainer.innerHTML = supportHTML;
+
+    // Recommendation Action.
+    const rec = fetchedData.signal.recommendation;
+    const actionHTML = `
+      <h4 class="text-lg font-semibold mb-4 text-blue-600">Recommendation Action</h4>
+      <div class="bg-blue-50 p-3 rounded-lg border">
+        <p class="font-medium">Action: <span class="ml-2">${rec.action}</span></p>
+      </div>
+    `;
+    recommendationActionContainer.innerHTML = actionHTML;
+
+    // Resistance Levels (red styling).
+    const resistanceHTML = `
+      <h4 class="text-lg font-semibold mb-4 text-red-600">Resistance Levels</h4>
+      <div class="space-y-3">
+        ${rec.resistance_levels.map(level => `
+          <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg">
+            <div>
+              <span class="font-medium">$${level.price.toFixed(1)}</span>
+              <span class="text-sm text-red-500 ml-2">
+                ${Math.abs(level.distance).toFixed(1)}%  ${getTrendIcon('BEARISH')}
+              </span>
+            </div>
+            <div class="text-sm text-red-700">Strength: ${level.strength}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    resistanceLevelsContainer.innerHTML = resistanceHTML;
+
+    // Trading Notes.
+    const notesHTML = `
+      <h4 class="text-lg font-semibold text-yellow-800 mb-2">Trading Notes</h4>
+      <p class="text-yellow-800">${rec.notes}</p>
+    `;
+    tradingNotesContainer.innerHTML = notesHTML;
+
+    // Components Popover Content.
+    const componentsHTML = getComponentsHTML(fetchedData.signal.components);
+    componentsContent.innerHTML = componentsHTML;
+  }
+
+  // Public initialization: attach event listeners.
+  function init() {
+    // When user clicks the main button, start fetch.
+    fetchBtn.addEventListener('click', async function () {
+      // Set button to loading state.
+      fetchBtn.textContent = "Loading...";
+      fetchBtn.classList.add("bg-gray-400", "cursor-not-allowed");
+      fetchBtn.disabled = true;
+
+      const fetchedData = await fetchTechnicalData();
+      if (fetchedData) {
+        updateUI(fetchedData);
+        openModal();
+      }
+
+      // Restore button state.
+      fetchBtn.textContent = "Show Analysis";
+      fetchBtn.classList.remove("bg-gray-400", "cursor-not-allowed");
+      fetchBtn.disabled = false;
+    });
+
+    // Close modal on close button click.
+    closeModalBtn.addEventListener('click', closeModal);
+
+    // Toggle components popover when clicking info icon.
+    infoIcon.addEventListener('click', function (event) {
+      event.stopPropagation();
+      componentsPopover.classList.toggle('hidden');
+    });
+
+    // Clicking outside popover closes it.
+    window.addEventListener('click', function (event) {
+      if (!componentsPopover.contains(event.target) && event.target.id !== 'infoIcon') {
+        componentsPopover.classList.add('hidden');
+      }
+    });
+  }
+
+  // Show the modal.
+  function openModal() {
+    mainModal.classList.remove('hidden');
+  }
+  // Hide the modal.
+  function closeModal() {
+    mainModal.classList.add('hidden');
+  }
+
+  // Return public API.
+  return {
+    init
+  };
+})();
+
+// Initialize the component.
+document.addEventListener('DOMContentLoaded', function () {
+  TechnicalAnalysisComponent.init();
+});
