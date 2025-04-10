@@ -25,6 +25,53 @@
 
 <body class="bg-gray-100">
 
+  <div id="news-modal"
+    class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center backdrop-blur-sm bg-black/50">
+    
+
+    <div
+      class="relative bg-white p-6 md:p-8 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+
+      <div class="flex justify-center">
+        <!-- Close Button -->
+        <button id="close-modal-btn" aria-label="Close"
+          class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+  
+        <div>Candle News</div>
+  
+  
+        <!-- Info Button -->
+        <div class="relative inline-block">
+          <button id="info-btn" aria-label="More info" class="text-blue-600 hover:text-blue-800 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-10.75a.75.75 0 10-1.5 0v.5a.75.75 0 101.5 0v-.5zm-1.5 3a.75.75 0 011.5 0v4a.75.75 0 01-1.5 0v-4z"
+                clip-rule="evenodd" />
+            </svg>
+          </button>
+  
+          <!-- Popup -->
+          <div id="info-popup"
+            class="absolute left-full top-1/2 ml-2 -translate-y-1/2 w-64 p-3 bg-white text-sm text-gray-700 border border-gray-300 rounded-lg shadow-lg hidden z-10">
+            This modal shows the news related to the selected candle.
+          </div>
+        </div>
+  
+  
+      </div>
+
+      <div id="news-content"></div>
+
+
+
+
+    </div>
+  </div>
+
   <!-- Trigger Button -->
   <button id="fetchBtn"
     class="fixed bottom-6 right-6 bg-indigo-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-105 z-20">
@@ -88,7 +135,7 @@
         <h1 class="text-3xl font-bold text-gray-900 mb-2">Market Pair Details</h1>
         <p class="text-gray-500 font-medium">Real-time financial data updated every 2 seconds</p>
       </header>
-  
+
       <!-- Data Cards -->
       <div class="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8" id="dataCards">
         <div class="bg-white rounded-xl shadow-lg p-8">
@@ -109,7 +156,7 @@
                 </div>
               </div>
             </div>
-  
+
             <!-- Price Columns -->
             <div class="flex-1 grid grid-cols-2 gap-6">
               <div class="space-y-3">
@@ -146,7 +193,7 @@
               </div>
             </div>
           </div>
-  
+
           <!-- Volume & Change -->
           <div class="mt-8 pt-6 border-t border-gray-100 flex-col md:flex md:flex-row justify-between">
             <div class="flex gap-4">
@@ -162,27 +209,27 @@
           </div>
         </div>
       </div>
-  
+
       <!-- Hidden Chart Section -->
       <div class="bg-white shadow rounded-lg p-6 hidden">
         <h3 class="text-2xl font-semibold text-gray-800 mb-4">Price History</h3>
         <canvas id="priceChart" class="w-full h-64"></canvas>
       </div>
     </div>
-  
+
     <!-- Candlestick Chart Section -->
     <div class="bg-white rounded-xl shadow-lg p-8">
       <header class="mb-4">
         <h1 class="text-3xl font-bold text-gray-900">Market Candlestick Chart</h1>
       </header>
-  
+
       <!-- Controls -->
       <div class="bg-gray-50 rounded-lg p-6 mb-8">
         <div class="flex flex-wrap gap-6 items-end">
           <div class="hidden">
             <label for="since" class="block text-sm font-medium text-gray-700 mb-2">Since</label>
-            <input type="text" id="since" value="2025-02-07 09:52:37" 
-                   class="w-full px-4 py-2 rounded-lg border border-gray-200">
+            <input type="text" id="since" value="2025-02-07 09:52:37"
+              class="w-full px-4 py-2 rounded-lg border border-gray-200">
           </div>
           <!-- <div class="flex-1 min-w-[200px]">
             <label for="marketSelect" class="block text-sm font-medium text-gray-700 mb-2">Select Market</label>
@@ -190,13 +237,11 @@
           </div> -->
           <div class="min-w-[120px]">
             <label for="timeframe" class="block text-sm font-medium text-gray-700 mb-2">Timeframe</label>
-            <input type="text" id="timeframe" value="1m" 
-                   class="w-full px-4 py-2 rounded-lg border border-gray-200">
+            <input type="text" id="timeframe" value="1m" class="w-full px-4 py-2 rounded-lg border border-gray-200">
           </div>
           <div class="min-w-[120px]">
             <label for="limit" class="block text-sm font-medium text-gray-700 mb-2">Limit</label>
-            <input type="number" id="limit" value="100" 
-                   class="w-full px-4 py-2 rounded-lg border border-gray-200">
+            <input type="number" id="limit" value="100" class="w-full px-4 py-2 rounded-lg border border-gray-200">
           </div>
           <div class="flex items-center gap-2">
             <label for="chart_type" class="text-sm font-medium text-gray-700">Advanced Chart</label>
@@ -207,7 +252,7 @@
           </button>
         </div>
       </div>
-  
+
       <!-- Chart Area -->
       <div id="chartContainer" class="bg-white rounded-lg">
         <div id="coinInfo" class="mb-6 flex flex-wrap gap-4 items-center">
@@ -231,7 +276,7 @@
         <div id="volume-chart" class="mt-4 h-32"></div>
       </div>
     </div>
-  
+
     <!-- Advanced Tools -->
     <div id="advanced_chart_tools" class="mt-8 hidden">
       <div class="bg-white rounded-xl shadow-lg p-8">
@@ -261,7 +306,7 @@
               </label>
             </div>
           </div>
-  
+
           <div class="space-y-4 min-w-[300px]">
             <div class="space-y-2">
               <div class="flex items-center gap-4">

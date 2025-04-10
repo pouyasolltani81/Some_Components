@@ -28,7 +28,71 @@ let currentXMin = null,
 let macdlastsignal = 0;
 let activeMarkets = [];
 let currentMarketId = id;
+let firstCandleTime = null;
 let time_interval_for_chart = 5000; // May update based on API response
+
+
+const modal = document.getElementById('news-modal');
+const closeBtn = document.getElementById('close-modal-btn');
+
+closeBtn.addEventListener('click', () => {
+  modal.classList.add('hidden');
+});
+
+// Optional: click outside to close
+modal.addEventListener('click', (e) => {
+  if (e.target === modal) {
+    modal.classList.add('hidden');
+  }
+});
+
+const infoBtn = document.getElementById('info-btn');
+const infoPopup = document.getElementById('info-popup');
+
+infoBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  infoPopup.classList.toggle('hidden');
+});
+
+// Optional: close popup if clicking elsewhere
+document.addEventListener('click', () => {
+  infoPopup.classList.add('hidden');
+});
+
+
+// ----------------------------------------------------------------------------------------
+// Fetch Coin Data & Update Data Cards / Price History
+// ----------------------------------------------------------------------------------------
+
+
+async function fetchNewsall(firstCandleTime) {
+
+  try {
+    let params = {
+      symbols: "ETH-USDT",
+      startDate: firstCandleTime,
+      category: "cryptocurrencies"
+    };
+    let newsResponse = await axios.post(
+      "http://79.175.177.113:15800/AimoonxNewsHUB/News/GetNewsbyDateCategory/",
+      params,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json; charset=utf-8",
+          Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
+        },
+      }
+    );
+    if (newsResponse.data && newsResponse.data.return) {
+      console.log(fetchedNews);
+
+      fetchedNews = newsResponse.data.data;
+    }
+  } catch (err) {
+    console.error("Error fetching news:", err);
+  }
+}
 
 // ----------------------------------------------------------------------------------------
 // Fetch Coin Data & Update Data Cards / Price History
@@ -87,7 +151,9 @@ async function fetchCoinList() {
   }
 }
 fetchCoinList();
-setInterval(fetchCoinList, 10000);
+setInterval(fetchCoinList, time_interval_for_chart);
+// setInterval(fetchNewsall, time_interval_for_chart);
+
 
 // ----------------------------------------------------------------------------------------
 // Active Markets & Market Select Dropdown Helpers
@@ -160,11 +226,17 @@ async function fetchOHLCVData() {
         },
       }
     );
-    console.log(response);
+
 
     if (response.data.return) {
       let ohlcv = chart_type ? response.data.data : response.data.ohlcv;
-      time_interval_for_chart = 10000;
+      firstCandleTime = Math.floor(new Date(ohlcv[0].datetime).getTime() / 1000);
+      if (newsMode) {
+        console.log("on");
+
+        await fetchNewsall(firstCandleTime)
+      }
+      // time_interval_for_chart = 10000;
       return ohlcv;
     }
   } catch (error) {
@@ -393,36 +465,36 @@ async function updateChart() {
     // ------------------------------------------------------------------------------------
     const tooltipOptions = newsMode
       ? {
-          custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-            let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
-            let timeRange = 3600000;
-            if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
-              let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
-              let currTime = candleTime.getTime();
-              timeRange = currTime - prevTime;
-            }
-            const relatedNews = fetchedNews
-              ? fetchedNews.filter((news) => {
-                  let newsTime = news.pubDate * 1000;
-                  return (
-                    newsTime >= candleTime.getTime() &&
-                    newsTime < candleTime.getTime() + timeRange
-                  );
-                })
-              : [];
-            return relatedNews.length > 0
-              ? `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`
-              : `<div class="p-2">No news available</div>`;
-          },
-        }
+        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+          let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
+          let timeRange = 3600000;
+          if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
+            let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
+            let currTime = candleTime.getTime();
+            timeRange = currTime - prevTime;
+          }
+          const relatedNews = fetchedNews
+            ? fetchedNews.filter((news) => {
+              let newsTime = news.pubDate * 1000;
+              return (
+                newsTime >= candleTime.getTime() &&
+                newsTime < candleTime.getTime() + timeRange
+              );
+            })
+            : [];
+          return relatedNews.length > 0
+            ? `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`
+            : `<div class="p-2">No news available</div>`;
+        },
+      }
       : {
-          custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-            if (!currentChartData || !currentChartData[dataPointIndex]) {
-              return `<div class="apexcharts-tooltip">Loading...</div>`;
-            }
-            const item = currentChartData[dataPointIndex];
-            const dateStr = new Date(item.datetime).toLocaleString();
-            return `<div class="apexcharts-tooltip" style="padding:10px;">
+        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+          if (!currentChartData || !currentChartData[dataPointIndex]) {
+            return `<div class="apexcharts-tooltip">Loading...</div>`;
+          }
+          const item = currentChartData[dataPointIndex];
+          const dateStr = new Date(item.datetime).toLocaleString();
+          return `<div class="apexcharts-tooltip" style="padding:10px;">
                       <div><strong>${dateStr}</strong></div>
                       <div>Open: ${item.open}</div>
                       <div>High: ${item.high}</div>
@@ -430,10 +502,10 @@ async function updateChart() {
                       <div>Close: ${item.close}</div>
                       <div>Volume: ${item.volume}</div>
                     </div>`;
-          },
-          shared: true,
-          intersect: false,
-        };
+        },
+        shared: true,
+        intersect: false,
+      };
 
     // ------------------------------------------------------------------------------------
     // Update Chart Options (zoom, annotations, etc.)
@@ -467,13 +539,14 @@ async function updateChart() {
                   }
                   const relatedNews = fetchedNews
                     ? fetchedNews.filter((news) => {
-                        let newsTime = news.pubDate * 1000;
-                        return (
-                          newsTime >= candleTime.getTime() &&
-                          newsTime < candleTime.getTime() + timeRange
-                        );
-                      })
+                      let newsTime = news.pubDate * 1000;
+                      return (
+                        newsTime >= candleTime.getTime() &&
+                        newsTime < candleTime.getTime() + timeRange
+                      );
+                    })
                     : [];
+
                   showNewsModal(relatedNews);
                 }
               } catch (err) {
@@ -593,12 +666,12 @@ const chartOptions = {
               }
               const relatedNews = fetchedNews
                 ? fetchedNews.filter((news) => {
-                    const newsTime = news.pubDate * 1000;
-                    return (
-                      newsTime >= candleTime.getTime() &&
-                      newsTime < candleTime.getTime() + timeRange
-                    );
-                  })
+                  const newsTime = news.pubDate * 1000;
+                  return (
+                    newsTime >= candleTime.getTime() &&
+                    newsTime < candleTime.getTime() + timeRange
+                  );
+                })
                 : [];
               showNewsModal(relatedNews);
             }
@@ -638,36 +711,36 @@ const chartOptions = {
   annotations: { yaxis: [] },
   tooltip: newsMode
     ? {
-        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-          let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
-          let timeRange = 3600000;
-          if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
-            let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
-            let currTime = candleTime.getTime();
-            timeRange = currTime - prevTime;
-          }
-          const relatedNews = fetchedNews
-            ? fetchedNews.filter((news) => {
-                let newsTime = news.pubDate * 1000;
-                return (
-                  newsTime >= candleTime.getTime() &&
-                  newsTime < candleTime.getTime() + timeRange
-                );
-              })
-            : [];
-          return relatedNews.length > 0
-            ? `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`
-            : `<div class="p-2">No news available</div>`;
-        },
-      }
+      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+        let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
+        let timeRange = 3600000;
+        if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
+          let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
+          let currTime = candleTime.getTime();
+          timeRange = currTime - prevTime;
+        }
+        const relatedNews = fetchedNews
+          ? fetchedNews.filter((news) => {
+            let newsTime = news.pubDate * 1000;
+            return (
+              newsTime >= candleTime.getTime() &&
+              newsTime < candleTime.getTime() + timeRange
+            );
+          })
+          : [];
+        return relatedNews.length > 0
+          ? `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`
+          : `<div class="p-2">No news available</div>`;
+      },
+    }
     : {
-        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-          if (!currentChartData || !currentChartData[dataPointIndex]) {
-            return `<div class="apexcharts-tooltip">Loading...</div>`;
-          }
-          const item = currentChartData[dataPointIndex];
-          const dateStr = new Date(item.datetime).toLocaleString();
-          return `<div class="apexcharts-tooltip" style="padding:10px;">
+      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+        if (!currentChartData || !currentChartData[dataPointIndex]) {
+          return `<div class="apexcharts-tooltip">Loading...</div>`;
+        }
+        const item = currentChartData[dataPointIndex];
+        const dateStr = new Date(item.datetime).toLocaleString();
+        return `<div class="apexcharts-tooltip" style="padding:10px;">
                     <div><strong>${dateStr}</strong></div>
                     <div>Open: ${item.open}</div>
                     <div>High: ${item.high}</div>
@@ -675,10 +748,10 @@ const chartOptions = {
                     <div>Close: ${item.close}</div>
                     <div>Volume: ${item.volume}</div>
                   </div>`;
-        },
-        shared: true,
-        intersect: false,
       },
+      shared: true,
+      intersect: false,
+    },
 };
 
 // ----------------------------------------------------------------------------------------
@@ -835,6 +908,7 @@ document.addEventListener("DOMContentLoaded", function () {
         newsMode = !newsMode;
         this.classList.toggle("bg-blue-600", newsMode);
         this.classList.toggle("bg-gray-400", !newsMode);
+
         if (newsMode) {
           chart.updateOptions({
             tooltip: {
@@ -848,12 +922,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 const relatedNews = fetchedNews
                   ? fetchedNews.filter((news) => {
-                      let newsTime = news.pubDate * 1000;
-                      return (
-                        newsTime >= candleTime.getTime() &&
-                        newsTime < candleTime.getTime() + timeRange
-                      );
-                    })
+                    let newsTime = news.pubDate * 1000;
+                    return (
+                      newsTime >= candleTime.getTime() &&
+                      newsTime < candleTime.getTime() + timeRange
+                    );
+                  })
                   : [];
                 return relatedNews.length > 0
                   ? `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`
@@ -953,6 +1027,8 @@ function getSentimentIndicator(news) {
 }
 
 function showNewsModal(relatedNews) {
+  console.log(relatedNews);
+
   const newsContent = document.getElementById("news-content");
   if (!newsContent) return;
   const initialItems = relatedNews.slice(0, 5);
@@ -970,11 +1046,10 @@ function showNewsModal(relatedNews) {
           <p class="news-description" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
             ${news.articleBody}
           </p>
-          ${
-            news.articleBody && news.articleBody.length > 100
-              ? `<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>`
-              : ""
-          }
+          ${news.articleBody && news.articleBody.length > 100
+        ? `<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>`
+        : ""
+      }
           <a href="${news.link}" target="_blank" class="text-blue-500 underline">Read more</a>
         </div>
         <div class="w-24 text-center ml-2">
@@ -996,11 +1071,10 @@ function showNewsModal(relatedNews) {
             <p class="news-description" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
               ${news.articleBody}
             </p>
-            ${
-              news.articleBody && news.articleBody.length > 100
-                ? `<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>`
-                : ""
-            }
+            ${news.articleBody && news.articleBody.length > 100
+          ? `<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>`
+          : ""
+        }
             <a href="${news.link}" target="_blank" class="text-blue-500 underline">Read more</a>
           </div>
           <div class="w-24 text-center ml-2">
@@ -1040,7 +1114,7 @@ function toggleDescription(btn) {
     btn.innerText = "Show More";
   }
 }
-  
+
 // ----------------------------------------------------------------------------------------
 // Technical Analysis Component (Using Global token and id)
 // ----------------------------------------------------------------------------------------
@@ -1183,8 +1257,8 @@ const TechnicalAnalysisComponent = (function () {
       <h4 class="text-lg font-semibold mb-4 text-green-600">Support Levels</h4>
       <div class="space-y-3">
         ${fetchedData.signal.recommendation.support_levels
-          .map(
-            (level) => `
+        .map(
+          (level) => `
           <div class="flex justify-between items-center bg-green-50 p-3 rounded-lg">
             <div>
               <span class="font-medium">$${level.price.toFixed(1)}</span>
@@ -1195,8 +1269,8 @@ const TechnicalAnalysisComponent = (function () {
             <div class="text-sm text-green-700">Strength: ${level.strength}</div>
           </div>
         `
-          )
-          .join("")}
+        )
+        .join("")}
       </div>
     `;
     supportLevelsContainer.innerHTML = supportHTML;
@@ -1212,8 +1286,8 @@ const TechnicalAnalysisComponent = (function () {
       <h4 class="text-lg font-semibold mb-4 text-red-600">Resistance Levels</h4>
       <div class="space-y-3">
         ${rec.resistance_levels
-          .map(
-            (level) => `
+        .map(
+          (level) => `
           <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg">
             <div>
               <span class="font-medium">$${level.price.toFixed(1)}</span>
@@ -1224,8 +1298,8 @@ const TechnicalAnalysisComponent = (function () {
             <div class="text-sm text-red-700">Strength: ${level.strength}</div>
           </div>
         `
-          )
-          .join("")}
+        )
+        .join("")}
       </div>
     `;
     resistanceLevelsContainer.innerHTML = resistanceHTML;
@@ -1271,7 +1345,7 @@ const TechnicalAnalysisComponent = (function () {
   }
   return { init };
 })();
-  
+
 document.addEventListener("DOMContentLoaded", function () {
   TechnicalAnalysisComponent.init();
 });
