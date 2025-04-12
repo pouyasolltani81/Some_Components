@@ -12,6 +12,8 @@ const token = "23b30428c4102a9280abbbd75762cf01";
 const priceHistory = []; // Price history (up to 20 points)
 const maxDataPoints = 20;
 
+
+let pair_name = null
 let chart, volumeChart;
 let currentCandleCount = 0;
 let currentVolumeCount = 0;
@@ -67,9 +69,14 @@ document.addEventListener('click', () => {
 
 async function fetchNewsall(firstCandleTime) {
 
+
+
+  console.log(pair_name);
+
+
   try {
     let params = {
-      symbols: "ETH-USDT",
+      symbols: pair_name,
       startDate: firstCandleTime,
       category: "cryptocurrencies"
     };
@@ -112,6 +119,7 @@ async function fetchCoinList() {
       .then((response) => {
         const data = response.data.market_pair;
         if (data) {
+          pair_name = data.pair.name
           // Update data cards
           document.getElementById("pairName").textContent = data.pair.name;
           document.getElementById("price").textContent = data.formatted_price;
@@ -1229,7 +1237,7 @@ const TechnicalAnalysisComponent = (function () {
     const signalHTML = `
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-2xl font-bold">$${signal.price.toFixed(1)}</p>
+          <p class="text-2xl font-bold">$${signal.price.toFixed(2)} (${pair_name})</p>
           <p class="text-gray-500 text-sm">Current Price</p>
         </div>
         <div class="text-right">
@@ -1261,9 +1269,9 @@ const TechnicalAnalysisComponent = (function () {
           (level) => `
           <div class="flex justify-between items-center bg-green-50 p-3 rounded-lg">
             <div>
-              <span class="font-medium">$${level.price.toFixed(1)}</span>
+              <span class="font-medium">$${level.price.toFixed(2)}</span>
               <span class="text-sm text-green-500 ml-2">
-                ${level.distance.toFixed(1)} ${getTrendIcon("BULLISH")}
+                ${level.distance.toFixed(2)}% ${getTrendIcon("BULLISH")}
               </span>
             </div>
             <div class="text-sm text-green-700">Strength: ${level.strength}</div>
@@ -1275,12 +1283,84 @@ const TechnicalAnalysisComponent = (function () {
     `;
     supportLevelsContainer.innerHTML = supportHTML;
     const rec = fetchedData.signal.recommendation;
+
+    // Updated formatLevel function with icon integration
+    const formatLevel = (level, type) => `
+  <div class="flex items-center justify-between p-3 bg-white rounded-lg border ${type === 'support' ? 'border-green-200' : 'border-red-200'} mb-2 last:mb-0">
+    <div class="flex items-center gap-2 w-1/3">
+      <span class="p-1.5 rounded-lg ${type === 'support' ? 'bg-green-100' : 'bg-red-100'}">
+        ${type === 'support' ? '🟢' : '🔴'}
+      </span>
+      <span class="font-medium">${level.price.toFixed(2)}</span>
+    </div>
+    <div class="w-1/3 text-center">
+      <span class="inline-block px-2 py-1 rounded-full ${level.strength === 'Strong' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} text-xs font-medium">
+        ${level.strength.toFixed(2)}
+      </span>
+    </div>
+    <div class="w-1/3 text-right font-medium text-gray-600">${level.distance.toFixed(2)} %</div>
+  </div>
+`;
+
     const actionHTML = `
-      <h4 class="text-lg font-semibold mb-4 text-blue-600">Recommendation Action</h4>
-      <div class="bg-blue-50 p-3 rounded-lg border">
-        <p class="font-medium">Action: <span class="ml-2">${rec.action}</span></p>
+  <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-6">
+      <div class="p-2 bg-blue-100 rounded-lg">
+        📈
       </div>
-    `;
+      <h4 class="text-xl font-bold text-gray-800">
+        Trading Recommendation
+        <span class="block text-sm font-normal text-gray-500">Based on technical analysis</span>
+      </h4>
+    </div>
+
+    <!-- Recommendation Grid -->
+    <div class="grid md:grid-cols-2 gap-4 mb-6">
+      <!-- Action Card -->
+      <div class="bg-white p-4 rounded-lg border ${rec.action === 'Buy' ? 'border-green-200' : 'border-red-200'}">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="p-2 rounded-lg ${rec.action === 'Buy' ? 'bg-green-100' : 'bg-red-100'}">
+            ${rec.action === 'Buy' ? '🔼' : '🔽'}
+          </span>
+          <div>
+            <p class="text-sm text-gray-600">Recommended Action</p>
+            <p class="text-lg font-bold ${rec.action === 'Buy' ? 'text-green-600' : 'text-red-600'}">${rec.action}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk/Reward Card -->
+      <div class="bg-white p-4 rounded-lg border border-blue-200">
+        <div class="flex items-center gap-3">
+          <span class="p-2 rounded-lg bg-blue-100">⚖️</span>
+          <div>
+            <p class="text-sm text-gray-600">Risk/Reward Ratio</p>
+            <p class="text-lg font-bold text-blue-600">${rec.risk_reward_ratio.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Targets Grid -->
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-lg border border-red-200">
+        <p class="text-sm text-gray-600 mb-1">🛑 Stop Loss</p>
+        <p class="font-semibold text-red-600">${rec.stop_loss.toFixed(2)}</p>
+      </div>
+      <div class="bg-white p-4 rounded-lg border border-green-200">
+        <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 1</p>
+        <p class="font-semibold text-green-600">${rec.take_profit_1.toFixed(2)}</p>
+      </div>
+      <div class="bg-white p-4 rounded-lg border border-green-200">
+        <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 2</p>
+        <p class="font-semibold text-green-600">${rec.take_profit_2.toFixed(2)}</p>
+      </div>
+    </div>
+
+    
+`;
+
     recommendationActionContainer.innerHTML = actionHTML;
     const resistanceHTML = `
       <h4 class="text-lg font-semibold mb-4 text-red-600">Resistance Levels</h4>
@@ -1290,12 +1370,12 @@ const TechnicalAnalysisComponent = (function () {
           (level) => `
           <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg">
             <div>
-              <span class="font-medium">$${level.price.toFixed(1)}</span>
+              <span class="font-medium">$${level.price.toFixed(2)}</span>
               <span class="text-sm text-red-500 ml-2">
-                ${Math.abs(level.distance).toFixed(1)}%  ${getTrendIcon("BEARISH")}
+                ${Math.abs(level.distance).toFixed(2)}%  ${getTrendIcon("BEARISH")}
               </span>
             </div>
-            <div class="text-sm text-red-700">Strength: ${level.strength}</div>
+            <div class="text-sm text-red-700">Strength: ${level.strength.toFixed(2)}</div>
           </div>
         `
         )

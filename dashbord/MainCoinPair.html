@@ -18,19 +18,48 @@
 
   <script src="https://cdn.jsdelivr.net/npm/date-fns@4.1.0/cdn.min.js"></script>
   <style>
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 8px;
+    }
 
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background-color: #a5b4fc;
+      border-radius: 4px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
   </style>
 
 </head>
 
 <body class="bg-gray-100">
 
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal"
+    class="hidden fixed inset-0  bg-black bg-opacity-40 flex items-center justify-center px-4" style="z-index: 51;">
+    <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 text-center space-y-4">
+      <h2 class="text-lg font-semibold text-gray-800">Confirm Action</h2>
+      <p id="confirmationText" class="text-gray-600">Are you sure you want to proceed?</p>
+      <div class="flex justify-center gap-4 pt-2">
+        <button onclick="closeConfirmationModal()" class="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-100">
+          Cancel
+        </button>
+        <button onclick="proceedConfirmedAction()"
+          class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+
   <div id="news-modal"
     class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center backdrop-blur-sm bg-black/50">
-    
 
-    <div
-      class="relative bg-white p-6 md:p-8 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+
+    <div class="relative bg-white p-6 md:p-8 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
 
       <div class="flex justify-center">
         <!-- Close Button -->
@@ -40,10 +69,10 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-  
+
         <div>Candle News</div>
-  
-  
+
+
         <!-- Info Button -->
         <div class="relative inline-block">
           <button id="info-btn" aria-label="More info" class="text-blue-600 hover:text-blue-800 transition">
@@ -53,15 +82,15 @@
                 clip-rule="evenodd" />
             </svg>
           </button>
-  
+
           <!-- Popup -->
           <div id="info-popup"
             class="absolute left-full top-1/2 ml-2 -translate-y-1/2 w-64 p-3 bg-white text-sm text-gray-700 border border-gray-300 rounded-lg shadow-lg hidden z-10">
             This modal shows the news related to the selected candle.
           </div>
         </div>
-  
-  
+
+
       </div>
 
       <div id="news-content"></div>
@@ -80,54 +109,130 @@
 
 
   <!-- Main Modal -->
-  <div id="mainModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-20">
-    <div class="bg-white rounded-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+  <div id="mainModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-10 px-4 z-50 overflow-y-auto">
+    <div class="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden">
+
       <!-- Header -->
-      <div class="flex justify-between items-center p-6 border-b">
-        <h3 class="text-2xl font-bold text-gray-800">
+      <div class="flex justify-between items-center px-5 py-4 border-b border-transparent relative">
+        <h3 class="text-xl font-bold text-gray-800">
           Technical Analysis Dashboard
-          <span id="analysisDate" class="text-lg font-normal text-gray-500"></span>
+          <span id="analysisDate" class="text-base font-normal text-gray-500"></span>
         </h3>
-        <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        <button id="closeModalBtn" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+        <!-- Gradient separator -->
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
+        </div>
       </div>
+
       <!-- Content Grid -->
-      <div class="grid md:grid-cols-2 gap-8 p-6">
-        <!-- Left Column: Signal Section & Support Levels -->
-        <div class="space-y-6">
-          <!-- Signal Section -->
-          <div id="signalSection" class="bg-gray-50 p-4 rounded-lg relative">
-            <!-- Info Icon (toggles inline components popover) -->
-            <button id="infoIcon" class="absolute top-5 right-32 text-gray-400 hover:text-indigo-600">
+      <div
+        class="grid gap-5 p-5 max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-gray-100">
+
+        <!-- First Row -->
+        <div class="flex flex-col gap-4">
+          <div id="signalSection" class="bg-gray-50 p-3 rounded-lg relative shadow-sm border border-gray-200">
+            <button id="infoIcon" class="absolute top-4 right-40 text-gray-400 hover:text-indigo-600 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </button>
-            <!-- Inline Components Popover -->
             <div id="componentsPopover"
-              class="absolute top-10 right-3 bg-white border border-gray-300 rounded shadow-lg p-4 w-72 mt-2 hidden z-30">
+              class="absolute top-10 right-3 bg-white border border-gray-300 rounded shadow-lg p-3 w-64 mt-2 hidden z-30">
               <h5 class="font-semibold mb-2">Components</h5>
               <div id="componentsContent" class="text-sm space-y-2"></div>
             </div>
-            <!-- Signal Data -->
-            <div id="signalDataContainer" class="space-y-4"></div>
+            <div id="signalDataContainer" class="space-y-3"></div>
           </div>
-          <!-- Support Levels (green styling) -->
-          <div id="supportLevelsContainer"></div>
+
+          <div id="recommendationActionContainer" class=" rounded-lg border shadow-sm"></div>
         </div>
-        <!-- Right Column: Recommendation Action, Resistance Levels & Trading Notes -->
-        <div class="space-y-6">
-          <!-- Recommendation Action -->
-          <div id="recommendationActionContainer" class="bg-blue-50 p-4 rounded-lg border"></div>
-          <!-- Resistance Levels (red styling) -->
-          <div id="resistanceLevelsContainer"></div>
-          <!-- Trading Notes -->
-          <div id="tradingNotesContainer" class="bg-yellow-50 p-4 rounded-lg border border-yellow-200"></div>
+
+        <!-- Second Row -->
+        <div class="grid md:grid-cols-2 gap-4">
+          <div id="supportLevelsContainer" class="p-3 rounded-lg bg-green-50 border border-green-200 shadow-sm"></div>
+          <div id="resistanceLevelsContainer" class="p-3 rounded-lg bg-red-50 border border-red-200 shadow-sm"></div>
+        </div>
+
+        <!-- Third Row -->
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
+            <h4 class="text-base font-semibold mb-3 flex items-center gap-2 text-gray-700">💰 Wallet Overview</h4>
+            <div class="grid md:grid-cols-2 gap-3">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-white rounded-lg border">👛</div>
+                <div>
+                  <p class="text-sm text-gray-600">Current Balance</p>
+                  <p class="text-lg font-semibold text-gray-800">100 $</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-white rounded-lg border">💹</div>
+                <div>
+                  <p class="text-sm text-gray-600">Current Pair Value</p>
+                  <p class="text-lg font-semibold text-gray-800">234,234 $</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-green-50 p-4 rounded-lg border border-green-200 shadow-sm">
+            <h4 class="text-base font-semibold mb-3 flex items-center gap-2 text-gray-700">🚀 Suggested Actions</h4>
+            <div class="grid grid-cols-2 gap-3">
+
+              <div class="space-y-3">
+                <div onclick="confirmAction('Optimal Risk Buy')"
+                  class="cursor-pointer bg-white p-3 rounded-lg border border-green-200 hover:bg-green-100">
+                  <div class="flex items-center gap-1 text-green-600 mb-1">
+                    <span>↑</span><span class="font-medium">Optimal Risk Buy</span>
+                  </div>
+                  <p class="text-lg font-semibold">100 $</p>
+                </div>
+
+                <div onclick="confirmAction('High Risk Buy')"
+                  class="cursor-pointer bg-white p-3 rounded-lg border border-orange-200 hover:bg-orange-100">
+                  <div class="flex items-center gap-1 text-orange-600 mb-1">
+                    <span>↑</span><span class="font-medium">High Risk Buy</span>
+                  </div>
+                  <p class="text-lg font-semibold">100 $</p>
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <div onclick="confirmAction('Optimal Risk Sell')"
+                  class="cursor-pointer bg-white p-3 rounded-lg border border-red-200 hover:bg-red-100">
+                  <div class="flex items-center gap-1 text-red-600 mb-1">
+                    <span>↓</span><span class="font-medium">Optimal Risk Sell</span>
+                  </div>
+                  <p class="text-lg font-semibold">100 $</p>
+                </div>
+
+                <div onclick="confirmAction('High Risk Sell')"
+                  class="cursor-pointer bg-white p-3 rounded-lg border border-orange-200 hover:bg-orange-100">
+                  <div class="flex items-center gap-1 text-orange-600 mb-1">
+                    <span>↓</span><span class="font-medium">High Risk Sell</span>
+                  </div>
+                  <p class="text-lg font-semibold">100 $</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Final Row -->
+        <div class="grid grid-cols-1">
+          <div id="tradingNotesContainer" class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 shadow-sm"></div>
         </div>
       </div>
     </div>
   </div>
+
+
+
+
   <div class="container mx-auto p-6 text-gray-800">
     <!-- Market Pair Details Section -->
     <div class="mb-12">
@@ -338,6 +443,32 @@
     </div>
   </div>
   <script type="module" type="module" src="maincoinpair.js"></script>
+  <!-- Scrollbar Style -->
+
+  <!-- Confirmation Script -->
+  <script>
+    let pendingAction = null;
+
+    function confirmAction(actionType) {
+      pendingAction = actionType;
+      document.getElementById('confirmationText').innerText = `Are you sure you want to perform "${actionType}"?`;
+      document.getElementById('confirmationModal').classList.remove('hidden');
+    }
+
+    function closeConfirmationModal() {
+      pendingAction = null;
+      document.getElementById('confirmationModal').classList.add('hidden');
+    }
+
+    function proceedConfirmedAction() {
+      console.log(`Confirmed action: ${pendingAction}`);
+      // Insert your action logic here
+      closeConfirmationModal();
+    }
+
+  </script>
+
+
 
 
 </body>
