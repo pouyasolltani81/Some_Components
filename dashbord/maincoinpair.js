@@ -1161,6 +1161,22 @@ const TechnicalAnalysisComponent = (function () {
     return colors[status] || "text-gray-600";
   }
   function getScoreColor(score) {
+    if (score > 20) {
+      console.log('green');
+      
+      document.getElementById('seperator_line').classList ='absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-green-500'
+    } else if (score < 20) {
+
+      console.log('red');
+
+      document.getElementById('seperator_line').classList = 'absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-red-500'
+
+    } else {
+      console.log('blue');
+
+      document.getElementById('seperator_line').classList ='absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-blue-500'
+
+    }
     if (score >= 20) return "text-green-600";
     if (score >= 10) return "text-blue-600";
     if (score >= 0) return "text-gray-600";
