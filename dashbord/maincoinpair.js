@@ -13,6 +13,13 @@ const priceHistory = []; // Price history (up to 20 points)
 const maxDataPoints = 20;
 
 
+// ----------------------------------------------------------------------------------------
+
+let srMode = false;
+let srModeInterval = null;
+
+
+
 let pair_name = null
 let chart, volumeChart;
 let currentCandleCount = 0;
@@ -203,13 +210,12 @@ function updateMarketInfo(market) {
   document.getElementById("marketName").textContent = market.name;
   document.getElementById("marketDesc").textContent = market.desc || "";
 }
-
 // ----------------------------------------------------------------------------------------
-// Fetch OHLCV Data and Process it for the Candlestick & Volume Charts
+// Fetch OHLCV Data and Process for Candlestick & Volume Charts
 // ----------------------------------------------------------------------------------------
 async function fetchOHLCVData() {
   const marketpair_id = currentMarketId;
-  console.log(marketpair_id);
+  console.log("Market ID:", marketpair_id);
   const timeframe = document.getElementById("timeframe").value;
   const limit = parseInt(document.getElementById("limit").value);
   const since = getDate(limit, timeframe);
@@ -235,16 +241,15 @@ async function fetchOHLCVData() {
       }
     );
 
-
     if (response.data.return) {
       let ohlcv = chart_type ? response.data.data : response.data.ohlcv;
-      firstCandleTime = Math.floor(new Date(ohlcv[0].datetime).getTime() / 1000);
+      const firstCandleTime = Math.floor(
+        new Date(ohlcv[0].datetime).getTime() / 1000
+      );
       if (newsMode) {
-        console.log("on");
-
-        await fetchNewsall(firstCandleTime)
+        console.log("News mode is active");
+        await fetchNewsall(firstCandleTime);
       }
-      // time_interval_for_chart = 10000;
       return ohlcv;
     }
   } catch (error) {
@@ -338,28 +343,107 @@ async function updateAnnotationsWrapper(data) {
 }
 
 // ----------------------------------------------------------------------------------------
-// Main Chart Update Function with Optimized Data Append
+// New Function: Fetch and Update Support/Resistance (SR) Levels for SR Mode
+// ----------------------------------------------------------------------------------------
+async function fetchAndUpdateSRLevels() {
+  try {
+
+    const marketpair_id = currentMarketId;
+    console.log("Market ID:", marketpair_id);
+    const timeframe = document.getElementById("timeframe").value;
+    const limit = parseInt(document.getElementById("limit").value);
+    const since = getDate(limit, timeframe);
+    // Change the URL to your specific SR levels endpoint.
+    const response = await axios.post(
+      'http://188.34.202.221:8000/Market/exGetIntelligentSupportResistanceLevels/',
+      { marketpair_id, timeframe, since, limit },
+      {
+        headers: {
+          Accept: "application/json",
+          Authorization: token,
+        },
+      }
+    );
+    if (response.data.return) {
+      const srData = response.data.sr_levels;
+
+      let annotations = [];
+      // Process resistance levels
+      if (srData.resistance_levels) {
+        srData.resistance_levels.forEach((level, index) => {
+          annotations.push({
+            y: level.price,
+            borderColor: "red",
+            label: {
+              borderColor: "red",
+              style: { color: "#fff", background: "red" },
+              text: `R${index + 1}`,
+              position: "left",
+            },
+          });
+        });
+      }
+      // Process support levels
+      if (srData.support_levels) {
+        srData.support_levels.forEach((level, index) => {
+          annotations.push({
+            y: level.price,
+            borderColor: "green",
+            label: {
+              borderColor: "green",
+              style: { color: "#fff", background: "green" },
+              text: `S${index + 1}`,
+              position: "left",
+            },
+          });
+        });
+      }
+      // Process pivot point if present
+      if (srData.pivot_points) {
+        annotations.push({
+          y: srData.pivot_points.pivot,
+          borderColor: "blue",
+          label: {
+            borderColor: "blue",
+            style: { color: "#fff", background: "blue" },
+            text: "Pivot",
+            position: "left",
+          },
+        });
+      }
+      // Update chart annotations with the fetched SR levels.
+      chart.updateOptions({ annotations: { yaxis: annotations } });
+      // Force a chart resize/redraw to address any blank render issues.
+      // window.dispatchEvent(new Event("resize"));
+      ;
+    }
+  } catch (error) {
+    console.error("Error fetching SR levels:", error);
+  }
+}
+
+// ----------------------------------------------------------------------------------------
+// Main Chart Update Function with Optimized Data Append & Resize
 // ----------------------------------------------------------------------------------------
 async function updateChart() {
   try {
     const data = await fetchOHLCVData();
-    console.log(data);
+    console.log("OHLCV Data:", data);
     if (!data || !Array.isArray(data) || data.length === 0) {
       console.warn("No OHLCV data available.");
       return;
     }
     currentChartData = data; // Save data for tooltips
 
-    // Reset zoom state if candle count changes
     if (data.length !== currentCandleCount) {
       currentXMin = currentXMax = currentYMin = currentYMax = null;
     }
 
-    // Calculate extra x-axis spacing
     const candlestickData = data.map((d) => ({
       x: new Date(d.datetime),
       y: [d.open, d.high, d.low, d.close],
     }));
+
     let bullishColor = document.getElementById("bullish-color")
       ? document.getElementById("bullish-color").value
       : "#008000";
@@ -380,7 +464,7 @@ async function updateChart() {
       newXMax = lastTime + diff * 5;
     }
 
-    // Build series array with optional SMA/EMA if toggled
+    // Build series array
     const series = [
       { name: "Candlestick", type: "candlestick", data: candlestickData },
     ];
@@ -401,8 +485,7 @@ async function updateChart() {
       series.push({ name: "EMA_20", type: "line", data: emaData });
     }
 
-    // Use optimized "appendData" if only one new point is added;
-    // otherwise update the entire series.
+    // Append or update series based on candle count change.
     const isCandlestickIncremental =
       chart &&
       currentCandleCount &&
@@ -442,9 +525,9 @@ async function updateChart() {
       }
       currentCandleCount = candlestickData.length;
     } else {
-      chart.updateSeries(series, true).catch((err) =>
-        console.error("Error in full series update:", err)
-      );
+      chart
+        .updateSeries(series, true)
+        .catch((err) => console.error("Error in full series update:", err));
       currentCandleCount = candlestickData.length;
     }
 
@@ -462,155 +545,20 @@ async function updateChart() {
     } else {
       volumeChart
         .updateSeries([{ name: "Volume", type: "bar", data: volumeData }], true)
-        .catch((err) =>
-          console.error("Error updating volume chart:", err)
-        );
+        .catch((err) => console.error("Error updating volume chart:", err));
       currentVolumeCount = volumeData.length;
     }
 
-    // ------------------------------------------------------------------------------------
-    // Tooltip Options based on News Mode
-    // ------------------------------------------------------------------------------------
-    const tooltipOptions = newsMode
-      ? {
-        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-          let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
-          let timeRange = 3600000;
-          if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
-            let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
-            let currTime = candleTime.getTime();
-            timeRange = currTime - prevTime;
-          }
-          const relatedNews = fetchedNews
-            ? fetchedNews.filter((news) => {
-              let newsTime = news.pubDate * 1000;
-              return (
-                newsTime >= candleTime.getTime() &&
-                newsTime < candleTime.getTime() + timeRange
-              );
-            })
-            : [];
-          return relatedNews.length > 0
-            ? `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`
-            : `<div class="p-2">No news available</div>`;
-        },
-      }
-      : {
-        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-          if (!currentChartData || !currentChartData[dataPointIndex]) {
-            return `<div class="apexcharts-tooltip">Loading...</div>`;
-          }
-          const item = currentChartData[dataPointIndex];
-          const dateStr = new Date(item.datetime).toLocaleString();
-          return `<div class="apexcharts-tooltip" style="padding:10px;">
-                      <div><strong>${dateStr}</strong></div>
-                      <div>Open: ${item.open}</div>
-                      <div>High: ${item.high}</div>
-                      <div>Low: ${item.low}</div>
-                      <div>Close: ${item.close}</div>
-                      <div>Volume: ${item.volume}</div>
-                    </div>`;
-        },
-        shared: true,
-        intersect: false,
-      };
+    // If SR mode is not active, update using default annotations.
+    if (!srMode) {
+      chart.updateOptions({ annotations: { yaxis: getAnnotations(data) } });
+    }
 
-    // ------------------------------------------------------------------------------------
-    // Update Chart Options (zoom, annotations, etc.)
-    // ------------------------------------------------------------------------------------
-    const newOptions = {
-      chart: {
-        noData: { text: "Loading..." },
-        group: "news_charts",
-        animations: { enabled: true },
-        toolbar: { autoSelected: "pan" },
-        zoom: { enabled: true, type: "xy" },
-        id: "candlestick-chart",
-        events: {
-          zoomed: function (chartContext, { xaxis, yaxis }) {
-            currentXMin = xaxis.min;
-            currentXMax = xaxis.max;
-            currentYMin = yaxis.min;
-            currentYMax = yaxis.max;
-          },
-          click: function (event, chartContext, config) {
-            if (newsMode) {
-              try {
-                const candleIndex = config.dataPointIndex;
-                if (candleIndex >= 0 && data && data[candleIndex]) {
-                  const candleTime = new Date(data[candleIndex].datetime);
-                  let timeRange = 3600000;
-                  if (data.length >= 2 && candleIndex > 0) {
-                    const prevTime = new Date(data[candleIndex - 1].datetime).getTime();
-                    const currTime = candleTime.getTime();
-                    timeRange = currTime - prevTime;
-                  }
-                  const relatedNews = fetchedNews
-                    ? fetchedNews.filter((news) => {
-                      let newsTime = news.pubDate * 1000;
-                      return (
-                        newsTime >= candleTime.getTime() &&
-                        newsTime < candleTime.getTime() + timeRange
-                      );
-                    })
-                    : [];
+    // Force a chart update/resize to solve the blank display issue.
+    // window.dispatchEvent(new Event("resize"));
+    ;
 
-                  showNewsModal(relatedNews);
-                }
-              } catch (err) {
-                console.error("Error during news mode click event:", err);
-              }
-              return;
-            }
-            if (drawingMode || alertDrawingMode) {
-              try {
-                const globals = chartContext.w.globals;
-                const offsetY = event.offsetY;
-                const gridHeight = globals.gridHeight;
-                if (!gridHeight) return;
-                const minY = globals.minY;
-                const maxY = globals.maxY;
-                const gridSpacing = 5;
-                const extraPoints = gridSpacing + 2;
-                const price =
-                  Math.round((maxY - (offsetY / gridHeight) * (maxY - minY)) * 100) / 100 + extraPoints;
-                const alertOn = alertDrawingMode;
-                drawnLines.push({ price, alertOn, alertTriggered: false });
-                updateAnnotationsWrapper(data);
-              } catch (err) {
-                console.error("Error during drawing click event:", err);
-              }
-            }
-          },
-        },
-      },
-      plotOptions: {
-        candlestick: {
-          colors: { upward: bullishColor, downward: bearishColor },
-        },
-      },
-      xaxis: {
-        type: "datetime",
-        min: currentXMin,
-        max: newXMax || currentXMax,
-      },
-      yaxis: {
-        tooltip: { enabled: true },
-        opposite: true,
-        min: currentYMin,
-        max: currentYMax,
-      },
-      annotations: { yaxis: getAnnotations(data) },
-      tooltip: tooltipOptions,
-    };
-
-    chart.updateOptions(newOptions).catch((err) =>
-      console.error("Error updating chart options:", err)
-    );
-
-    // ------------------------------------------------------------------------------------
-    // Update Trend, MACD, and Price Info Display
-    // ------------------------------------------------------------------------------------
+    // Update other UI elements (MACD, Price, Trend indicators, etc.)
     const lastCandle = data[data.length - 1];
     const macdSignal = lastCandle.MACD_signal == lastCandle.MACD;
     if (macdSignal) {
@@ -623,7 +571,8 @@ async function updateChart() {
       document.getElementById("macd-recommendation").innerText = "SELL";
     }
     const currentPrice = lastCandle.close;
-    const currentPriceColor = lastCandle.close > lastCandle.open ? bullishColor : bearishColor;
+    const currentPriceColor =
+      lastCandle.close > lastCandle.open ? bullishColor : bearishColor;
     if (document.getElementById("trend-recommendation")) {
       document.getElementById("trend-recommendation").innerText =
         lastCandle.TREND_RECOMMENDATION || "N/A";
@@ -633,7 +582,8 @@ async function updateChart() {
         lastCandle.TREND_STRENGTH !== undefined ? lastCandle.TREND_STRENGTH : "N/A";
     }
     if (document.getElementById("current-price")) {
-      document.getElementById("current-price").innerHTML = `<span style="color:${currentPriceColor}; font-weight:bold;">${currentPrice.toFixed(2)}</span>`;
+      document.getElementById("current-price").innerHTML =
+        `<span style="color:${currentPriceColor}; font-weight:bold;">${currentPrice.toFixed(2)}</span>`;
     }
   } catch (err) {
     console.error("Error in updateChart function:", err);
@@ -641,7 +591,7 @@ async function updateChart() {
 }
 
 // ----------------------------------------------------------------------------------------
-// Initial Chart Options
+// Initial Chart Options & Volume Chart Options
 // ----------------------------------------------------------------------------------------
 const chartOptions = {
   chart: {
@@ -664,17 +614,17 @@ const chartOptions = {
         if (newsMode) {
           try {
             const candleIndex = config.dataPointIndex;
-            if (candleIndex >= 0) {
-              const candleTime = new Date(chartContext.w.globals.seriesX[0][candleIndex]);
+            if (candleIndex >= 0 && currentChartData && currentChartData[candleIndex]) {
+              const candleTime = new Date(currentChartData[candleIndex].datetime);
               let timeRange = 3600000;
-              if (chartContext.w.globals.seriesX[0].length >= 2 && candleIndex > 0) {
-                const prevTime = new Date(chartContext.w.globals.seriesX[0][candleIndex - 1]).getTime();
+              if (currentChartData.length >= 2 && candleIndex > 0) {
+                const prevTime = new Date(currentChartData[candleIndex - 1].datetime).getTime();
                 const currTime = candleTime.getTime();
                 timeRange = currTime - prevTime;
               }
               const relatedNews = fetchedNews
                 ? fetchedNews.filter((news) => {
-                  const newsTime = news.pubDate * 1000;
+                  let newsTime = news.pubDate * 1000;
                   return (
                     newsTime >= candleTime.getTime() &&
                     newsTime < candleTime.getTime() + timeRange
@@ -684,7 +634,7 @@ const chartOptions = {
               showNewsModal(relatedNews);
             }
           } catch (err) {
-            console.error("Error in news mode chart click event:", err);
+            console.error("Error during news mode click event:", err);
           }
           return;
         }
@@ -694,15 +644,17 @@ const chartOptions = {
             const offsetY = event.offsetY;
             const gridHeight = globals.gridHeight;
             if (!gridHeight) return;
+            const minY = globals.minY;
+            const maxY = globals.maxY;
             const gridSpacing = 5;
             const extraPoints = gridSpacing + 2;
             const price =
-              Math.round((globals.maxY - (offsetY / gridHeight) * (globals.maxY - globals.minY)) * 100) / 100 +
+              Math.round((maxY - (offsetY / gridHeight) * (maxY - minY)) * 100) / 100 +
               extraPoints;
             drawnLines.push({ price, alertOn: alertDrawingMode, alertTriggered: false });
-            updateAnnotationsWrapper([]);
+            updateAnnotationsWrapper(currentChartData);
           } catch (err) {
-            console.error("Error in chart click event:", err);
+            console.error("Error during drawing click event:", err);
           }
         }
       },
@@ -762,9 +714,6 @@ const chartOptions = {
     },
 };
 
-// ----------------------------------------------------------------------------------------
-// Volume Chart Initial Options
-// ----------------------------------------------------------------------------------------
 const volumeOptions = {
   chart: {
     noData: { text: "Loading..." },
@@ -781,7 +730,7 @@ const volumeOptions = {
     animations: { enabled: true },
     toolbar: { show: false },
     brush: {
-      enabled: true,
+      enabled: false,
       target: "candlestick-chart",
     },
   },
@@ -790,8 +739,11 @@ const volumeOptions = {
   plotOptions: {
     bar: { columnWidth: "60%" },
   },
+  dataLabels: {
+    enabled: false,
+  } ,
   tooltip: { shared: true, intersect: false },
-  yaxis: { labels: { show: false }, opposite: true },
+  yaxis: { labels: { show: false }, opposite: false },
 };
 
 // ----------------------------------------------------------------------------------------
@@ -804,16 +756,17 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!chartContainer) throw new Error("Element with id 'chart' not found.");
     if (!volumeContainer) throw new Error("Element with id 'volume-chart' not found.");
 
+    // Initialize charts
     chart = new ApexCharts(chartContainer, chartOptions);
-    chart.render().catch((e) =>
-      console.error("Error rendering candlestick chart:", e)
-    );
+    chart
+      .render()
+      .catch((e) => console.error("Error rendering candlestick chart:", e));
     volumeChart = new ApexCharts(volumeContainer, volumeOptions);
-    volumeChart.render().catch((e) =>
-      console.error("Error rendering volume chart:", e)
-    );
+    volumeChart
+      .render()
+      .catch((e) => console.error("Error rendering volume chart:", e));
 
-    // Set up Draw Line button
+    // Toggle Draw Line Mode
     const drawLineBtn = document.getElementById("draw-line-button");
     if (drawLineBtn) {
       drawLineBtn.addEventListener("click", function () {
@@ -825,7 +778,7 @@ document.addEventListener("DOMContentLoaded", function () {
       console.warn("draw-line-button not found.");
     }
 
-    // Toggle Alert button
+    // Toggle Alert Drawing Mode
     const toggleAlertBtn = document.getElementById("toggle-alert-button");
     if (toggleAlertBtn) {
       toggleAlertBtn.addEventListener("click", function () {
@@ -837,7 +790,7 @@ document.addEventListener("DOMContentLoaded", function () {
       console.warn("toggle-alert-button not found.");
     }
 
-    // Remove Drawn Lines
+    // Remove Drawn Lines Button
     const removeLineBtn = document.getElementById("remove-line-button");
     if (removeLineBtn) {
       removeLineBtn.addEventListener("click", function () {
@@ -879,7 +832,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 drawnLines.splice(n - 1, 1);
               }
             });
-            updateAnnotationsWrapper([]);
+            updateAnnotationsWrapper(currentChartData);
           }
           document.getElementById("removal-modal").classList.add("hidden");
         } catch (err) {
@@ -903,8 +856,7 @@ document.addEventListener("DOMContentLoaded", function () {
       marketSelect.addEventListener("change", function (e) {
         const selectedId = parseInt(e.target.value);
         currentMarketId = selectedId;
-        const market = activeMarkets.find((m) => m.id === selectedId);
-        updateMarketInfo(market);
+        // updateMarketInfo() could be defined elsewhere as needed.
         updateChart();
       });
     }
@@ -971,15 +923,37 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
 
-    if (typeof fetchActiveMarkets === "function") {
-      fetchActiveMarkets();
+    // SR Mode Toggle Button
+    const srModeBtn = document.getElementById("sr-mode-button");
+    if (srModeBtn) {
+      srModeBtn.addEventListener("click", function () {
+        srMode = !srMode;
+        this.classList.toggle("bg-blue-600", srMode);
+        this.classList.toggle("bg-gray-400", !srMode);
+
+        if (srMode) {
+          // Immediately fetch SR data and set interval to update every 5 minutes.
+          fetchAndUpdateSRLevels();
+          srModeInterval = setInterval(fetchAndUpdateSRLevels, 300000);
+        } else {
+          // If deactivated, clear the interval and restore default annotations.
+          if (srModeInterval) {
+            clearInterval(srModeInterval);
+            srModeInterval = null;
+          }
+          chart.updateOptions({ annotations: { yaxis: getAnnotations(currentChartData) } });
+        }
+      });
+    } else {
+      console.warn("Element with id 'sr-mode-button' not found.");
     }
+
+    // Start regular chart updates every 10 seconds.
     setInterval(updateChart, 10000);
   } catch (err) {
     console.error("Error during DOMContentLoaded initialization:", err);
   }
 });
-
 // ----------------------------------------------------------------------------------------
 // Utility: Generate Date String Based on Limit & Timeframe
 // ----------------------------------------------------------------------------------------
@@ -1604,7 +1578,7 @@ const TechnicalAnalysisComponent = (function () {
       // Combine recommendations with AI recommends and update the container.
       document.getElementById('recomendations').innerHTML = recomendationHTML + aiRecommendsHTML;
 
-      
+
     } // end updateTradeRecs
 
     // Initial call to update trade recommendations based on default risk management parameters.
