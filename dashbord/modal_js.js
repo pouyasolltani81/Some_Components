@@ -69,125 +69,129 @@ class SmartCoinAnalysCard {
 
   createModal() {
     const cardHTML = `
-          <div id="${this.prefixId}" class="max-w-[1000px] bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in hidden">
-            <div class="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center">
-              <button class="close-button hover:bg-purple-700 p-1 rounded-full transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              <div class="text-lg font-semibold">📊 تحلیل کوین</div>
-            </div>
+          <!-- Modal Backdrop & Container -->
+<div id="${this.prefixId}" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+  <!-- Modal -->
+  <div  class="max-w-[1000px] w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-fade-in">
+    <!-- Header -->
+    <div class="p-4 bg-gray-100 border-b border-gray-300 text-gray-800 flex justify-between items-center">
+      <button class="close-button hover:bg-gray-200 p-1 rounded-full transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <div class="text-lg font-semibold">📊 تحلیل کوین</div>
+    </div>
 
-            <div class="p-6 space-y-4" id="${this.prefixId}_InputForm">
-              <div class="space-y-2">
-                <label class="text-gray-700">💱 جفت ارز:</label>
-                <select id="${this.prefixId}_coinPair" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                </select>
-              </div>
+    <!-- Input Form -->
+    <div class="p-6 space-y-4" id="${this.prefixId}_InputForm">
+      <div class="space-y-2">
+        <label class="text-gray-800">💱 جفت ارز:</label>
+        <select id="${this.prefixId}_coinPair" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+      </div>
 
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <label class="text-gray-700">⏱️ تایم فریم:</label>
-                  <select id="${this.prefixId}_timeFrame" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option value="1m">1Min</option>
-                    <option value="5m">5Min</option>
-                    <option value="15m">15Min</option>
-                    <option value="30m">30Min</option>
-                    
-                    <option value="1h">1H</option>
-                    <option value="2h">2H</option>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <label class="text-gray-800">⏱️ تایم فریم:</label>
+          <select id="${this.prefixId}_timeFrame" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="1m">1Min</option>
+            <option value="5m">5Min</option>
+            <option value="15m">15Min</option>
+            <option value="30m">30Min</option>
+            <option value="1h">1H</option>
+            <option value="2h">2H</option>
+            <option value="4h" selected>4H</option>
+            <option value="1d">1D</option>
+            <option value="1w">1W</option>
+          </select>
+        </div>
+        <div class="space-y-2">
+          <label class="text-gray-800">🕒 تعداد کندل:</label>
+          <input type="number" id="${this.prefixId}_candleCount" value="10" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
 
-                    <option value="4h" selected>4H</option>
-                    <option value="1d">1D</option>
-                    <option value="1w">1W</option>
-                  </select>
-                </div>
-                <div class="space-y-2">
-                  <label class="text-gray-700">🕒 تعداد کندل:</label>
-                  <input type="number" id="${this.prefixId}_candleCount" value="10" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                </div>
-              </div>
+      <div class="space-y-2">
+        <label class="text-gray-800">📰 استفاده از اخبار:</label>
+        <select id="${this.prefixId}_useNews" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="true" selected>✅ بله</option>
+          <option value="false">❌ خیر</option>
+        </select>
+      </div>
 
-              <div class="space-y-2">
-                <label class="text-gray-700">📰 استفاده از اخبار:</label>
-                <select id="${this.prefixId}_useNews" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="true" selected>✅ بله</option>
-                  <option value="false">❌ خیر</option>
-                </select>
-              </div>
+      <div class="space-y-2">
+        <label class="text-gray-800">📊 استفاده از اندیکاتورها:</label>
+        <select id="${this.prefixId}_useIndicator" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="true">✅ بله</option>
+          <option value="false" selected>❌ خیر</option>
+        </select>
+      </div>
 
-              <div class="space-y-2">
-                <label class="text-gray-700">📊 استفاده از اندیکاتورها:</label>
-                <select id="${this.prefixId}_useIndicator" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="true" >✅ بله</option>
-                  <option value="false" selected>❌ خیر</option>
-                </select>
-              </div>
+      <button class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors analysis-button">
+        تحلیل 🔍
+      </button>
+    </div>
 
-              <button class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors analysis-button">
-                تحلیل ✨
-              </button>
-            </div>
+    <!-- Waiting Message -->
+    <div class="p-6 bg-blue-50 text-blue-700 hidden waiting-message animate-slide-up">
+      <div class="flex items-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        <span>در حال دریافت داده‌ها... لطفا منتظر بمانید. ⏳</span>
+      </div>
+    </div>
 
-            <div class="p-6 bg-yellow-100 hidden waiting-message animate-slide-up">
-              <div class="flex items-center space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span>در حال دریافت داده‌ها... لطفا منتظر بمانید. ⏳</span>
-              </div>
-            </div>
+    <!-- Analysis Answer -->
+    <div class="p-6 space-y-4 hidden analysis-answer animate-slide-up">
+      <div class="flex justify-between items-center">
+        <div class="text-lg font-semibold" id="${this.prefixId}_pairName">XRP/USDT</div>
+        <div class="px-4 py-2 bg-green-100 text-green-800 rounded-lg" id="${this.prefixId}_decision">تصمیم</div>
+      </div>
+      <div class="space-y-2 text-gray-800">
+        <div class="flex justify-between">
+          <span>📐 الگو:</span>
+          <span id="${this.prefixId}_pattern">-</span>
+        </div>
+        <div class="flex justify-between">
+          <span>⌛ مدت:</span>
+          <span id="${this.prefixId}_duration">-</span>
+        </div>
+        <div class="flex justify-between">
+          <span>📅 آخرین بروزرسانی:</span>
+          <span id="${this.prefixId}_updatedAt">-</span>
+        </div>
+        <div class="flex flex-col">
+          <span>✨ آنالیز:</span>
+          <span id="${this.prefixId}_analyse">-</span>
+        </div>
+        <div class="flex flex-col">
+          <span>📝 خلاصه اخبار:</span>
+          <span id="${this.prefixId}_summery">-</span>
+        </div>
+      </div>
 
-            <div class="p-6 space-y-4 hidden analysis-answer animate-slide-up">
-              <div class="flex justify-between items-center">
-                <div class="text-lg font-semibold" id="${this.prefixId}_pairName">XRP/USDT</div>
-                <div class="px-4 py-2 bg-green-100 text-green-800 rounded-lg" id="${this.prefixId}_decision">تصمیم</div>
-              </div>
-              <div class="space-y-2">
-                <div class="flex justify-between">
-                  <span class="text-gray-700">📐 الگو:</span>
-                  <span id="${this.prefixId}_pattern">-</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-700">⌛ مدت:</span>
-                  <span id="${this.prefixId}_duration">-</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-700">📅 آخرین بروزرسانی:</span>
-                  <span id="${this.prefixId}_updatedAt">-</span>
-                </div>
+      <div class="space-y-2">
+        <label class="text-gray-800">📰 اخبار مرتبط:</label>
+        <div class="news-container bg-gray-50 p-2 rounded-lg" dir='ltr'>
+          <div id="${this.prefixId}_newsList" class="space-y-2"></div>
+        </div>
+        <button id="${this.prefixId}_showMoreNews" class="w-full py-1 text-blue-600 hover:text-blue-700 transition-colors hidden">
+          نمایش بیشتر
+        </button>
+      </div>
 
-                <div class="flex flex-col justify-between">
-                  <span class="text-gray-700">✨ آنالیز:</span>
-                  <span id="${this.prefixId}_analyse">-</span>
-                </div>
+      <button class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors refresh-button">
+        تجزیه و تحلیل مجدد 🔄
+      </button>
 
-                <div class="flex flex-col justify-between">
-                  <span class="text-gray-700">📝 خلاصه اخبار:</span>
-                  <span id="${this.prefixId}_summery">-</span>
-                </div>
-              </div>
+      <button class="w-full py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors more-info-button">
+        اطلاعات بیشتر
+      </button>
+    </div>
+  </div>
+</div>
 
-              <div class="space-y-2">
-                <label class="text-gray-700">📰 اخبار مرتبط:</label>
-                <div class="news-container bg-gray-50 p-2 rounded-lg" dir='ltr'>
-                  <div id="${this.prefixId}_newsList" class="space-y-2"></div>
-                </div>
-                <button id="${this.prefixId}_showMoreNews" class="w-full py-1 text-purple-600 hover:text-purple-700 transition-colors hidden">
-                  نمایش بیشتر
-                </button>
-              </div>
-
-              <button class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors refresh-button">
-                تجزیه و تحلیل مجدد 🔄
-              </button>
-
-              <button class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors more-info-button">
-                اطلاعات بیشتر
-              </button>
-            </div>
-          </div>
           `;
 
     const tempDiv = document.createElement("div");

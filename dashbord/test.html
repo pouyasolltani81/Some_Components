@@ -42,9 +42,15 @@
         }
       }
 
+
       createDampChart(elementId) {
+
+        
         const { daily_timeseries } = this.data;
         
+        let new_timestamp = daily_timeseries.timestamp.map(t => t * 1000)
+
+
         return new ApexCharts(document.querySelector(elementId), {
           chart: {
             type: 'line',
@@ -53,15 +59,19 @@
           },
           series: [
             { name: 'DAMP 5', data: daily_timeseries.damp_5 },
-            { name: 'DAMP 10', data: daily_timeseries.damp_10 }
+            { name: 'DAMP 10', data: daily_timeseries.damp_10 },
+            { name: 'DAMP 15', data: daily_timeseries.damp_15 },
+            { name: 'DAMP 20', data: daily_timeseries.damp_20 },
+            // { name: 'DAMP 25', data: daily_timeseries.damp_25 },
+
           ],
           xaxis: {
             type: 'datetime',
-            categories: daily_timeseries.timestamp.map(t => new Date(t * 1000))
+            categories: new_timestamp
           },
           yaxis: { title: { text: 'DAMP Values' } },
           stroke: { width: 2, curve: 'smooth' },
-          colors: ['#3B82F6', '#10B981'],
+          colors: ['#3B82F6', '#10B981' , '#D5D1D8' , '#FF6178' , ],
           tooltip: {
             x: { format: 'dd MMM yyyy' }
           }
@@ -70,6 +80,9 @@
 
       createNewsCountChart(elementId) {
         const { daily_timeseries } = this.data;
+
+
+        let new_timestamp = daily_timeseries.timestamp.map(t => t * 1000)
         
         return new ApexCharts(document.querySelector(elementId), {
           chart: {
@@ -80,7 +93,7 @@
           series: [{ name: 'News Count', data: daily_timeseries.newsCount }],
           xaxis: {
             type: 'datetime',
-            categories: daily_timeseries.timestamp.map(t => new Date(t * 1000))
+            categories: new_timestamp
           },
           yaxis: { title: { text: 'News Count' } },
           colors: ['#F59E0B'],
@@ -127,33 +140,11 @@
         const { latest_price_info, latest_news_info } = this.data;
 
         this.parentElement.innerHTML = `
-          <!-- Header -->
-          <div class="flex items-center mb-8">
-            <img src="${this.data.logo}" class="w-16 h-16 mr-4 rounded-full">
-            <div>
-              <h1 class="text-3xl font-bold">${this.data.name}</h1>
-              <p class="text-gray-600 text-sm">${this.data.description}</p>
-            </div>
-          </div>
+         
 
-          <!-- Price -->
-          <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-            <div class="flex justify-between items-center">
-              <div>
-                <span class="text-2xl font-bold">$${latest_price_info.formatted_price}</span>
-                <span class="ml-2 ${latest_price_info.change_rate >= 0 ? 'text-green-500' : 'text-red-500'}">
-                  ${latest_price_info.change_rate}%
-                </span>
-              </div>
-              <div class="text-right">
-                <div>24H High: $${latest_price_info.high_price}</div>
-                <div>24H Low: $${latest_price_info.low_price}</div>
-              </div>
-            </div>
-          </div>
 
           <!-- Stats Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <!-- News Stats with Donut -->
             <div class="bg-white p-6 rounded-lg shadow-md">
               <h3 class="text-xl font-semibold mb-4">News Statistics</h3>
@@ -163,34 +154,14 @@
                 <div id="sentimentChart"></div>
               </div>
             </div>
-            
-            <!-- Market Stats -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-              <h3 class="text-xl font-semibold mb-4">Market Stats</h3>
-              <div class="space-y-2">
-                <div>Volume: ${latest_price_info.volume}</div>
-                <div>Market: ${latest_price_info.market_name}</div>
-                <div>Rate: ${this.data.rate}%</div>
-              </div>
-            </div>
 
-            <!-- Change Stats -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-              <h3 class="text-xl font-semibold mb-4">Change Statistics</h3>
-              <div class="space-y-2">
-                ${Object.entries(latest_news_info.change_stat).map(
-                  ([k, v]) => `
-                    <div class="flex justify-between">
-                      <span>${k.replace(/_/g,' ')}:</span>
-                      <span>${v.percent_change_24h?.toFixed(2) || ''}%</span>
-                    </div>`
-                ).join('')}
-              </div>
-            </div>
-          </div>
+
 
           <!-- DAMP Chart -->
-          <div id="dampChart" class="bg-white p-6 rounded-lg shadow-md mb-8"></div>
+          <div id="dampChart" class="bg-white p-6 rounded-lg shadow-md "></div>
+            
+          </div>
+
           
           <!-- News Count Chart -->
           <div id="newsCountChart" class="bg-white p-6 rounded-lg shadow-md"></div>
@@ -200,7 +171,7 @@
         setTimeout(() => {
           this.createSentimentDonut('#sentimentChart').render();
           this.createDampChart('#dampChart').render();
-          this.createNewsCountChart('#newsCountChart').render();
+          // this.createNewsCountChart('#newsCountChart').render();
         }, 100);
       }
     }

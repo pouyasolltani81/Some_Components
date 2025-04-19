@@ -5,6 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Financial Display - Market Pair Details</title>
+
+  <link rel="stylesheet" href="loading_and_animations.css">
   <!-- Tailwind CSS CDN -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.css" rel="stylesheet">
   <!-- Axios for API calls -->
@@ -35,6 +37,18 @@
 </head>
 
 <body class="bg-gray-100">
+
+
+  <!-- Loading Overlay -->
+  <div id="globalLoading"
+    class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-90 pointer-events-auto hidden">
+    <div class="loading-wave max-w-[1000px] w-full rounded-xl shadow-xl overflow-hidden animate-fade-in">
+      <div class="loading-bar"></div>
+      <div class="loading-bar"></div>
+      <div class="loading-bar"></div>
+      <div class="loading-bar"></div>
+    </div>
+  </div>
 
   <!-- Confirmation Modal -->
   <div id="confirmationModal" class="hidden fixed inset-0  bg-black bg-opacity-40 flex items-center justify-center px-4"
@@ -74,12 +88,15 @@
 
 
         <!-- Info Button -->
+
+
+
         <div class="relative inline-block">
-          <button id="info-btn" aria-label="More info" class="text-blue-600 hover:text-blue-800 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-10.75a.75.75 0 10-1.5 0v.5a.75.75 0 101.5 0v-.5zm-1.5 3a.75.75 0 011.5 0v4a.75.75 0 01-1.5 0v-4z"
-                clip-rule="evenodd" />
+          <button id="info-btn" aria-label="More info" class="text-gray-400 hover:text-blue-800 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
 
@@ -103,7 +120,7 @@
 
   <!-- Trigger Button -->
   <button id="fetchBtn"
-    class="fixed bottom-6 right-6 bg-indigo-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-105 z-20">
+    class="transition-all fixed bottom-6 right-6 bg-indigo-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-105 z-20">
     Show Analysis
   </button>
 
@@ -169,14 +186,14 @@
         <!-- Third Row -->
         <div class="grid md:grid-cols-2 gap-4">
           <div id="wallet_overview" class="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm space-y-3">
-            
+
           </div>
 
-          
+
 
 
           <div id="recomendations" class="bg-green-50 p-4 rounded-lg border border-green-200 shadow-sm">
-         
+
           </div>
         </div>
 
@@ -300,7 +317,21 @@
           </div> -->
           <div class="min-w-[120px]">
             <label for="timeframe" class="block text-sm font-medium text-gray-700 mb-2">Timeframe</label>
-            <input type="text" id="timeframe" value="1m" class="w-full px-4 py-2 rounded-lg border border-gray-200">
+            <select id="timeframe"
+              class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+              <option value="1m">1Min</option>
+              <option value="5m">5Min</option>
+              <option value="15m">15Min</option>
+              <option value="30m">30Min</option>
+
+              <option value="1h">1H</option>
+              <option value="2h">2H</option>
+
+              <option value="4h" selected>4H</option>
+              <option value="1d">1D</option>
+              <option value="1w">1W</option>
+            </select>
+            <!-- <input type="text" id="timeframe" value="1m" class="w-full px-4 py-2 rounded-lg border border-gray-200"> -->
           </div>
           <div class="min-w-[120px]">
             <label for="limit" class="block text-sm font-medium text-gray-700 mb-2">Limit</label>
@@ -321,7 +352,7 @@
         <div id="coinInfo" class="mb-6 flex flex-wrap gap-4 items-center">
           <h2 id="marketName" class="text-2xl font-semibold text-gray-900"></h2>
           <div class="flex gap-2">
-            <button id="draw-line-button" class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
+            <!-- <button id="draw-line-button" class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
               Draw Line
             </button>
             <button id="toggle-alert-button" class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
@@ -329,7 +360,7 @@
             </button>
             <button id="remove-line-button" class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
               Remove Line
-            </button>
+            </button> -->
             <button id="news-mode-button" class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
               News Mode
             </button>
@@ -344,9 +375,14 @@
       </div>
     </div>
 
+
+
+    <div id="news_statistics" class="w-full mt-4 hidden"></div>
+
+
     <!-- Advanced Tools -->
     <div id="advanced_chart_tools" class="mt-8 hidden">
-      <div class="bg-white rounded-xl shadow-lg p-8">
+      <!-- <div class="bg-white rounded-xl shadow-lg p-8">
         <div class="flex flex-col md:flex-row gap-8 justify-between">
           <div class="space-y-4">
             <h2 class="text-xl font-bold text-gray-900">Indicators & Settings</h2>
@@ -359,7 +395,7 @@
                 <input type="checkbox" id="show-ema" class="w-5 h-5 rounded border-gray-300">
                 EMA 20
               </label>
-              <label class="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg">
+              <label class="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg hidden">
                 <input type="checkbox" id="show-MACD" class="w-5 h-5 rounded border-gray-300">
                 MACD
               </label>
@@ -374,61 +410,137 @@
             </div>
           </div>
 
-          <div class="space-y-4 min-w-[300px]">
-            <div class="space-y-2">
-              <div class="flex items-center gap-4">
-                <label class="text-sm font-medium">Bullish Color:</label>
-                <input type="color" id="bullish-color" value="#008000" class="w-12 h-8 rounded">
-              </div>
-              <div class="flex items-center gap-4">
-                <label class="text-sm font-medium">Bearish Color:</label>
-                <input type="color" id="bearish-color" value="#ff0000" class="w-12 h-8 rounded">
-              </div>
+
+        </div>
+      </div> -->
+    </div>
+  </div>
+
+
+
+
+  <!-- WRAPPER THAT HOLDS BOTH MODAL + DRAWER -->
+  <div id="modal-wrapper" class="fixed top-10 right-10 z-50 hidden flex flex-row-reverse items-start">
+    <!-- MODAL -->
+    <div id="summery_modal" class="space-y-6 p-4 bg-white rounded-lg shadow-md  relative z-50" style="
+    min-width: 320px;
+">
+      <!-- DRAGGABLE HEADER -->
+      <div id="draggable-header" class="w-full cursor-move text-gray-700 font-semibold border-b pb-2 mb-2">
+        📊 Summary Panel
+      </div>
+
+      <!-- TOGGLE BUTTON -->
+      <button id="drawer-toggle" class="text-sm px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 border">
+        🧰 Tools
+      </button>
+
+
+      <!-- coin pair name  -->
+
+      <div id="advance_chart_pair_name" class="p1 font-bold"></div>
+
+      <!-- Trend Indicators -->
+      <div class="space-y-4">
+        <div class="flex items-center gap-3">
+          <div id="trend-icon" class="flex-shrink-0">
+            <!-- Dynamic SVG will be inserted here -->
+          </div>
+          <div>
+            <div class="text-sm font-medium text-gray-500">Market Trend</div>
+            <div id="trend-recommendation" class="text-xl font-bold text-gray-800">NEUTRAL</div>
+          </div>
+        </div>
+
+        <!-- Strength Meter -->
+        <div class="space-y-2">
+          <div class="flex justify-between text-sm font-medium">
+            <span class="text-gray-500">Strength</span>
+            <span id="trend-strength" class="text-gray-700">0%</span>
+          </div>
+          <div class="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div id="strength-bar" class="absolute h-full transition-all duration-500"
+              style="width: 50%; background: linear-gradient(90deg, #16a34a 0%, #dc2626 100%)">
             </div>
-            <div class="space-y-2">
-              <div class="text-lg font-semibold">
-                Trend: <span id="trend-recommendation" class="text-blue-600">NEUTRAL</span>
-              </div>
-              <div class="text-lg font-semibold">
-                MACD Signal: <span id="macd-recommendation" class="text-blue-600">NEUTRAL</span>
-              </div>
-              <div class="text-sm text-gray-500">
-                Strength: <span id="trend-strength" class="font-medium">0</span>
-              </div>
-              <div class="text-sm text-gray-500">
-                Current Price: $<span id="current-price" class="font-medium">0</span>
-              </div>
-            </div>
+          </div>
+        </div>
+
+        <!-- Price & MACD -->
+        <div class="pt-4 space-y-2 border-t">
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-medium text-gray-500">Current Price</span>
+            <span id="current-price" class="text-lg font-semibold text-gray-800">$0.00</span>
+          </div>
+          <div class="flex justify-between items-center hidden">
+            <span class="text-sm font-medium text-gray-500">MACD Signal</span>
+            <span id="macd-recommendation" class="flex items-center gap-1 text-sm font-semibold text-gray-800">
+              <span class="w-4 h-4">-</span>
+              NEUTRAL
+            </span>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- DRAWER (initially hidden using translate-x) -->
+    <div id="left-drawer"
+      class="bg-gray-50 shadow-lg rounded-l-lg w-[250px] p-4 h-full transition-transform duration-300 transform translate-x-full z-26">
+      <h2 class="text-lg font-bold text-gray-800 mb-4">Indicators & Settings</h2>
+      <div class="flex flex-col gap-3">
+        <label class="flex items-center gap-2">
+          <input type="checkbox" id="show-sma" class="w-5 h-5 rounded border-gray-300">
+          SMA 20
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" id="show-ema" class="w-5 h-5 rounded border-gray-300">
+          EMA 20
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" id="show-fib" class="w-5 h-5 rounded border-gray-300">
+          Fibonacci
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" id="show-support-resistance" class="w-5 h-5 rounded border-gray-300">
+          Support/Resistance
+        </label>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Trend SVGs Template (Hidden) -->
+  <div class="hidden">
+    <!-- Strong Uptrend -->
+    <svg id="strong-uptrend" class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M5 15l7-7 7 7m-7-7v6m-4 0h4m3-10l3 3m0 0l-3 3m3-3H9" />
+    </svg>
+
+    <!-- Uptrend -->
+    <svg id="uptrend" class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+    </svg>
+
+    <!-- Strong Downtrend -->
+    <svg id="strong-downtrend" class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M19 9l-7 7-7-7m14 6l-3 3m0 0l-3-3m3 3H6" />
+    </svg>
+
+    <!-- Downtrend -->
+    <svg id="downtrend" class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+
+    <!-- Neutral -->
+    <svg id="neutral" class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
   </div>
   <script type="module" type="module" src="maincoinpair.js"></script>
-  <!-- Scrollbar Style -->
 
-  <!-- Confirmation Script -->
-  <script>
-    let pendingAction = null;
 
-    function confirmAction(actionType) {
-      pendingAction = actionType;
-      document.getElementById('confirmationText').innerText = `Are you sure you want to perform "${actionType}"?`;
-      document.getElementById('confirmationModal').classList.remove('hidden');
-    }
 
-    function closeConfirmationModal() {
-      pendingAction = null;
-      document.getElementById('confirmationModal').classList.add('hidden');
-    }
-
-    function proceedConfirmedAction() {
-      console.log(`Confirmed action: ${pendingAction}`);
-      // Insert your action logic here
-      closeConfirmationModal();
-    }
-
-  </script>
 
 
 

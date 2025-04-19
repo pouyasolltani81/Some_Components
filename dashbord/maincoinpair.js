@@ -19,7 +19,8 @@ let srMode = false;
 let srModeInterval = null;
 
 
-
+let cryptoComponent = null;
+let first_time = true;
 let pair_name = null
 let chart, volumeChart;
 let currentCandleCount = 0;
@@ -126,7 +127,30 @@ async function fetchCoinList() {
       .then((response) => {
         const data = response.data.market_pair;
         if (data) {
+
+
           pair_name = data.pair.name
+
+
+
+
+          if (first_time) {
+
+
+
+            cryptoComponent = new CryptoDataComponent(
+              '189b4bf96bf5de782515c1b4f0b2a2c7',
+              pair_name,
+              document.getElementById('news_statistics')
+            );
+
+
+
+
+          }
+
+          first_time = false;
+
           // Update data cards
           document.getElementById("pairName").textContent = data.pair.name;
           document.getElementById("price").textContent = data.formatted_price;
@@ -224,9 +248,13 @@ async function fetchOHLCVData() {
     ? "http://188.34.202.221:8000/Market/exGetTrendWithOHLCV/"
     : "http://188.34.202.221:8000/Market/exGetOHLCV/";
   if (chart_type) {
-    document.getElementById("advanced_chart_tools").classList.remove("hidden");
+    // document.getElementById("advanced_chart_tools").classList.remove("hidden");
+    document.getElementById("modal-wrapper").classList.remove("hidden");
+
   } else {
-    document.getElementById("advanced_chart_tools").classList.add("hidden");
+    // document.getElementById("advanced_chart_tools").classList.add("hidden");
+    document.getElementById("modal-wrapper").classList.add("hidden");
+
   }
 
   try {
@@ -248,7 +276,10 @@ async function fetchOHLCVData() {
       );
       if (newsMode) {
         console.log("News mode is active");
+        // showLoading();
         await fetchNewsall(firstCandleTime);
+
+        // hideLoading();
       }
       return ohlcv;
     }
@@ -425,6 +456,13 @@ async function fetchAndUpdateSRLevels() {
 // ----------------------------------------------------------------------------------------
 // Main Chart Update Function with Optimized Data Append & Resize
 // ----------------------------------------------------------------------------------------
+let bullishColor = document.getElementById("bullish-color")
+  ? document.getElementById("bullish-color").value
+  : "#008000";
+
+let bearishColor = document.getElementById("bearish-color")
+  ? document.getElementById("bearish-color").value
+  : "#ff0000";
 async function updateChart() {
   try {
     const data = await fetchOHLCVData();
@@ -444,10 +482,10 @@ async function updateChart() {
       y: [d.open, d.high, d.low, d.close],
     }));
 
-    let bullishColor = document.getElementById("bullish-color")
+    bullishColor = document.getElementById("bullish-color")
       ? document.getElementById("bullish-color").value
       : "#008000";
-    let bearishColor = document.getElementById("bearish-color")
+    bearishColor = document.getElementById("bearish-color")
       ? document.getElementById("bearish-color").value
       : "#ff0000";
     const volumeData = data.map((d) => ({
@@ -561,25 +599,34 @@ async function updateChart() {
     // Update other UI elements (MACD, Price, Trend indicators, etc.)
     const lastCandle = data[data.length - 1];
     const macdSignal = lastCandle.MACD_signal == lastCandle.MACD;
-    if (macdSignal) {
-      macdlastsignal = lastCandle.MACD_signal;
-    } else if (macdlastsignal === 0) {
-      document.getElementById("macd-recommendation").innerText = "Waiting ...";
-    } else if (macdlastsignal > lastCandle.MACD_signal) {
-      document.getElementById("macd-recommendation").innerText = "BUY";
-    } else {
-      document.getElementById("macd-recommendation").innerText = "SELL";
-    }
+    // if (macdSignal) {
+    //   macdlastsignal = lastCandle.MACD_signal;
+    // } else if (macdlastsignal === 0) {
+    //   document.getElementById("macd-recommendation").innerText = "Waiting ...";
+    // } else if (macdlastsignal > lastCandle.MACD_signal) {
+    //   document.getElementById("macd-recommendation").innerText = "BUY";
+    // } else {
+    //   document.getElementById("macd-recommendation").innerText = "SELL";
+    // }
     const currentPrice = lastCandle.close;
     const currentPriceColor =
       lastCandle.close > lastCandle.open ? bullishColor : bearishColor;
+
+    console.log('update trend', lastCandle.TREND_RECOMMENDATION);
+
+
+    document.getElementById('advance_chart_pair_name').innerText = pair_name
+
+
+
+    updateTrend(lastCandle.TREND_RECOMMENDATION, lastCandle.TREND_STRENGTH)
     if (document.getElementById("trend-recommendation")) {
       document.getElementById("trend-recommendation").innerText =
         lastCandle.TREND_RECOMMENDATION || "N/A";
     }
     if (document.getElementById("trend-strength")) {
       document.getElementById("trend-strength").innerText =
-        lastCandle.TREND_STRENGTH !== undefined ? lastCandle.TREND_STRENGTH : "N/A";
+        lastCandle.TREND_STRENGTH !== undefined ? lastCandle.TREND_STRENGTH.toFixed(2) : "N/A";
     }
     if (document.getElementById("current-price")) {
       document.getElementById("current-price").innerHTML =
@@ -588,6 +635,29 @@ async function updateChart() {
   } catch (err) {
     console.error("Error in updateChart function:", err);
   }
+}
+
+
+function updateTrend(recommendation, strength) {
+  const icons = {
+    'STRONG_UPTREND': '#strong-uptrend',
+    'UPTREND': '#uptrend',
+    'STRONG_DOWNTREND': '#strong-downtrend',
+    'DOWNTREND': '#downtrend',
+    'NEUTRAL': '#neutral'
+  };
+
+  const icon = document.querySelector(icons[recommendation]).cloneNode(true);
+  icon.classList.remove('hidden');
+  document.getElementById('trend-icon').innerHTML = '';
+  document.getElementById('trend-icon').appendChild(icon);
+
+  // Update strength meter
+  const strengthBar = document.getElementById('strength-bar');
+  strengthBar.style.width = `${Math.abs(strength)}%`;
+  strengthBar.style.background = strength >= 0
+    ? `linear-gradient(90deg, ${bullishColor} 0%, #fff 100%)`
+    : `linear-gradient(90deg, #fff 0%, ${bearishColor} 100%)`;
 }
 
 // ----------------------------------------------------------------------------------------
@@ -741,7 +811,7 @@ const volumeOptions = {
   },
   dataLabels: {
     enabled: false,
-  } ,
+  },
   tooltip: { shared: true, intersect: false },
   yaxis: { labels: { show: false }, opposite: false },
 };
@@ -865,6 +935,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const newsModeBtn = document.getElementById("news-mode-button");
     if (newsModeBtn) {
       newsModeBtn.addEventListener("click", function () {
+
+        cryptoComponent.fetchData();
+        document.getElementById('news_statistics').classList.toggle('hidden')
         newsMode = !newsMode;
         this.classList.toggle("bg-blue-600", newsMode);
         this.classList.toggle("bg-gray-400", !newsMode);
@@ -1226,7 +1299,6 @@ const TechnicalAnalysisComponent = (function () {
     analysisDateEl.textContent = `${analysisDate}`;
 
     const signal = fetchedData.signal.signal;
-    const pair_name = fetchedData.pair_name; // assuming pair_name is available
     const rec = fetchedData.signal.recommendation;
 
     const actionHTML = `
@@ -1236,10 +1308,18 @@ const TechnicalAnalysisComponent = (function () {
       <div class="p-2 bg-blue-100 rounded-lg">
         📈
       </div>
-      <h4 class="text-xl font-bold text-gray-800">
+      <h4 class="text-xl font-bold text-gray-800  flex flex-col items-center">
         Trading Recommendation
         <span class="block text-sm font-normal text-gray-500">Based on technical analysis</span>
       </h4>
+
+        <button id="trading_recom_info" class=" text-gray-400 hover:text-indigo-600 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
     </div>
 
     <!-- Recommendation Grid -->
@@ -1291,6 +1371,9 @@ const TechnicalAnalysisComponent = (function () {
 
     document.getElementById('recommendationActionContainer').innerHTML = actionHTML;
 
+    console.log(pair_name);
+
+
     // Build the primary signal display
     const signalHTML = `
         <div class="flex items-center justify-between">
@@ -1322,7 +1405,17 @@ const TechnicalAnalysisComponent = (function () {
 
     // Build Support Levels display
     const supportHTML = `
-        <h4 class="text-lg font-semibold mb-4 text-green-600">Support Levels</h4>
+      <div class='flex gap-4'>
+      <h4 class="text-lg font-semibold mb-4 text-green-600">Support Levels</h4>
+        <button id="support_info" class=" text-gray-400 hover:text-indigo-600 transition-colors hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+        </div>
+        
         <div class="space-y-3">
           ${rec.support_levels
         .map(level => `
@@ -1353,7 +1446,17 @@ const TechnicalAnalysisComponent = (function () {
     // Wallet Overview (kept as before)
     const walletHTML = `
       <!-- Wallet Overview -->
+      <div class='flex gap-4'>
       <h4 class="text-base font-semibold flex items-center gap-2 text-gray-700">💰 Wallet Overview</h4>
+       <button id="wallet_info" class=" text-gray-400 hover:text-indigo-600 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+      </div>
+      
       <div class="grid md:grid-cols-2 gap-3">
         <!-- Current Balance -->
         <div class="flex items-center gap-3">
@@ -1475,7 +1578,19 @@ const TechnicalAnalysisComponent = (function () {
 
       // Build the Suggested Actions section with dynamic profits and rec data.
       const recomendationHTML = `
-        <h4 class="text-base font-semibold mb-3 flex items-center gap-2 text-gray-700">🚀 Suggested Actions</h4>
+        <div class='flex gap-4 mb-3'>
+
+          <h4 class="text-base font-semibold  flex items-center gap-2 text-gray-700">🚀 Suggested Actions</h4>
+          <button id="actions_info" class=" text-gray-400 hover:text-indigo-600 transition-colors ">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+
+          </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div class="space-y-3">
             <!-- Optimal Risk Buy/Sell -->
@@ -1631,7 +1746,14 @@ const TechnicalAnalysisComponent = (function () {
 
   function init() {
     fetchBtn.addEventListener("click", async function () {
-      fetchBtn.textContent = "Loading...";
+      // fetchBtn.textContent = "Loading...";
+      fetchBtn.innerHTML = `<div class="loading-wave h-[10px]">
+  <div class="loading-bar"></div>
+  <div class="loading-bar"></div>
+  <div class="loading-bar"></div>
+  <div class="loading-bar"></div>
+</div>`;
+
       fetchBtn.classList.add("bg-gray-400", "cursor-not-allowed");
       fetchBtn.disabled = true;
       const fetchedData = await fetchTechnicalData();
@@ -1665,4 +1787,589 @@ const TechnicalAnalysisComponent = (function () {
 
 document.addEventListener("DOMContentLoaded", function () {
   TechnicalAnalysisComponent.init();
+});
+
+
+
+let pendingAction = null;
+
+function confirmAction(actionType) {
+  pendingAction = actionType;
+  document.getElementById('confirmationText').innerText = `Are you sure you want to perform "${actionType}"?`;
+  document.getElementById('confirmationModal').classList.remove('hidden');
+}
+
+function closeConfirmationModal() {
+  pendingAction = null;
+  document.getElementById('confirmationModal').classList.add('hidden');
+}
+
+function proceedConfirmedAction() {
+  console.log(`Confirmed action: ${pendingAction}`);
+  // Insert your action logic here
+  closeConfirmationModal();
+}
+
+
+// loading 
+
+function showLoading() {
+  const loading = document.getElementById('globalLoading');
+  loading.classList.remove('hidden');
+  document.body.style.overflow = 'hidden'; // prevent scroll
+  document.body.style.pointerEvents = 'none'; // prevent interaction
+}
+
+function hideLoading() {
+  const loading = document.getElementById('globalLoading');
+  loading.classList.add('hidden');
+  document.body.style.overflow = ''; // restore scroll
+  document.body.style.pointerEvents = ''; // restore interaction
+}
+
+
+
+
+
+// news components 
+
+
+// class CryptoDataComponent {
+//   constructor(userToken, coinPair, parentElement) {
+//     this.userToken = userToken;
+//     this.coinPair = coinPair;
+//     this.parentElement = parentElement;
+//     this.data = null;
+//   }
+
+//   async fetchData() {
+//     try {
+//       console.log('news component test', this.coinPair);
+
+//       const params = { name: this.coinPair };
+//       const response = await axios.post(
+//         "http://79.175.177.113:15800/AimoonxNewsHUB/Symbols/ex_getSymbolInfo/",
+//         params,
+//         {
+//           headers: {
+//             Accept: "application/json",
+//             "Content-Type": "application/json; charset=utf-8",
+//             Authorization: this.userToken,
+//           },
+//         }
+//       );
+//       this.data = response.data.data[0];
+//       this.render();
+//     } catch (error) {
+//       console.error('Error fetching data:', error);
+//       this.parentElement.innerHTML = `<div class="p-4 text-red-500">Error loading data</div>`;
+//     }
+//   }
+
+
+//   createDampChart(elementId) {
+
+
+//     const { daily_timeseries } = this.data;
+
+
+
+//     let new_timestamp = daily_timeseries.timestamp.map(t => t * 1000)
+
+
+//     return new ApexCharts(document.querySelector(elementId), {
+//       chart: {
+//         type: 'line',
+//         height: 350,
+//         toolbar: { show: true }
+//       },
+//       series: [
+//         { name: 'DAMP 5', data: daily_timeseries.damp_5 },
+//         { name: 'DAMP 10', data: daily_timeseries.damp_10 },
+//         { name: 'DAMP 15', data: daily_timeseries.damp_15 },
+//         { name: 'DAMP 20', data: daily_timeseries.damp_20 },
+//         { name: 'DAMP 30', data: daily_timeseries.damp_30 },
+
+//         // { name: 'DAMP 25', data: daily_timeseries.damp_25 },
+
+//       ],
+//       xaxis: {
+//         type: 'datetime',
+//         categories: new_timestamp
+//       },
+//       yaxis: { title: { text: 'DAMP Values' } },
+//       stroke: { width: 2, curve: 'smooth' },
+//       colors: ['#3B82F6', '#10B981', '#D5D1D8', '#FF6178',],
+//       tooltip: {
+//         x: { format: 'dd MMM yyyy' }
+//       }
+//     });
+//   }
+
+//   createNewsCountChart(elementId) {
+//     const { daily_timeseries } = this.data;
+
+
+//     let new_timestamp = daily_timeseries.timestamp.map(t => t * 1000)
+
+//     return new ApexCharts(document.querySelector(elementId), {
+//       chart: {
+//         type: 'bar',
+//         height: 350,
+//         toolbar: { show: true }
+//       },
+//       series: [{ name: 'News Count', data: daily_timeseries.newsCount }],
+//       xaxis: {
+//         type: 'datetime',
+//         categories: new_timestamp
+//       },
+//       yaxis: { title: { text: 'News Count' } },
+//       colors: ['#F59E0B'],
+//       plotOptions: {
+//         bar: { columnWidth: '80%' }
+//       },
+//       tooltip: {
+//         x: { format: 'dd MMM yyyy' }
+//       }
+//     });
+//   }
+
+//   createSentimentDonut(elementId) {
+//     const s = this.data.latest_news_info.last_week_sentiment;
+//     return new ApexCharts(document.querySelector(elementId), {
+//       chart: {
+//         type: 'donut',
+//         height: 250,
+//         animations: { enabled: false }
+//       },
+//       series: [s.positive * 100, s.negative * 100, s.neutral * 100],
+//       labels: ['Positive', 'Negative', 'Neutral'],
+//       legend: { position: 'bottom' },
+//       dataLabels: { enabled: false },
+//       colors: ['#10B981', '#EF4444', '#64748B'],
+//       plotOptions: {
+//         pie: {
+//           donut: {
+//             labels: {
+//               show: true,
+//               total: {
+//                 show: true,
+//                 label: 'Sentiment',
+//                 formatter: () => '100%'
+//               }
+//             }
+//           }
+//         }
+//       }
+//     });
+//   }
+
+//   render() {
+//     const { latest_price_info, latest_news_info } = this.data;
+
+//     console.log("news data :" , latest_news_info);
+
+
+//     this.parentElement.innerHTML = `
+
+
+
+//       <!-- Stats Grid -->
+//       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+//         <!-- News Stats with Donut -->
+//         <div class="bg-white p-6 rounded-lg shadow-md">
+//           <h3 class="text-xl font-semibold mb-4">News Statistics</h3>
+//           <div class="space-y-4">
+//             <div>24H News: ${latest_news_info.last_day_count}</div>
+//             <div>7D Avg: ${latest_news_info.avg_news_week}</div>
+//             <div id="sentimentChart"></div>
+//           </div>
+//         </div>
+
+
+
+//       <!-- DAMP Chart -->
+//       <div id="dampChart" class="bg-white p-6 rounded-lg shadow-md "></div>
+
+//       </div>
+
+
+//       <!-- News Count Chart -->
+//       <div id="newsCountChart" class="bg-white p-6 rounded-lg shadow-md"></div>
+//     `;
+
+//     // Render charts after DOM update
+//     setTimeout(() => {
+//       this.createSentimentDonut('#sentimentChart').render();
+//       this.createDampChart('#dampChart').render();
+//       // this.createNewsCountChart('#newsCountChart').render();
+//     }, 100);
+//   }
+// }
+class CryptoDataComponent {
+  constructor(userToken, coinPair, parentElement) {
+    this.userToken = userToken;
+    this.coinPair = coinPair;
+    this.parentElement = parentElement;
+    this.data = null;
+    this.newsChart = null;
+    this.fetchData = this.fetchData.bind(this);
+  }
+
+  async fetchData() {
+    try {
+      const params = { name: this.coinPair };
+      const response = await axios.post(
+        "http://79.175.177.113:15800/AimoonxNewsHUB/Symbols/ex_getSymbolInfo/",
+        params,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json; charset=utf-8",
+            Authorization: this.userToken
+          }
+        }
+      );
+      this.data = response.data.data[0];
+      this.render();
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      this.parentElement.innerHTML = `
+        <div class="p-4 bg-red-50 text-red-600 rounded-lg">
+          Error loading data. 
+          <button 
+            class="text-blue-600 underline hover:text-blue-700 focus:outline-none"
+            onclick="this.closest('.crypto-component').querySelector('button').click()"
+          >
+            Retry
+          </button>
+        </div>`;
+    }
+  }
+
+  createDampChart(elementId) {
+    const { daily_timeseries } = this.data;
+    const ts = daily_timeseries.timestamp.map(t => t * 1000);
+    return new ApexCharts(document.querySelector(elementId), {
+      chart: {
+        type: 'line',
+        height: '100%',
+        zoom: { enabled: true },
+        toolbar: { show: true }
+      },
+      series: [
+        { name: 'DAMP 5', data: daily_timeseries.damp_5 },
+        { name: 'DAMP 10', data: daily_timeseries.damp_10 },
+        { name: 'DAMP 15', data: daily_timeseries.damp_15 },
+        { name: 'DAMP 20', data: daily_timeseries.damp_20 },
+        { name: 'DAMP 30', data: daily_timeseries.damp_30 }
+      ],
+      xaxis: {
+        type: 'datetime',
+        categories: ts
+      },
+      yaxis: {
+        title: { text: 'DAMP Values' }
+      },
+      stroke: {
+        width: 2,
+        curve: 'smooth'
+      },
+      colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#64748B'],
+      tooltip: {
+        theme: 'dark',
+        x: { format: 'dd MMM yyyy HH:mm' }
+      }
+    });
+  }
+
+  createNewsCountChart(elementId) {
+    const { daily_timeseries } = this.data;
+    const now = Date.now();
+    const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const raw = daily_timeseries.timestamp
+      .map((t, i) => ({ t: t * 1000, count: daily_timeseries.newsCount[i] }))
+      .filter(pt => pt.t >= oneWeekAgo);
+
+    let zoomTimeout;
+    const zoomHandler = (chartCtx, { xaxis }) => {
+      clearTimeout(zoomTimeout);
+      zoomTimeout = setTimeout(() => {
+        const min = xaxis.min, max = xaxis.max;
+        const range = max - min;
+        const groupMs = range <= 24 * 3600 * 1000 ? 3600 * 1000 : 24 * 3600 * 1000;
+        const bins = {};
+        raw.filter(pt => pt.t >= min && pt.t <= max).forEach(pt => {
+          const bucket = Math.floor(pt.t / groupMs) * groupMs;
+          bins[bucket] = (bins[bucket] || 0) + pt.count;
+        });
+        const data = Object.keys(bins).sort().map(k => [+k, bins[k]]);
+        this.newsChart.updateOptions({ series: [{ data }] });
+      }, 300);
+    };
+
+    this.newsChart = new ApexCharts(document.querySelector(elementId), {
+      chart: {
+        type: 'bar',
+        height: '100%',
+        toolbar: { show: true },
+        zoom: { enabled: true },
+        events: { zoomed: zoomHandler }
+      },
+      series: [{
+        name: 'News Count',
+        data: raw.map(pt => [pt.t, pt.count])
+      }],
+      xaxis: {
+        type: 'datetime'
+      },
+      yaxis: {
+        title: { text: 'News Count' }
+      },
+      plotOptions: {
+        bar: {
+          columnWidth: '60%'
+        }
+      },
+      dataLabels: {
+        enabled: false
+      },
+      tooltip: {
+        theme: 'dark',
+        x: { format: 'dd MMM yyyy HH:mm' }
+      }
+    });
+    return this.newsChart;
+  }
+
+  createSentimentDonut(elementId, sentimentData, title) {
+    const hasData = sentimentData.positive || sentimentData.negative || sentimentData.neutral;
+    return new ApexCharts(document.querySelector(elementId), {
+      chart: {
+        type: 'donut',
+        height: 200,
+        animations: { enabled: false }
+      },
+      series: hasData ? [
+        sentimentData.positive * 100,
+        sentimentData.negative * 100,
+        sentimentData.neutral * 100
+      ] : [],
+      labels: ['Positive', 'Negative', 'Neutral'],
+      legend: {
+        position: 'bottom'
+      },
+      dataLabels: {
+        enabled: false
+      },
+      plotOptions: {
+        pie: {
+          donut: {
+            labels: {
+              show: true,
+              total: {
+                show: true,
+                label: title,
+                formatter: () => '100%'
+              }
+            }
+          }
+        }
+      },
+      colors: ['#10B981', '#EF4444', '#64748B'],
+      tooltip: {
+        theme: 'dark'
+      }
+    });
+  }
+
+  render() {
+    const { latest_news_info } = this.data;
+    const daySent = latest_news_info.last_day_sentiment;
+    const weekSent = latest_news_info.last_week_sentiment;
+    const showDay = daySent.positive || daySent.negative || daySent.neutral;
+    const showWeek = weekSent.positive || weekSent.negative || weekSent.neutral;
+    const sentimentVisible = showDay || showWeek;
+
+    const styleTag = `
+      <style>
+        .tooltip {
+          position: relative;
+          display: inline-block;
+          cursor: help;
+        }
+        .tooltip .tooltip-text {
+          visibility: hidden;
+          width: 220px;
+          background: rgba(0,0,0,0.9);
+          color: #fff;
+          text-align: center;
+          border-radius: 4px;
+          padding: 8px;
+          position: absolute;
+          z-index: 100;
+          bottom: 125%;
+          left: 50%;
+          transform: translateX(-50%);
+          opacity: 0;
+          transition: opacity 0.2s;
+          font-size: 14px;
+          pointer-events: none;
+        }
+        .tooltip:hover .tooltip-text,
+        .tooltip:focus .tooltip-text {
+          visibility: visible;
+          opacity: 1;
+        }
+        .tooltip-icon {
+          width: 16px;
+          height: 16px;
+          fill: currentColor;
+        }
+      </style>
+    `;
+
+    let sentimentSection = '';
+    if (sentimentVisible) {
+      sentimentSection = `
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            Sentiment Analysis
+            <button class="tooltip ml-2 text-gray-500 hover:text-gray-700 focus:outline-none">
+              <svg class="tooltip-icon" viewBox="0 0 20 20">
+                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 102 0V7zm-1 7a1 1 0 100-2 1 1 0 000 2z"/>
+              </svg>
+              <span class="tooltip-text">
+                Sentiment analysis based on news articles. Positive values indicate bullish sentiment, 
+                negative values suggest bearish sentiment, and neutral represents mixed or uncertain outlook.
+              </span>
+            </button>
+          </h3>
+          <div class="flex flex-col md:flex-row gap-6">
+            ${showDay ? `
+              <div class="flex-1">
+                <h4 class="flex items-center mb-2">
+                  Last 24 Hours
+                  <button class="tooltip ml-1 text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <svg class="tooltip-icon" viewBox="0 0 20 20">
+                      <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 102 0V7zm-1 7a1 1 0 100-2 1 1 0 000 2z"/>
+                    </svg>
+                    <span class="tooltip-text">Sentiment analysis from news articles published in the last 24 hours</span>
+                  </button>
+                </h4>
+                ${daySent.positive || daySent.negative || daySent.neutral ?
+            '<div id="sentimentDayChart" class="h-48"></div>' :
+            '<div class="text-gray-500 text-center py-4">No recent sentiment data available</div>'}
+              </div>` : ''}
+            ${showWeek ? `
+              <div class="flex-1">
+                <h4 class="flex items-center mb-2">
+                  Last 7 Days
+                  <button class="tooltip ml-1 text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <svg class="tooltip-icon" viewBox="0 0 20 20">
+                      <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 102 0V7zm-1 7a1 1 0 100-2 1 1 0 000 2z"/>
+                    </svg>
+                    <span class="tooltip-text">Sentiment analysis from news articles published in the last week</span>
+                  </button>
+                </h4>
+                ${weekSent.positive || weekSent.negative || weekSent.neutral ?
+            '<div id="sentimentWeekChart" class="h-48"></div>' :
+            '<div class="text-gray-500 text-center py-4">No weekly sentiment data available</div>'}
+              </div>` : ''}
+          </div>
+        </div>`;
+    }
+
+    this.parentElement.innerHTML = `
+      ${styleTag}
+      <div class="space-y-6">
+        ${sentimentVisible ? `
+          <div class="grid gap-6 md:grid-cols-3">
+            ${sentimentSection}
+            <div id="dampChart" class="bg-white p-6 rounded-lg shadow-md md:col-span-2 h-[500px]"></div>
+          </div>` :
+        `<div id="dampChart" class="bg-white p-6 rounded-lg shadow-md h-[500px]"></div>`}
+
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            News Frequency Analysis
+            <button class="tooltip ml-2 text-gray-500 hover:text-gray-700 focus:outline-none">
+              <svg class="tooltip-icon" viewBox="0 0 20 20">
+                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 102 0V7zm-1 7a1 1 0 100-2 1 1 0 000 2z"/>
+              </svg>
+              <span class="tooltip-text">
+                Interactive chart showing news article frequency. Zoom to see hourly/daily trends.
+                Click and drag to zoom, double-click to reset.
+              </span>
+            </button>
+          </h3>
+          <div id="newsCountChart" class="w-full h-64"></div>
+        </div>
+      </div>
+    `;
+
+    if (sentimentVisible) {
+      if (showDay && (daySent.positive || daySent.negative || daySent.neutral)) {
+        this.createSentimentDonut('#sentimentDayChart', daySent, 'Last 24 Hours').render();
+      }
+      if (showWeek && (weekSent.positive || weekSent.negative || weekSent.neutral)) {
+        this.createSentimentDonut('#sentimentWeekChart', weekSent, 'Last 7 Days').render();
+      }
+    }
+    this.createDampChart('#dampChart').render();
+    this.createNewsCountChart('#newsCountChart').render();
+  }
+}
+
+
+
+
+
+// draggable modal 
+document.addEventListener("DOMContentLoaded", () => {
+  const wrapper = document.getElementById("modal-wrapper");
+  const header = document.getElementById("draggable-header");
+  const drawer = document.getElementById("left-drawer");
+  const toggleBtn = document.getElementById("drawer-toggle");
+
+
+  // Drawer toggle
+  let open = false;
+  toggleBtn.addEventListener("click", () => {
+    open = !open;
+    drawer.classList.toggle("translate-x-full", !open);
+  });
+
+  // Drag logic
+  let isDragging = false;
+  let offsetX = 0, offsetY = 0;
+
+  header.addEventListener("pointerdown", (e) => {
+    isDragging = true;
+    const rect = wrapper.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+
+    wrapper.style.left = `${rect.left}px`;
+    wrapper.style.top = `${rect.top}px`;
+    wrapper.style.right = "auto";
+    wrapper.style.position = "fixed";
+
+    document.body.style.userSelect = "none";
+    document.addEventListener("pointermove", dragMove);
+    document.addEventListener("pointerup", dragEnd);
+  });
+
+  function dragMove(e) {
+    if (!isDragging) return;
+    wrapper.style.left = `${e.clientX - offsetX}px`;
+    wrapper.style.top = `${e.clientY - offsetY}px`;
+  }
+
+  function dragEnd() {
+    isDragging = false;
+    document.body.style.userSelect = "";
+    document.removeEventListener("pointermove", dragMove);
+    document.removeEventListener("pointerup", dragEnd);
+  }
 });
