@@ -367,7 +367,7 @@ class SmartCoinAnalysCard {
 
     this.triggerButton.addEventListener("click", () => {
       this.cardElement.classList.remove("hidden");
-      this.triggerButton.classList.add("hidden");
+      // this.triggerButton.classList.add("hidden");
     });
 
     const analysisButton =
@@ -488,7 +488,7 @@ class SmartCoinAnalysCard {
       .querySelector(".close-button")
       .addEventListener("click", () => {
         this.cardElement.classList.add("hidden");
-        this.triggerButton.classList.remove("hidden");
+        // this.triggerButton.classList.remove("hidden");
       });
   }
 
