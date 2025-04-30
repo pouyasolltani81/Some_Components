@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,47 +11,35 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-jalaali/0.9.2/moment-jalaali.js"></script>
 
-  
-
-  <style>
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    @keyframes slideUp {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
-    .animate-slide-up { animation: slideUp 0.3s ease-in-out; }
-    .news-container {
-      max-height: 150px;
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: #6b7280 #e5e7eb;
-    }
-    .news-container::-webkit-scrollbar {
-      width: 8px;
-    }
-    .news-container::-webkit-scrollbar-thumb {
-      background-color: #6b7280;
-      border-radius: 4px;
-    }
-    .news-container::-webkit-scrollbar-track {
-      background-color: #e5e7eb;
-    }
-  </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
 
+<body class="bg-gray-100 min-h-screen flex flex-col items-center py-8">
 
-  <div id="modal-container" class="ml-2" ></div>
-  <div id="modal-container2"  class="ml-2"></div>
-  <div id="modal-container3" class="ml-2"></div>
-  <div id="modal-container4" class="ml-2"></div>
+  <!-- Page Header -->
+  <header class="w-full max-w-6xl px-4 mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Coin Analysis Dashboard</h1>
+    <p class="mt-2 text-gray-600">
+      Open any coin modal via  buttons to run sentiment analysis.
+    </p>
+  </header>
 
+  <!-- Main Content -->
+  <main class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4" dir="rtl">
+    <!-- Modal Slots (empty containers for your scripts to mount into) -->
+    <div id="modal-container"></div>
+    <div id="modal-container2"></div>
+    <div id="modal-container3"></div>
+    <div id="modal-container4"></div>
+    <div id="modal-container5"></div>
+    <div id="modal-container6"></div>
+    <div id="modal-container7"></div>
+    <div id="modal-container8"></div>
+    <div id="modal-container9"></div>
+    <div id="modal-container10"></div>
 
+  </main>
 
+  <!-- Your scripts handle all modal behavior and styling -->
   <script type="module" src="modal_js.js"></script>
   <script type="module" src="test.js"></script>
 </body>

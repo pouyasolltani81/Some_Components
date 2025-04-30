@@ -1,11 +1,11 @@
-import {coinAnalyze, getLLMResponse , ListPairs} from './endpoints'
+import { coinAnalyze, getLLMResponse, ListPairs } from './endpoints'
 
 
 // ===========================================================================
 // 1. Fetch the list of coin pairs from the API
 // ===========================================================================
 async function fetchCoinList() {
-  const url = ListPairs ;
+  const url = ListPairs;
   const token = "23b30428c4102a9280abbbd75762cf01";
   try {
     const response = await axios.get(url, {
@@ -31,7 +31,7 @@ class SmartCoinAnalysCard {
   constructor(COIN_ONE, COIN_TWO, coinList = null) {
     this.coin_one = COIN_ONE;
     this.coin_two = COIN_TWO;
-    
+
     // If a coin list is provided from the API, use it to populate the options;
     // otherwise, use fallback hard-coded pairs.
     if (coinList && coinList.length > 0) {
@@ -72,31 +72,32 @@ class SmartCoinAnalysCard {
 
   createModal() {
     const cardHTML = `
-          <!-- Modal Backdrop & Container -->
-<div id="${this.prefixId}" class="hidden fixed inset-0 bg-[rgba(0,0,0,0.5)]  flex items-center justify-center z-50">
+        <!-- Modal Backdrop & Container -->
+<div id="${this.prefixId}" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <!-- Modal -->
-  <div  class="max-w-[1000px] w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-fade-in">
+  <div class="w-full max-w-5xl bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+    
     <!-- Header -->
-    <div class="p-4 bg-gray-100 border-b border-gray-300 text-gray-800 flex justify-between items-center">
-      <button class="close-button hover:bg-gray-200 p-1 rounded-full transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div class="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-300">
+      <h2 class="text-lg font-semibold text-gray-900">📊 تحلیل کوین</h2>
+      <button aria-label="بستن" class="close-button hover:bg-gray-200 p-1.5 rounded-full transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-      <div class="text-lg font-semibold">📊 تحلیل کوین</div>
     </div>
 
     <!-- Input Form -->
-    <div class="p-6 space-y-4" id="${this.prefixId}_InputForm">
-      <div class="space-y-2">
-        <label class="text-gray-800">💱 جفت ارز:</label>
-        <select id="${this.prefixId}_coinPair" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+    <div class="p-6 space-y-5" id="${this.prefixId}_InputForm">
+      <div>
+        <label class="block mb-1 text-sm font-medium text-gray-700">💱 جفت ارز:</label>
+        <select id="${this.prefixId}_coinPair" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
-        <div class="space-y-2">
-          <label class="text-gray-800">⏱️ تایم فریم:</label>
-          <select id="${this.prefixId}_timeFrame" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">⏱️ تایم فریم:</label>
+          <select id="${this.prefixId}_timeFrame" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
             <option value="1m">1Min</option>
             <option value="5m">5Min</option>
             <option value="15m">15Min</option>
@@ -108,37 +109,37 @@ class SmartCoinAnalysCard {
             <option value="1w">1W</option>
           </select>
         </div>
-        <div class="space-y-2">
-          <label class="text-gray-800">🕒 تعداد کندل:</label>
-          <input type="number" id="${this.prefixId}_candleCount" value="10" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">🕒 تعداد کندل:</label>
+          <input type="number" id="${this.prefixId}_candleCount" value="10" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
       </div>
 
-      <div class="space-y-2">
-        <label class="text-gray-800">📰 استفاده از اخبار:</label>
-        <select id="${this.prefixId}_useNews" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <div>
+        <label class="block mb-1 text-sm font-medium text-gray-700">📰 استفاده از اخبار:</label>
+        <select id="${this.prefixId}_useNews" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
           <option value="true" selected>✅ بله</option>
           <option value="false">❌ خیر</option>
         </select>
       </div>
 
-      <div class="space-y-2">
-        <label class="text-gray-800">📊 استفاده از اندیکاتورها:</label>
-        <select id="${this.prefixId}_useIndicator" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <div>
+        <label class="block mb-1 text-sm font-medium text-gray-700">📊 استفاده از اندیکاتورها:</label>
+        <select id="${this.prefixId}_useIndicator" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
           <option value="true">✅ بله</option>
           <option value="false" selected>❌ خیر</option>
         </select>
       </div>
 
-      <button class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors analysis-button">
+      <button class="analysis-button w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
         تحلیل 🔍
       </button>
     </div>
 
     <!-- Waiting Message -->
-    <div class="p-6 bg-blue-50 text-blue-700 hidden waiting-message animate-slide-up">
-      <div class="flex items-center space-x-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div class="waiting-message hidden p-6 bg-blue-50 text-blue-700 animate-slide-up">
+      <div class="flex items-center gap-2">
+        <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
         <span>در حال دریافت داده‌ها... لطفا منتظر بمانید. ⏳</span>
@@ -146,52 +147,48 @@ class SmartCoinAnalysCard {
     </div>
 
     <!-- Analysis Answer -->
-    <div class="p-6 space-y-4 hidden analysis-answer animate-slide-up">
+    <div class="analysis-answer hidden p-6 space-y-4 animate-slide-up">
       <div class="flex justify-between items-center">
-        <div class="text-lg font-semibold" id="${this.prefixId}_pairName">XRP/USDT</div>
-        <div class="px-4 py-2 bg-green-100 text-green-800 rounded-lg" id="${this.prefixId}_decision">تصمیم</div>
+        <h3 class="text-lg font-semibold text-gray-900" id="${this.prefixId}_pairName">XRP/USDT</h3>
+        <span id="${this.prefixId}_decision" class="px-3 py-1 text-sm bg-green-100 text-green-800 rounded-full">تصمیم</span>
       </div>
-      <div class="space-y-2 text-gray-800">
+
+      <div class="text-sm text-gray-800 space-y-1">
         <div class="flex justify-between">
-          <span>📐 الگو:</span>
-          <span id="${this.prefixId}_pattern">-</span>
-        </div>
-        <div class="flex justify-between">
-          <span>⌛ مدت:</span>
-          <span id="${this.prefixId}_duration">-</span>
+          <span>📐 الگو:</span><span id="${this.prefixId}_pattern">-</span>
         </div>
         <div class="flex justify-between">
-          <span>📅 آخرین بروزرسانی:</span>
-          <span id="${this.prefixId}_updatedAt">-</span>
+          <span>⌛ مدت:</span><span id="${this.prefixId}_duration">-</span>
         </div>
-        <div class="flex flex-col">
-          <span>✨ آنالیز:</span>
-          <span id="${this.prefixId}_analyse">-</span>
+        <div class="flex justify-between">
+          <span>📅 آخرین بروزرسانی:</span><span id="${this.prefixId}_updatedAt">-</span>
         </div>
-        <div class="flex flex-col">
-          <span>📝 خلاصه اخبار:</span>
-          <span id="${this.prefixId}_summery">-</span>
+        <div>
+          <span class="block font-medium">✨ آنالیز:</span>
+          <p id="${this.prefixId}_analyse" class="mt-1">-</p>
+        </div>
+        <div>
+          <span class="block font-medium">📝 خلاصه اخبار:</span>
+          <p id="${this.prefixId}_summery" class="mt-1">-</p>
         </div>
       </div>
 
-      <div class="space-y-2">
-        <label class="text-gray-800">📰 اخبار مرتبط:</label>
-        <div class="news-container bg-gray-50 p-2 rounded-lg" dir='ltr'>
+      <div>
+        <label class="block mb-1 font-medium text-gray-700">📰 اخبار مرتبط:</label>
+        <div class="news-container p-2 rounded-md bg-gray-100" dir="ltr">
           <div id="${this.prefixId}_newsList" class="space-y-2"></div>
         </div>
-        <button id="${this.prefixId}_showMoreNews" class="w-full py-1 text-blue-600 hover:text-blue-700 transition-colors hidden">
+        <button id="${this.prefixId}_showMoreNews" class="hidden w-full text-sm text-blue-600 hover:underline mt-2">
           نمایش بیشتر
         </button>
       </div>
 
-      <button class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors refresh-button">
-        تجزیه و تحلیل مجدد 🔄
-      </button>
-
-      <button class="w-full py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors more-info-button">
-        اطلاعات بیشتر
-      </button>
+      <div class="flex flex-col gap-2">
+        <button class="refresh-button w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">تجزیه و تحلیل مجدد 🔄</button>
+        <button class="more-info-button w-full py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800">اطلاعات بیشتر</button>
+      </div>
     </div>
+
   </div>
 </div>
 
@@ -203,7 +200,7 @@ class SmartCoinAnalysCard {
     // Populate the coin pair <select> options using the coinList data
     const coinPairSelect = tempDiv.querySelector(`#${this.prefixId}_coinPair`);
     this.Pair_coins_name.forEach((element, index) => {
-      
+
       let option = document.createElement("option");
       option.value = this.Pair_coins_value[index];
       option.id = this.Pair_coins_ids[index]
@@ -317,7 +314,9 @@ class SmartCoinAnalysCard {
             decision: getResponse.data.data[0].result.response.rec_position,
             pattern: getResponse.data.data[0].result.response.chart_Pattern,
             duration: `${getResponse.data.data[0].result.response.duration}`,
-            updatedAt: moment.unix(getResponse.data.data[0].result.response.timestamp).format("YYYY/MM/DD HH:mm:ss"), 
+            // updatedAt: moment.unix(getResponse.data.data[0].result.response.timestamp *).format("YYYY/MM/DD HH:mm:ss"),
+            updatedAt: getResponse.data.data[0].result.response.updatedAt ,
+
             news: getResponse.data.data[0].result.newsTitles,
             analyse: getResponse.data.data[0].result.response.analysis,
             summery: getResponse.data.data[0].result.response.summaryFa,
@@ -416,7 +415,20 @@ class SmartCoinAnalysCard {
 
       try {
 
+
         const data = await this.fetchData(params);
+        const timestamp = data.updatedAt;
+        console.log(data);
+
+        console.log(timestamp);
+        
+        const date = new Date(timestamp * 1000); // multipl
+        console.log(date);
+
+        const formatted = date.toISOString().slice(0, 10); // "2025-05-30"
+        console.log(formatted);
+
+
         this.cardElement.querySelector(
           `#${this.prefixId}_pairName`
         ).textContent = data.pair;
@@ -431,7 +443,7 @@ class SmartCoinAnalysCard {
         ).textContent = data.duration;
         this.cardElement.querySelector(
           `#${this.prefixId}_updatedAt`
-        ).textContent = data.updatedAt;
+        ).textContent = formatted;
 
         this.cardElement.querySelector(
           `#${this.prefixId}_analyse`
@@ -463,13 +475,13 @@ class SmartCoinAnalysCard {
 
     moreInfoButton.addEventListener("click", () => {
       let id = this.cardElement.querySelector(
-          `#${this.prefixId}_coinPair`
-        ).options[document.querySelector(`#${this.prefixId}_coinPair`).selectedIndex].id
-      
-      let url = "./MainCoinPair.html?" + new URLSearchParams({ id: id}).toString();
+        `#${this.prefixId}_coinPair`
+      ).options[document.querySelector(`#${this.prefixId}_coinPair`).selectedIndex].id
+
+      let url = "./MainCoinPair.html?" + new URLSearchParams({ id: id }).toString();
       // location.href = url;
       window.open(url, '_blank');
-      
+
     });
 
     this.cardElement
@@ -497,10 +509,17 @@ function showSmartCoinAnalysCard(COIN_ONE, COIN_TWO, coinList, container = docum
 // ===========================================================================
 document.addEventListener("DOMContentLoaded", async () => {
   const coinList = await fetchCoinList();
-  showSmartCoinAnalysCard("ETH", "USDT", coinList, document.getElementById("modal-container"));
-  showSmartCoinAnalysCard("BTC", "USDT", coinList, document.getElementById("modal-container2"));
+  showSmartCoinAnalysCard("BTC", "USDT", coinList, document.getElementById("modal-container"));
+  showSmartCoinAnalysCard("ETH", "USDT", coinList, document.getElementById("modal-container2"));
   showSmartCoinAnalysCard("BNB", "USDT", coinList, document.getElementById("modal-container3"));
   showSmartCoinAnalysCard("ETC", "USDT", coinList, document.getElementById("modal-container4"));
+  showSmartCoinAnalysCard("USDT", "RLS", coinList, document.getElementById("modal-container5"));
+  showSmartCoinAnalysCard("XRP", "USDT", coinList, document.getElementById("modal-container6"));
+  showSmartCoinAnalysCard("ADA", "USDT", coinList, document.getElementById("modal-container7"));
+  showSmartCoinAnalysCard("IOTA", "USDT", coinList, document.getElementById("modal-container8"));
+  showSmartCoinAnalysCard("STX", "USDT", coinList, document.getElementById("modal-container9"));
+  showSmartCoinAnalysCard("SUI", "USDT", coinList, document.getElementById("modal-container10"));
+
 
 });
 

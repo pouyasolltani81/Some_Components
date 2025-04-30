@@ -2230,7 +2230,7 @@ class CryptoDataComponent {
               </span>
             </button>
           </h3>
-          <div class="flex flex-col md:flex-row gap-6">
+          <div class="flex flex-col md:flex-col gap-6">
             ${showDay ? `
               <div class="flex-1">
                 <h4 class="flex items-center mb-2">
