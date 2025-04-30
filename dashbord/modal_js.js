@@ -1,8 +1,11 @@
+import {coinAnalyze, getLLMResponse , ListPairs} from './endpoints'
+
+
 // ===========================================================================
 // 1. Fetch the list of coin pairs from the API
 // ===========================================================================
 async function fetchCoinList() {
-  const url = "http://188.34.202.221:8000/Pair/ListPairs/";
+  const url = ListPairs ;
   const token = "23b30428c4102a9280abbbd75762cf01";
   try {
     const response = await axios.get(url, {
@@ -70,7 +73,7 @@ class SmartCoinAnalysCard {
   createModal() {
     const cardHTML = `
           <!-- Modal Backdrop & Container -->
-<div id="${this.prefixId}" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+<div id="${this.prefixId}" class="hidden fixed inset-0 bg-[rgba(0,0,0,0.5)]  flex items-center justify-center z-50">
   <!-- Modal -->
   <div  class="max-w-[1000px] w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-fade-in">
     <!-- Header -->
@@ -201,7 +204,6 @@ class SmartCoinAnalysCard {
     const coinPairSelect = tempDiv.querySelector(`#${this.prefixId}_coinPair`);
     this.Pair_coins_name.forEach((element, index) => {
       
-      
       let option = document.createElement("option");
       option.value = this.Pair_coins_value[index];
       option.id = this.Pair_coins_ids[index]
@@ -259,8 +261,8 @@ class SmartCoinAnalysCard {
   // Replace the URLs with your actual endpoints.
   // ------------------------------------------------------------------------
   async fetchData(params) {
-    const sendUrl = "http://79.175.177.113:15800/AimoonxNewsHUB/LLM/coinAnalyze/";
-    const getUrl = "http://79.175.177.113:15800/AimoonxNewsHUB/LLM/getLLMResponse/";
+    const sendUrl = coinAnalyze;
+    const getUrl = getLLMResponse;
     try {
       // 1. Send the analysis request
       const sendResponse = await axios.post(sendUrl, params, {
@@ -501,3 +503,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   showSmartCoinAnalysCard("ETC", "USDT", coinList, document.getElementById("modal-container4"));
 
 });
+
+

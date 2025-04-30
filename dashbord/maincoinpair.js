@@ -1,5 +1,5 @@
 import ApexCharts from "apexcharts";
-
+import {GetNewsbyDateCategory,GetMarketPair,ListPairs,exGetTrendWithOHLCV,exGetOHLCV,exGetIntelligentSupportResistanceLevels,exGetMultipleTechnicalIndicatorSignal,ex_getSymbolInfo} from './endpoints'
 // ----------------------------------------------------------------------------------------
 // Global Variables & URL Params
 // ----------------------------------------------------------------------------------------
@@ -89,7 +89,8 @@ async function fetchNewsall(firstCandleTime) {
       category: "cryptocurrencies"
     };
     let newsResponse = await axios.post(
-      "http://79.175.177.113:15800/AimoonxNewsHUB/News/GetNewsbyDateCategory/",
+      GetNewsbyDateCategory,
+      
       params,
       {
         headers: {
@@ -113,7 +114,7 @@ async function fetchNewsall(firstCandleTime) {
 // Fetch Coin Data & Update Data Cards / Price History
 // ----------------------------------------------------------------------------------------
 async function fetchCoinList() {
-  const url = "http://188.34.202.221:8000/Market/GetMarketPair/";
+  const url = GetMarketPair ;
   const params = { marketpair_id: id };
 
   try {
@@ -199,7 +200,7 @@ setInterval(fetchCoinList, time_interval_for_chart);
 // ----------------------------------------------------------------------------------------
 async function fetchActiveMarkets() {
   try {
-    const response = await axios.get("http://188.34.202.221:8000/Pair/ListPairs/", {
+    const response = await axios.get(ListPairs, {
       headers: {
         Accept: "application/json",
         Authorization: token,
@@ -245,8 +246,8 @@ async function fetchOHLCVData() {
   const since = getDate(limit, timeframe);
   let chart_type = document.getElementById("chart_type").checked;
   let url = chart_type
-    ? "http://188.34.202.221:8000/Market/exGetTrendWithOHLCV/"
-    : "http://188.34.202.221:8000/Market/exGetOHLCV/";
+    ? exGetTrendWithOHLCV
+    : exGetOHLCV;
   if (chart_type) {
     // document.getElementById("advanced_chart_tools").classList.remove("hidden");
     document.getElementById("modal-wrapper").classList.remove("hidden");
@@ -386,7 +387,8 @@ async function fetchAndUpdateSRLevels() {
     const since = getDate(limit, timeframe);
     // Change the URL to your specific SR levels endpoint.
     const response = await axios.post(
-      'http://188.34.202.221:8000/Market/exGetIntelligentSupportResistanceLevels/',
+      exGetIntelligentSupportResistanceLevels
+      ,
       { marketpair_id, timeframe, since, limit },
       {
         headers: {
@@ -647,6 +649,8 @@ function updateTrend(recommendation, strength) {
     'NEUTRAL': '#neutral'
   };
 
+  console.log('icon things : ', recommendation ,icons[recommendation]);
+  
   const icon = document.querySelector(icons[recommendation]).cloneNode(true);
   icon.classList.remove('hidden');
   document.getElementById('trend-icon').innerHTML = '';
@@ -940,7 +944,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById('news_statistics').classList.toggle('hidden')
         newsMode = !newsMode;
         this.classList.toggle("bg-blue-600", newsMode);
-        this.classList.toggle("bg-gray-400", !newsMode);
+        this.classList.toggle("bg-gray-100", !newsMode);
 
         if (newsMode) {
           chart.updateOptions({
@@ -1002,7 +1006,7 @@ document.addEventListener("DOMContentLoaded", function () {
       srModeBtn.addEventListener("click", function () {
         srMode = !srMode;
         this.classList.toggle("bg-blue-600", srMode);
-        this.classList.toggle("bg-gray-400", !srMode);
+        this.classList.toggle("bg-gray-100", !srMode);
 
         if (srMode) {
           // Immediately fetch SR data and set interval to update every 5 minutes.
@@ -1267,7 +1271,7 @@ const TechnicalAnalysisComponent = (function () {
   }
 
   async function fetchTechnicalData() {
-    const url = "http://188.34.202.221:8000/Market/exGetMultipleTechnicalIndicatorSignal/";
+    const url = exGetMultipleTechnicalIndicatorSignal;
     const payload = {
       marketpair_id: id,
       timeframe: document.getElementById("timeframe").value,
@@ -1791,25 +1795,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-let pendingAction = null;
-
-function confirmAction(actionType) {
-  pendingAction = actionType;
-  document.getElementById('confirmationText').innerText = `Are you sure you want to perform "${actionType}"?`;
-  document.getElementById('confirmationModal').classList.remove('hidden');
-}
-
-function closeConfirmationModal() {
-  pendingAction = null;
-  document.getElementById('confirmationModal').classList.add('hidden');
-}
-
-function proceedConfirmedAction() {
-  console.log(`Confirmed action: ${pendingAction}`);
-  // Insert your action logic here
-  closeConfirmationModal();
-}
-
 
 // loading 
 
@@ -1848,7 +1833,7 @@ function hideLoading() {
 
 //       const params = { name: this.coinPair };
 //       const response = await axios.post(
-//         "http://79.175.177.113:15800/AimoonxNewsHUB/Symbols/ex_getSymbolInfo/",
+//         "https://news.imoonex.ir/AimoonxNewsHUB/Symbols/ex_getSymbolInfo/",
 //         params,
 //         {
 //           headers: {
@@ -2020,7 +2005,7 @@ class CryptoDataComponent {
     try {
       const params = { name: this.coinPair };
       const response = await axios.post(
-        "http://79.175.177.113:15800/AimoonxNewsHUB/Symbols/ex_getSymbolInfo/",
+        ex_getSymbolInfo,
         params,
         {
           headers: {
@@ -2338,6 +2323,7 @@ document.addEventListener("DOMContentLoaded", () => {
   toggleBtn.addEventListener("click", () => {
     open = !open;
     drawer.classList.toggle("translate-x-full", !open);
+    document.getElementById('drawer_svg').classList.toggle('rotate-180')
   });
 
   // Drag logic
@@ -2373,3 +2359,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.removeEventListener("pointerup", dragEnd);
   }
 });
+
+
+

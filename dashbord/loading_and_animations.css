@@ -1,3 +1,7 @@
+@import "tailwindcss";
+
+
+
 /* loading  */
 /* From Uiverse.io by mrpumps31232 */ 
 .loading-wave {
@@ -42,4 +46,12 @@
       height: 5px;
     }
   }
+  
+
+
+
+
+
+
+
   

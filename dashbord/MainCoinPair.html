@@ -8,7 +8,7 @@
 
   <link rel="stylesheet" href="loading_and_animations.css">
   <!-- Tailwind CSS CDN -->
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.css" rel="stylesheet">
+  <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.css" rel="stylesheet"> -->
   <!-- Axios for API calls -->
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <!-- ApexCharts -->
@@ -19,20 +19,7 @@
   <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/date-fns@4.1.0/cdn.min.js"></script>
-  <style>
-    .scrollbar-thin::-webkit-scrollbar {
-      width: 8px;
-    }
 
-    .scrollbar-thin::-webkit-scrollbar-thumb {
-      background-color: #a5b4fc;
-      border-radius: 4px;
-    }
-
-    .scrollbar-thin::-webkit-scrollbar-track {
-      background: #f3f4f6;
-    }
-  </style>
 
 </head>
 
@@ -41,7 +28,7 @@
 
   <!-- Loading Overlay -->
   <div id="globalLoading"
-    class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-90 pointer-events-auto hidden">
+    class="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-90 pointer-events-auto hidden">
     <div class="loading-wave max-w-[1000px] w-full rounded-xl shadow-xl overflow-hidden animate-fade-in">
       <div class="loading-bar"></div>
       <div class="loading-bar"></div>
@@ -51,7 +38,7 @@
   </div>
 
   <!-- Confirmation Modal -->
-  <div id="confirmationModal" class="hidden fixed inset-0  bg-black bg-opacity-40 flex items-center justify-center px-4"
+  <div id="confirmationModal" class="hidden fixed inset-0  bg-[rgba(0,0,0,0.5)] flex items-center justify-center px-4"
     style="z-index: 51;">
     <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 text-center space-y-4">
       <h2 class="text-lg font-semibold text-gray-800">Confirm Action</h2>
@@ -127,7 +114,7 @@
 
   <!-- Main Modal -->
   <div id="mainModal"
-    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-10 px-4 z-50 overflow-y-auto">
+    class="hidden fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-start justify-center pt-10 px-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden">
 
       <!-- Header -->
@@ -174,7 +161,7 @@
             </div>
           </div>
 
-          <div id="recommendationActionContainer" class=" rounded-lg border shadow-sm"></div>
+          <div id="recommendationActionContainer" class=" rounded-lg shadow-sm"></div>
         </div>
 
         <!-- Second Row -->
@@ -361,7 +348,7 @@
             <button id="remove-line-button" class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
               Remove Line
             </button> -->
-            <button id="news-mode-button" class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
+            <button id="news-mode-button" class="px-4 py-2 bg-gray-100  rounded-lg hover:bg-gray-200">
               News Mode
             </button>
 
@@ -420,100 +407,103 @@
 
 
   <!-- WRAPPER THAT HOLDS BOTH MODAL + DRAWER -->
-  <div id="modal-wrapper" class="fixed top-10 right-10 z-50 hidden flex flex-row-reverse items-start">
-    <!-- MODAL -->
-    <div id="summery_modal" class="space-y-6 p-4 bg-white rounded-lg shadow-md  relative z-50" style="
-    min-width: 320px;
-">
-      <!-- DRAGGABLE HEADER -->
-      <div id="draggable-header" class="w-full cursor-move text-gray-700 font-semibold border-b pb-2 mb-2">
-        📊 Summary Panel
-      </div>
-
-      <!-- TOGGLE BUTTON -->
-      <button id="drawer-toggle" class="text-sm px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 border">
-        🧰 Tools
-      </button>
-
-
-      <!-- coin pair name  -->
-
-      <div id="advance_chart_pair_name" class="p1 font-bold"></div>
-
-      <!-- Trend Indicators -->
-      <div class="space-y-4">
-        <div class="flex items-center gap-3">
-          <div id="trend-icon" class="flex-shrink-0">
-            <!-- Dynamic SVG will be inserted here -->
-          </div>
-          <div>
-            <div class="text-sm font-medium text-gray-500">Market Trend</div>
-            <div id="trend-recommendation" class="text-xl font-bold text-gray-800">NEUTRAL</div>
-          </div>
-        </div>
-
-        <!-- Strength Meter -->
-        <div class="space-y-2">
-          <div class="flex justify-between text-sm font-medium">
-            <span class="text-gray-500">Strength</span>
-            <span id="trend-strength" class="text-gray-700">0%</span>
-          </div>
-          <div class="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div id="strength-bar" class="absolute h-full transition-all duration-500"
-              style="width: 50%; background: linear-gradient(90deg, #16a34a 0%, #dc2626 100%)">
-            </div>
-          </div>
-        </div>
-
-        <!-- Price & MACD -->
-        <div class="pt-4 space-y-2 border-t">
-          <div class="flex justify-between items-center">
-            <span class="text-sm font-medium text-gray-500">Current Price</span>
-            <span id="current-price" class="text-lg font-semibold text-gray-800">$0.00</span>
-          </div>
-          <div class="flex justify-between items-center hidden">
-            <span class="text-sm font-medium text-gray-500">MACD Signal</span>
-            <span id="macd-recommendation" class="flex items-center gap-1 text-sm font-semibold text-gray-800">
-              <span class="w-4 h-4">-</span>
-              NEUTRAL
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- DRAWER (initially hidden using translate-x) -->
+  <div id="modal-wrapper" class="fixed top-10 right-10 z-50 hidden flex items-start gap-0">
+    <!-- DRAWER -->
     <div id="left-drawer"
-      class="bg-gray-50 shadow-lg rounded-l-lg w-[250px] p-4 h-full transition-transform duration-300 transform translate-x-full z-26">
-      <h2 class="text-lg font-bold text-gray-800 mb-4">Indicators & Settings</h2>
+      class="bg-white shadow-lg rounded-l-lg w-[260px] p-4 h-auto transition-transform duration-300 transform translate-x-full border-r border-gray-200">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">Chart Tools</h2>
+
+      </div>
       <div class="flex flex-col gap-3">
-        <label class="flex items-center gap-2">
+        <label class="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
           <input type="checkbox" id="show-sma" class="w-5 h-5 rounded border-gray-300">
           SMA 20
         </label>
-        <label class="flex items-center gap-2">
+        <label class="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
           <input type="checkbox" id="show-ema" class="w-5 h-5 rounded border-gray-300">
           EMA 20
         </label>
-        <label class="flex items-center gap-2">
+        <label class="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
           <input type="checkbox" id="show-fib" class="w-5 h-5 rounded border-gray-300">
           Fibonacci
         </label>
-        <label class="flex items-center gap-2">
+        <label class="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
           <input type="checkbox" id="show-support-resistance" class="w-5 h-5 rounded border-gray-300">
-          Support/Resistance
+          S/R Levels
         </label>
+      </div>
+
+
+      <!-- TOGGLE BUTTON -->
+      <button id="drawer-toggle"
+        class=" absolute -left-8 top-4 bg-white shadow-sm border border-gray-200 rounded-l-full p-2 z-40 hover:bg-gray-50 transition-all">
+        <svg id="drawer_svg" class="w-5 h-5 text-gray-600 rotate-180 transition-all" fill="none" stroke="currentColor"
+          viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- MODAL -->
+    <div id="summery_modal" class="relative bg-white rounded-lg shadow-lg z-50" style="min-width: 320px;">
+
+
+      <!-- MODAL CONTENT -->
+      <div class="p-4 space-y-4">
+        <div id="draggable-header" class="w-full cursor-move text-gray-700 font-semibold border-b pb-2 mb-2">
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span>Market Summary</span>
+          </div>
+        </div>
+
+        <div id="advance_chart_pair_name" class="text-lg font-bold text-gray-800"></div>
+
+        <div class="space-y-4">
+          <div class="flex items-center gap-3">
+            <div id="trend-icon" class="flex-shrink-0">
+              <!-- Dynamic SVG will be inserted here -->
+            </div>
+            <div>
+              <div class="text-sm font-medium text-gray-500">Market Trend</div>
+              <div id="trend-recommendation" class="text-xl font-bold text-gray-800">NEUTRAL</div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm font-medium">
+              <span class="text-gray-500">Strength</span>
+              <span id="trend-strength" class="text-gray-700">0%</span>
+            </div>
+            <div class="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div id="strength-bar" class="absolute h-full transition-all duration-500"
+                style="width: 50%; background: linear-gradient(90deg, #16a34a 0%, #dc2626 100%)">
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 space-y-2 border-t">
+            <div class="flex justify-between items-center">
+              <span class="text-sm font-medium text-gray-500">Current Price</span>
+              <span id="current-price" class="text-lg font-semibold text-gray-800">$0.00</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-
 
   <!-- Trend SVGs Template (Hidden) -->
   <div class="hidden">
     <!-- Strong Uptrend -->
     <svg id="strong-uptrend" class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M5 15l7-7 7 7m-7-7v6m-4 0h4m3-10l3 3m0 0l-3 3m3-3H9" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+
+
     </svg>
 
     <!-- Uptrend -->
@@ -537,7 +527,34 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   </div>
-  <script type="module" type="module" src="maincoinpair.js"></script>
+
+
+  <script>
+    let pendingAction = null;
+
+    function confirmAction(actionType) {
+      pendingAction = actionType;
+      document.getElementById('confirmationText').innerText = `Are you sure you want to perform "${actionType}"?`;
+      document.getElementById('confirmationModal').classList.remove('hidden');
+    }
+
+    function closeConfirmationModal() {
+      pendingAction = null;
+      document.getElementById('confirmationModal').classList.add('hidden');
+    }
+
+    function proceedConfirmedAction() {
+      console.log(`Confirmed action: ${pendingAction}`);
+      // Insert your action logic here
+      closeConfirmationModal();
+    }
+  </script>
+
+
+  <!-- <script type="module" src="./cm.js"></script> -->
+
+  <script type="module" src="maincoinpair.js"></script>
+
 
 
 

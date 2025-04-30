@@ -1,5 +1,7 @@
+import { getLLMResponse } from "./endpoints";
+
 async function qwefetchCoinList(id) {
-  const url = "http://79.175.177.113:15800/AimoonxNewsHUB/LLM/getLLMResponse/";
+  const url = getLLMResponse;
   const token = "189b4bf96bf5de782515c1b4f0b2a2c7";
   const params = {
     task_id : id

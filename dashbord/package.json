@@ -12,6 +12,10 @@
     "vite": "^6.2.0"
   },
   "dependencies": {
-    "apexcharts": "^4.5.0"
+    "@tailwindcss/vite": "^4.1.4",
+    "apexcharts": "^4.5.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.2.0",
+    "tailwindcss": "^4.1.4"
   }
 }

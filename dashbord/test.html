@@ -1,191 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Crypto Data Component</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body>
-  <div id="parent-component" class="max-w-7xl mx-auto p-6 bg-gray-50"></div>
+  <meta charset="UTF-8" />
+  <title>Rounded-Edge 3-Slice Gauge (With Hover Popup)</title>
+  <style>
+    :root {
+      --slice1: 30;
+      --slice2: 50;
+      --slice3: calc(100 - var(--slice1) - var(--slice2));
 
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+      --c1: #e74c3c;
+      --c2: #f1c40f;
+      --c3: #2ecc71;
 
-  <script>
-    class CryptoDataComponent {
-      constructor(userToken, coinPair, parentElement) {
-        this.userToken = userToken;
-        this.coinPair = coinPair;
-        this.parentElement = parentElement;
-        this.data = null;
-      }
+      --size: 200px;
+      --thickness: 20px;
 
-      async fetchData() {
-        try {
-          const params = { name: this.coinPair };
-          const response = await axios.post(
-            "http://79.175.177.113:15800/AimoonxNewsHUB/Symbols/ex_getSymbolInfo/",
-            params,
-            {
-              headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json; charset=utf-8",
-                Authorization: this.userToken,
-              },
-            }
-          );
-          this.data = response.data.data[0];
-          this.render();
-        } catch (error) {
-          console.error('Error fetching data:', error);
-          this.parentElement.innerHTML = `<div class="p-4 text-red-500">Error loading data</div>`;
-        }
-      }
-
-
-      createDampChart(elementId) {
-
-        
-        const { daily_timeseries } = this.data;
-        
-        let new_timestamp = daily_timeseries.timestamp.map(t => t * 1000)
-
-
-        return new ApexCharts(document.querySelector(elementId), {
-          chart: {
-            type: 'line',
-            height: 350,
-            toolbar: { show: true }
-          },
-          series: [
-            { name: 'DAMP 5', data: daily_timeseries.damp_5 },
-            { name: 'DAMP 10', data: daily_timeseries.damp_10 },
-            { name: 'DAMP 15', data: daily_timeseries.damp_15 },
-            { name: 'DAMP 20', data: daily_timeseries.damp_20 },
-            // { name: 'DAMP 25', data: daily_timeseries.damp_25 },
-
-          ],
-          xaxis: {
-            type: 'datetime',
-            categories: new_timestamp
-          },
-          yaxis: { title: { text: 'DAMP Values' } },
-          stroke: { width: 2, curve: 'smooth' },
-          colors: ['#3B82F6', '#10B981' , '#D5D1D8' , '#FF6178' , ],
-          tooltip: {
-            x: { format: 'dd MMM yyyy' }
-          }
-        });
-      }
-
-      createNewsCountChart(elementId) {
-        const { daily_timeseries } = this.data;
-
-
-        let new_timestamp = daily_timeseries.timestamp.map(t => t * 1000)
-        
-        return new ApexCharts(document.querySelector(elementId), {
-          chart: {
-            type: 'bar',
-            height: 350,
-            toolbar: { show: true }
-          },
-          series: [{ name: 'News Count', data: daily_timeseries.newsCount }],
-          xaxis: {
-            type: 'datetime',
-            categories: new_timestamp
-          },
-          yaxis: { title: { text: 'News Count' } },
-          colors: ['#F59E0B'],
-          plotOptions: {
-            bar: { columnWidth: '80%' }
-          },
-          tooltip: {
-            x: { format: 'dd MMM yyyy' }
-          }
-        });
-      }
-
-      createSentimentDonut(elementId) {
-        const s = this.data.latest_news_info.last_day_sentiment;
-        return new ApexCharts(document.querySelector(elementId), {
-          chart: { 
-            type: 'donut', 
-            height: 250,
-            animations: { enabled: false }
-          },
-          series: [s.positive * 100, s.negative * 100, s.neutral * 100],
-          labels: ['Positive', 'Negative', 'Neutral'],
-          legend: { position: 'bottom' },
-          dataLabels: { enabled: false },
-          colors: ['#10B981', '#EF4444', '#64748B'],
-          plotOptions: {
-            pie: {
-              donut: {
-                labels: {
-                  show: true,
-                  total: {
-                    show: true,
-                    label: 'Sentiment',
-                    formatter: () => '100%'
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-
-      render() {
-        const { latest_price_info, latest_news_info } = this.data;
-
-        this.parentElement.innerHTML = `
-         
-
-
-          <!-- Stats Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <!-- News Stats with Donut -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-              <h3 class="text-xl font-semibold mb-4">News Statistics</h3>
-              <div class="space-y-4">
-                <div>24H News: ${latest_news_info.last_day_count}</div>
-                <div>7D Avg: ${latest_news_info.avg_news_week}</div>
-                <div id="sentimentChart"></div>
-              </div>
-            </div>
-
-
-
-          <!-- DAMP Chart -->
-          <div id="dampChart" class="bg-white p-6 rounded-lg shadow-md "></div>
-            
-          </div>
-
-          
-          <!-- News Count Chart -->
-          <div id="newsCountChart" class="bg-white p-6 rounded-lg shadow-md"></div>
-        `;
-
-        // Render charts after DOM update
-        setTimeout(() => {
-          this.createSentimentDonut('#sentimentChart').render();
-          this.createDampChart('#dampChart').render();
-          // this.createNewsCountChart('#newsCountChart').render();
-        }, 100);
-      }
+      --radius: calc((var(--size) / 2) - (var(--thickness) / 2));
+      --half: calc(3.14159265 * var(--radius));
     }
 
-    // Initialize
-    document.addEventListener('DOMContentLoaded', () => {
-      const parent = document.getElementById('parent-component');
-      const cryptoComponent = new CryptoDataComponent(
-        '189b4bf96bf5de782515c1b4f0b2a2c7',
-        'BTC-USDT',
-        parent
-      );
-      cryptoComponent.fetchData();
-    });
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f9f9f9;
+      font-family: sans-serif;
+      position: relative;
+    }
+
+    .gauge {
+      width: var(--size);
+      height: calc(var(--size) / 2);
+      overflow: visible;
+    }
+
+    .gauge path {
+      fill: none;
+      stroke-width: var(--thickness);
+      stroke-linecap: round;
+      cursor: pointer;
+    }
+
+    .track { stroke: #eee; }
+    .s1 {
+      stroke: var(--c1);
+      stroke-dasharray: calc(var(--slice1) / 100 * var(--half)) var(--half);
+      stroke-dashoffset: 0;
+    }
+    .s2 {
+      stroke: var(--c2);
+      stroke-dasharray: calc(var(--slice2) / 100 * var(--half)) var(--half);
+      stroke-dashoffset: calc(-1 * var(--slice1) / 100 * var(--half));
+    }
+    .s3 {
+      stroke: var(--c3);
+      stroke-dasharray: calc(var(--slice3) / 100 * var(--half)) var(--half);
+      stroke-dashoffset: calc(-1 * (var(--slice1) + var(--slice2)) / 100 * var(--half));
+    }
+
+    text.center {
+      font-size: 1.4rem;
+      font-weight: bold;
+      fill: #333;
+      dominant-baseline: middle;
+      text-anchor: middle;
+    }
+
+    /* Popup tooltip */
+    #tooltip {
+      position: absolute;
+      padding: 4px 8px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      pointer-events: none;
+      white-space: nowrap;
+      display: none;
+      transform: translate(-50%, -120%);
+      z-index: 100;
+    }
+
+    /* Legend Styles */
+    .legend {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0 0;
+      display: flex;
+      gap: 1rem;
+    }
+
+    .legend li {
+      display: flex;
+      align-items: center;
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    .legend span.box {
+      width: 12px;
+      height: 12px;
+      display: inline-block;
+      margin-right: 0.5rem;
+      border-radius: 2px;
+    }
+
+    .legend .c1 { background: var(--c1); }
+    .legend .c2 { background: var(--c2); }
+    .legend .c3 { background: var(--c3); }
+
+  </style>
+</head>
+<body>
+
+  <div class="gauge-wrapper" style="position: relative;">
+    <svg class="gauge" viewBox="0 0 200 100">
+      <!-- background track -->
+      <path class="track" d="M10,100 A90,90 0 0,1 190,100" />
+      <!-- slices with data-tooltip -->
+      <path class="s1" d="M10,100 A90,90 0 0,1 190,100" data-tooltip="Slice 1: 30%" />
+      <path class="s2" d="M10,100 A90,90 0 0,1 190,100" data-tooltip="Slice 2: 50%" />
+      <path class="s3" d="M10,100 A90,90 0 0,1 190,100" data-tooltip="Slice 3: 20%" />
+      <!-- centered label -->
+      <text class="center" x="100" y="90">100%</text>
+    </svg>
+    <div id="tooltip"></div>
+  </div>
+
+  <!-- Legend / Labels -->
+  <ul class="legend">
+    <li><span class="box c1"></span>Slice 1 (30%)</li>
+    <li><span class="box c2"></span>Slice 2 (50%)</li>
+    <li><span class="box c3"></span>Slice 3 (20%)</li>
+  </ul>
+
+  <script>
+    const tooltip = document.getElementById('tooltip');
+    document.querySelectorAll('.gauge path.s1, .gauge path.s2, .gauge path.s3')
+      .forEach(el => {
+        el.addEventListener('mouseover', e => {
+          tooltip.textContent = el.dataset.tooltip;
+          tooltip.style.display = 'block';
+        });
+        el.addEventListener('mousemove', e => {
+          const rect = document.querySelector('.gauge-wrapper').getBoundingClientRect();
+          tooltip.style.left = `${e.clientX - rect.left}px`;
+          tooltip.style.top  = `${e.clientY - rect.top - 10}px`;
+        });
+        el.addEventListener('mouseout', () => {
+          tooltip.style.display = 'none';
+        });
+      });
   </script>
+
 </body>
 </html>
