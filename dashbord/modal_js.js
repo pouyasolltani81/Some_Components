@@ -31,6 +31,7 @@ class SmartCoinAnalysCard {
   constructor(COIN_ONE, COIN_TWO, coinList = null) {
     this.coin_one = COIN_ONE;
     this.coin_two = COIN_TWO;
+    this.analysisdata = null ;
 
     // If a coin list is provided from the API, use it to populate the options;
     // otherwise, use fallback hard-coded pairs.
@@ -417,6 +418,7 @@ class SmartCoinAnalysCard {
 
 
         const data = await this.fetchData(params);
+        this.analysisdata =data ;
         const timestamp = data.updatedAt;
         console.log(data);
 
@@ -480,6 +482,8 @@ class SmartCoinAnalysCard {
 
       let url = "./MainCoinPair.html?" + new URLSearchParams({ id: id }).toString();
       // location.href = url;
+    
+      localStorage.setItem('newsAnalysis' , JSON.stringify(this.analysisdata))
       window.open(url, '_blank');
 
     });

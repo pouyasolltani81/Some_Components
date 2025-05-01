@@ -1085,6 +1085,10 @@ function getSentimentIndicator(news) {
   }
 }
 
+
+// show more 
+//<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>
+
 function showNewsModal(relatedNews) {
   console.log(relatedNews);
 
@@ -1106,7 +1110,7 @@ function showNewsModal(relatedNews) {
             ${news.articleBody}
           </p>
           ${news.articleBody && news.articleBody.length > 100
-        ? `<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>`
+        ? ``
         : ""
       }
           <a href="${news.link}" target="_blank" class="text-blue-500 underline">Read more</a>
@@ -1131,7 +1135,7 @@ function showNewsModal(relatedNews) {
               ${news.articleBody}
             </p>
             ${news.articleBody && news.articleBody.length > 100
-          ? `<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>`
+          ? ``
           : ""
         }
             <a href="${news.link}" target="_blank" class="text-blue-500 underline">Read more</a>
@@ -1998,15 +2002,15 @@ class CryptoDataComponent {
     this.parentElement = parentElement;
     this.data = null;
     this.newsChart = null;
+    this.newsAnalysis = JSON.parse(localStorage.getItem('newsAnalysis'));
     this.fetchData = this.fetchData.bind(this);
   }
 
   async fetchData() {
     try {
-      const params = { name: this.coinPair };
       const response = await axios.post(
         ex_getSymbolInfo,
-        params,
+        { name: this.coinPair },
         {
           headers: {
             Accept: "application/json",
@@ -2018,14 +2022,14 @@ class CryptoDataComponent {
       this.data = response.data.data[0];
       this.render();
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Data fetch error:', error);
       this.parentElement.innerHTML = `
-        <div class="p-4 bg-red-50 text-red-600 rounded-lg">
-          Error loading data. 
-          <button 
-            class="text-blue-600 underline hover:text-blue-700 focus:outline-none"
-            onclick="this.closest('.crypto-component').querySelector('button').click()"
-          >
+        <div class="p-3 bg-red-50 text-red-600 rounded-lg text-sm flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <span>Load error. </span>
+          <button class="text-blue-600 underline" onclick="this.closest('[data-component]').querySelector('button').click()">
             Retry
           </button>
         </div>`;
@@ -2034,13 +2038,12 @@ class CryptoDataComponent {
 
   createDampChart(elementId) {
     const { daily_timeseries } = this.data;
-    const ts = daily_timeseries.timestamp.map(t => t * 1000);
     return new ApexCharts(document.querySelector(elementId), {
       chart: {
         type: 'line',
         height: '100%',
         zoom: { enabled: true },
-        toolbar: { show: true }
+        toolbar: { show: true, tools: { download: false } }
       },
       series: [
         { name: 'DAMP 5', data: daily_timeseries.damp_5 },
@@ -2049,47 +2052,31 @@ class CryptoDataComponent {
         { name: 'DAMP 20', data: daily_timeseries.damp_20 },
         { name: 'DAMP 30', data: daily_timeseries.damp_30 }
       ],
-      xaxis: {
-        type: 'datetime',
-        categories: ts
-      },
-      yaxis: {
-        title: { text: 'DAMP Values' }
-      },
-      stroke: {
-        width: 2,
-        curve: 'smooth'
-      },
+      xaxis: { type: 'datetime', categories: daily_timeseries.timestamp.map(t => t * 1000) },
+      stroke: { width: 1.5, curve: 'smooth' },
       colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#64748B'],
-      tooltip: {
-        theme: 'dark',
-        x: { format: 'dd MMM yyyy HH:mm' }
-      }
+      tooltip: { theme: 'dark', x: { format: 'dd MMM yyyy HH:mm' } }
     });
   }
 
   createNewsCountChart(elementId) {
     const { daily_timeseries } = this.data;
-    const now = Date.now();
-    const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
     const raw = daily_timeseries.timestamp
       .map((t, i) => ({ t: t * 1000, count: daily_timeseries.newsCount[i] }))
-      .filter(pt => pt.t >= oneWeekAgo);
+      .filter(pt => pt.t >= Date.now() - 7 * 86400000);
 
     let zoomTimeout;
-    const zoomHandler = (chartCtx, { xaxis }) => {
+    const zoomHandler = (_chartCtx, { xaxis }) => {
       clearTimeout(zoomTimeout);
       zoomTimeout = setTimeout(() => {
-        const min = xaxis.min, max = xaxis.max;
-        const range = max - min;
-        const groupMs = range <= 24 * 3600 * 1000 ? 3600 * 1000 : 24 * 3600 * 1000;
+        const { min, max } = xaxis;
+        const groupMs = (max - min) <= 86400000 ? 3600000 : 86400000;
         const bins = {};
         raw.filter(pt => pt.t >= min && pt.t <= max).forEach(pt => {
           const bucket = Math.floor(pt.t / groupMs) * groupMs;
           bins[bucket] = (bins[bucket] || 0) + pt.count;
         });
-        const data = Object.keys(bins).sort().map(k => [+k, bins[k]]);
-        this.newsChart.updateOptions({ series: [{ data }] });
+        this.newsChart.updateOptions({ series: [{ data: Object.entries(bins).map(([k, v]) => [Number(k), v]) }] });
       }, 300);
     };
 
@@ -2097,32 +2084,15 @@ class CryptoDataComponent {
       chart: {
         type: 'bar',
         height: '100%',
-        toolbar: { show: true },
+        toolbar: { show: true, tools: { download: false } },
         zoom: { enabled: true },
         events: { zoomed: zoomHandler }
       },
-      series: [{
-        name: 'News Count',
-        data: raw.map(pt => [pt.t, pt.count])
-      }],
-      xaxis: {
-        type: 'datetime'
-      },
-      yaxis: {
-        title: { text: 'News Count' }
-      },
-      plotOptions: {
-        bar: {
-          columnWidth: '60%'
-        }
-      },
-      dataLabels: {
-        enabled: false
-      },
-      tooltip: {
-        theme: 'dark',
-        x: { format: 'dd MMM yyyy HH:mm' }
-      }
+      series: [{ name: 'News Count', data: raw.map(pt => [pt.t, pt.count]) }],
+      xaxis: { type: 'datetime' },
+      plotOptions: { bar: { columnWidth: '60%' } },
+      dataLabels: { enabled: false },
+      tooltip: { theme: 'dark', x: { format: 'dd MMM yyyy HH:mm' } }
     });
     return this.newsChart;
   }
@@ -2130,185 +2100,159 @@ class CryptoDataComponent {
   createSentimentDonut(elementId, sentimentData, title) {
     const hasData = sentimentData.positive || sentimentData.negative || sentimentData.neutral;
     return new ApexCharts(document.querySelector(elementId), {
-      chart: {
-        type: 'donut',
-        height: 200,
-        animations: { enabled: false }
-      },
+      chart: { type: 'donut', height: 160, animations: { enabled: false } },
       series: hasData ? [
         sentimentData.positive * 100,
         sentimentData.negative * 100,
         sentimentData.neutral * 100
       ] : [],
       labels: ['Positive', 'Negative', 'Neutral'],
-      legend: {
-        position: 'bottom'
-      },
-      dataLabels: {
-        enabled: false
-      },
+      legend: { position: 'bottom' },
+      dataLabels: { enabled: false },
       plotOptions: {
         pie: {
           donut: {
             labels: {
               show: true,
-              total: {
-                show: true,
-                label: title,
-                formatter: () => '100%'
-              }
+              total: { show: true, label: title, formatter: () => '100%' }
             }
           }
         }
       },
       colors: ['#10B981', '#EF4444', '#64748B'],
-      tooltip: {
-        theme: 'dark'
-      }
+      tooltip: { theme: 'dark' }
     });
   }
 
   render() {
-    const { latest_news_info } = this.data;
-    const daySent = latest_news_info.last_day_sentiment;
-    const weekSent = latest_news_info.last_week_sentiment;
-    const showDay = daySent.positive || daySent.negative || daySent.neutral;
-    const showWeek = weekSent.positive || weekSent.negative || weekSent.neutral;
-    const sentimentVisible = showDay || showWeek;
-
-    const styleTag = `
-      <style>
-        .tooltip {
-          position: relative;
-          display: inline-block;
-          cursor: help;
-        }
-        .tooltip .tooltip-text {
-          visibility: hidden;
-          width: 220px;
-          background: rgba(0,0,0,0.9);
-          color: #fff;
-          text-align: center;
-          border-radius: 4px;
-          padding: 8px;
-          position: absolute;
-          z-index: 100;
-          bottom: 125%;
-          left: 50%;
-          transform: translateX(-50%);
-          opacity: 0;
-          transition: opacity 0.2s;
-          font-size: 14px;
-          pointer-events: none;
-        }
-        .tooltip:hover .tooltip-text,
-        .tooltip:focus .tooltip-text {
-          visibility: visible;
-          opacity: 1;
-        }
-        .tooltip-icon {
-          width: 16px;
-          height: 16px;
-          fill: currentColor;
-        }
-      </style>
-    `;
-
-    let sentimentSection = '';
-    if (sentimentVisible) {
-      sentimentSection = `
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h3 class="text-xl font-semibold mb-4 flex items-center">
-            Sentiment Analysis
-            <button class="tooltip ml-2 text-gray-500 hover:text-gray-700 focus:outline-none">
-              <svg class="tooltip-icon" viewBox="0 0 20 20">
-                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 102 0V7zm-1 7a1 1 0 100-2 1 1 0 000 2z"/>
-              </svg>
-              <span class="tooltip-text">
-                Sentiment analysis based on news articles. Positive values indicate bullish sentiment, 
-                negative values suggest bearish sentiment, and neutral represents mixed or uncertain outlook.
-              </span>
-            </button>
-          </h3>
-          <div class="flex flex-col md:flex-col gap-6">
-            ${showDay ? `
-              <div class="flex-1">
-                <h4 class="flex items-center mb-2">
-                  Last 24 Hours
-                  <button class="tooltip ml-1 text-gray-500 hover:text-gray-700 focus:outline-none">
-                    <svg class="tooltip-icon" viewBox="0 0 20 20">
-                      <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 102 0V7zm-1 7a1 1 0 100-2 1 1 0 000 2z"/>
-                    </svg>
-                    <span class="tooltip-text">Sentiment analysis from news articles published in the last 24 hours</span>
-                  </button>
-                </h4>
-                ${daySent.positive || daySent.negative || daySent.neutral ?
-            '<div id="sentimentDayChart" class="h-48"></div>' :
-            '<div class="text-gray-500 text-center py-4">No recent sentiment data available</div>'}
-              </div>` : ''}
-            ${showWeek ? `
-              <div class="flex-1">
-                <h4 class="flex items-center mb-2">
-                  Last 7 Days
-                  <button class="tooltip ml-1 text-gray-500 hover:text-gray-700 focus:outline-none">
-                    <svg class="tooltip-icon" viewBox="0 0 20 20">
-                      <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 102 0V7zm-1 7a1 1 0 100-2 1 1 0 000 2z"/>
-                    </svg>
-                    <span class="tooltip-text">Sentiment analysis from news articles published in the last week</span>
-                  </button>
-                </h4>
-                ${weekSent.positive || weekSent.negative || weekSent.neutral ?
-            '<div id="sentimentWeekChart" class="h-48"></div>' :
-            '<div class="text-gray-500 text-center py-4">No weekly sentiment data available</div>'}
-              </div>` : ''}
+    let analysisSection = '';
+    if (this.newsAnalysis) {
+      const na = this.newsAnalysis;
+      analysisSection = `
+        <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm mb-4">
+          <div class="flex items-center gap-2 mb-2">
+            <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div class="flex-1">
+              <h3 class="text-sm font-semibold text-gray-800">Fundamental Analysis</h3>
+              <p class="text-xs text-gray-500">Last updated: ${new Date(na.updatedAt * 1000).toLocaleDateString()}</p>
+            </div>
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${na.decision === 'خرید' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+              ${na.decision} ${na.decision === 'خرید' ? '↗' : '↘'}
+            </span>
           </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+            <div class="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded">
+              <span class="text-gray-400">🌐</span>
+              <span class="font-medium text-gray-600">Pair:</span>
+              <span class="text-gray-800">${na.pair}</span>
+            </div>
+            <div class="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded">
+              <span class="text-gray-400">📊</span>
+              <span class="font-medium text-gray-600">Pattern:</span>
+              <span class="text-gray-800">${na.pattern}</span>
+            </div>
+            <div class="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded">
+              <span class="text-gray-400">⏳</span>
+              <span class="font-medium text-gray-600">Duration:</span>
+              <span class="text-gray-800">${na.duration}</span>
+            </div>
+            <div class="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded">
+              <span class="text-gray-400">🔄</span>
+              <span class="font-medium text-gray-600">Volatility:</span>
+              <span class="text-gray-800">${na.volatility || 'N/A'}</span>
+            </div>
+          </div>
+
+          <details class="group [&_summary::-webkit-details-marker]:hidden">
+            <summary class="flex items-center justify-between p-1.5 cursor-pointer hover:bg-gray-50 rounded">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                </svg>
+                <span class="text-xs font-medium text-gray-700">Analysis Details</span>
+              </div>
+              <svg class="w-5 h-5 text-gray-400 transform transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </summary>
+            <div class="mt-2 pt-2 border-t border-gray-100">
+              <p class="text-xs text-gray-600 leading-5">${na.analyse}</p>
+              <details class="mt-2 group">
+                <summary class="flex items-center gap-2 p-1.5 text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-50 rounded">
+                  <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                  </svg>
+                  Related News (${na.news.length})
+                </summary>
+                <ul class="mt-1.5 pl-4 space-y-1.5 text-xs text-gray-600">
+                  ${na.news.map(item => `
+                    <li class="relative before:absolute before:-left-4 before:top-2 before:w-1.5 before:h-1.5 before:bg-gray-300 before:rounded-full">
+                      ${item}
+                    </li>
+                  `).join('')}
+                </ul>
+              </details>
+            </div>
+          </details>
         </div>`;
     }
 
+    const { latest_news_info = {} } = this.data || {};
+    const daySent = latest_news_info.last_day_sentiment || {};
+    const weekSent = latest_news_info.last_week_sentiment || {};
+    const showDay = daySent.positive || daySent.negative || daySent.neutral;
+    const showWeek = weekSent.positive || weekSent.negative || weekSent.neutral;
+
     this.parentElement.innerHTML = `
-      ${styleTag}
-      <div class="space-y-6">
-        ${sentimentVisible ? `
-          <div class="grid gap-6 md:grid-cols-3">
-            ${sentimentSection}
-            <div id="dampChart" class="bg-white p-6 rounded-lg shadow-md md:col-span-2 h-[500px]"></div>
-          </div>` :
-        `<div id="dampChart" class="bg-white p-6 rounded-lg shadow-md h-[500px]"></div>`}
+      <div class="space-y-4" data-component>
+        ${analysisSection}
 
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h3 class="text-xl font-semibold mb-4 flex items-center">
-            News Frequency Analysis
-            <button class="tooltip ml-2 text-gray-500 hover:text-gray-700 focus:outline-none">
-              <svg class="tooltip-icon" viewBox="0 0 20 20">
-                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 102 0V7zm-1 7a1 1 0 100-2 1 1 0 000 2z"/>
+        <div class="grid gap-4 md:grid-cols-3">
+          ${showDay || showWeek ? `
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div class="flex items-center gap-2 mb-3">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>
+                <h3 class="text-sm font-semibold text-gray-800">Market Sentiment</h3>
+              </div>
+              ${showDay ? `<div id="sentimentDayChart" class="-mx-1"></div>` : ''}
+              ${showWeek ? `<div id="sentimentWeekChart" class="-mx-1 mt-4"></div>` : ''}
+            </div>` : ''}
+          
+          <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm md:col-span-2">
+            <div class="flex items-center gap-2 mb-3">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
               </svg>
-              <span class="tooltip-text">
-                Interactive chart showing news article frequency. Zoom to see hourly/daily trends.
-                Click and drag to zoom, double-click to reset.
-              </span>
-            </button>
-          </h3>
-          <div id="newsCountChart" class="w-full h-64"></div>
+              <h3 class="text-sm font-semibold text-gray-800">DAMP Trends</h3>
+            </div>
+            <div id="dampChart" class="h-80"></div>
+          </div>
         </div>
-      </div>
-    `;
 
-    if (sentimentVisible) {
-      if (showDay && (daySent.positive || daySent.negative || daySent.neutral)) {
-        this.createSentimentDonut('#sentimentDayChart', daySent, 'Last 24 Hours').render();
-      }
-      if (showWeek && (weekSent.positive || weekSent.negative || weekSent.neutral)) {
-        this.createSentimentDonut('#sentimentWeekChart', weekSent, 'Last 7 Days').render();
-      }
+        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <h3 class="text-sm font-semibold text-gray-800">News Frequency</h3>
+          </div>
+          <div id="newsCountChart" class="h-64"></div>
+        </div>
+      </div>`;
+
+    if (this.data) {
+      if (showDay) this.createSentimentDonut('#sentimentDayChart', daySent, '24H').render();
+      if (showWeek) this.createSentimentDonut('#sentimentWeekChart', weekSent, '7D').render();
+      this.createDampChart('#dampChart').render();
+      this.createNewsCountChart('#newsCountChart').render();
     }
-    this.createDampChart('#dampChart').render();
-    this.createNewsCountChart('#newsCountChart').render();
   }
 }
-
-
-
-
 
 // draggable modal 
 document.addEventListener("DOMContentLoaded", () => {
