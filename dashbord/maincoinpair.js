@@ -137,7 +137,7 @@ async function fetchCoinList() {
 
           if (first_time) {
 
-
+            
 
             cryptoComponent = new CryptoDataComponent(
               '189b4bf96bf5de782515c1b4f0b2a2c7',
@@ -190,6 +190,7 @@ async function fetchCoinList() {
     console.error("Error fetching coin list:", error);
   }
 }
+
 fetchCoinList();
 setInterval(fetchCoinList, time_interval_for_chart);
 // setInterval(fetchNewsall, time_interval_for_chart);
@@ -458,6 +459,7 @@ async function fetchAndUpdateSRLevels() {
 // ----------------------------------------------------------------------------------------
 // Main Chart Update Function with Optimized Data Append & Resize
 // ----------------------------------------------------------------------------------------
+let first_time_candles = true ;
 let bullishColor = document.getElementById("bullish-color")
   ? document.getElementById("bullish-color").value
   : "#008000";
@@ -467,7 +469,12 @@ let bearishColor = document.getElementById("bearish-color")
   : "#ff0000";
 async function updateChart() {
   try {
+    if (first_time_candles){
+      showLoading()
+    }
     const data = await fetchOHLCVData();
+    hideLoading()
+    first_time_candles =false ; 
     console.log("OHLCV Data:", data);
     if (!data || !Array.isArray(data) || data.length === 0) {
       console.warn("No OHLCV data available.");
@@ -1026,7 +1033,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Start regular chart updates every 10 seconds.
-    setInterval(updateChart, 10000);
+    updateChart()
+    setInterval(updateChart, 5000);
   } catch (err) {
     console.error("Error during DOMContentLoaded initialization:", err);
   }
