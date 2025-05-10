@@ -79,7 +79,7 @@ async function fetchNewsall(firstCandleTime) {
 
 
 
-  console.log(pair_name);
+  // console.log(pair_name);
 
 
   try {
@@ -96,12 +96,13 @@ async function fetchNewsall(firstCandleTime) {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json; charset=utf-8",
-          Authorization: 'e19ad04e557b1cc1fee6b60b4d421fef',
+          Authorization: 'd4735e3a265e16ee2393953',
         },
       }
     );
+    console.log('newsResponse',newsResponse);
     if (newsResponse.data && newsResponse.data.return) {
-      console.log(fetchedNews);
+      // console.log('fetchedNews',fetchedNews);
 
       fetchedNews = newsResponse.data.data;
     }
@@ -475,7 +476,7 @@ async function updateChart() {
     const data = await fetchOHLCVData();
     hideLoading()
     first_time_candles =false ; 
-    console.log("OHLCV Data:", data);
+    // console.log("OHLCV Data:", data);
     if (!data || !Array.isArray(data) || data.length === 0) {
       console.warn("No OHLCV data available.");
       return;
@@ -488,7 +489,7 @@ async function updateChart() {
 
     const candlestickData = data.map((d) => ({
       x: new Date(d.datetime),
-      y: [d.open, d.high, d.low, d.close],
+      y: [parseFloat(d.open).toFixed(2), parseFloat(d.high).toFixed(2), parseFloat(d.low).toFixed(2), parseFloat(d.close).toFixed(2)],
     }));
 
     bullishColor = document.getElementById("bullish-color")
@@ -499,7 +500,7 @@ async function updateChart() {
       : "#ff0000";
     const volumeData = data.map((d) => ({
       x: new Date(d.datetime),
-      y: d.volume,
+      y: parseFloat(d.volume).toFixed(2),
       fillColor: d.close > d.open ? bullishColor : bearishColor,
     }));
 
@@ -656,7 +657,7 @@ function updateTrend(recommendation, strength) {
     'NEUTRAL': '#neutral'
   };
 
-  console.log('icon things : ', recommendation ,icons[recommendation]);
+  // console.log('icon things : ', recommendation ,icons[recommendation]);
   
   const icon = document.querySelector(icons[recommendation]).cloneNode(true);
   icon.classList.remove('hidden');
@@ -783,11 +784,11 @@ const chartOptions = {
         const dateStr = new Date(item.datetime).toLocaleString();
         return `<div class="apexcharts-tooltip" style="padding:10px;">
                     <div><strong>${dateStr}</strong></div>
-                    <div>Open: ${item.open}</div>
-                    <div>High: ${item.high}</div>
-                    <div>Low: ${item.low}</div>
-                    <div>Close: ${item.close}</div>
-                    <div>Volume: ${item.volume}</div>
+                    <div>Open: ${parseFloat(item.open).toFixed(2)}</div>
+                    <div>High: ${parseFloat(item.high).toFixed(2)}</div>
+                    <div>Low: ${parseFloat(item.low).toFixed(2)}</div>
+                    <div>Close: ${parseFloat(item.close).toFixed(2)}</div>
+                    <div>Volume: ${parseFloat(item.volume).toFixed(2)}</div>
                   </div>`;
       },
       shared: true,
@@ -880,7 +881,7 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
         const listStr = drawnLines
-          .map((line, index) => `${index + 1}: Price = ${line.price.toFixed(2)}`)
+          .map((line, index) => `${index + 1}: Price = ${parseFloat(line.price).toFixed(2)}`)
           .join("<br>");
         document.getElementById("modal-lines").innerHTML = listStr;
         document.getElementById("removal-modal").classList.remove("hidden");
@@ -991,11 +992,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 const dateStr = new Date(item.datetime).toLocaleString();
                 return `<div class="apexcharts-tooltip" style="padding:10px;">
                           <div><strong>${dateStr}</strong></div>
-                          <div>Open: ${item.open}</div>
-                          <div>High: ${item.high}</div>
-                          <div>Low: ${item.low}</div>
-                          <div>Close: ${item.close}</div>
-                          <div>Volume: ${item.volume}</div>
+                          <div>Open: ${parseFloat(item.open).toFixed(2)}</div>
+                          <div>High: ${parseFloat(item.high).toFixed(2)}</div>
+                          <div>Low: ${parseFloat(item.low).toFixed(2)}</div>
+                          <div>Close: ${parseFloat(item.close).toFixed(2)}</div>
+                          <div>Volume: ${parseFloat(item.volume).toFixed(2)}</div>
                         </div>`;
               },
               shared: true,
@@ -1073,15 +1074,15 @@ function getDate(limit, timeframe) {
   const seconds = String(targetTime.getSeconds()).padStart(2, "0");
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
-console.log(getDate(60, "1m"));
+// console.log(getDate(60, "1m"));
 
 // ----------------------------------------------------------------------------------------
 // News Modal and Description Toggle Helpers
 // ----------------------------------------------------------------------------------------
 function getSentimentIndicator(news) {
-  const pos = news.Positive != null ? news.Positive : 0;
-  const neu = news.Neutral != null ? news.Neutral : 0;
-  const neg = news.Negative != null ? news.Negative : 0;
+  const pos = news.Positive != null ? news.Positive.toFixed(2) : 0;
+  const neu = news.Neutral != null ? news.Neutral.toFixed(2) : 0;
+  const neg = news.Negative != null ? news.Negative.toFixed(2) : 0;
   const maxVal = Math.max(pos, neu, neg);
   if (maxVal === 0) return "-";
   if (maxVal === pos) {
@@ -1098,7 +1099,7 @@ function getSentimentIndicator(news) {
 //<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>
 
 function showNewsModal(relatedNews) {
-  console.log(relatedNews);
+  // console.log(relatedNews);
 
   const newsContent = document.getElementById("news-content");
   if (!newsContent) return;
@@ -1225,17 +1226,17 @@ const TechnicalAnalysisComponent = (function () {
   }
   function getScoreColor(score) {
     if (score > 20) {
-      console.log('green');
+      // console.log('green');
 
       document.getElementById('seperator_line').classList = 'absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-green-500'
     } else if (score < 20) {
 
-      console.log('red');
+      // console.log('red');
 
       document.getElementById('seperator_line').classList = 'absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-red-500'
 
     } else {
-      console.log('blue');
+      // console.log('blue');
 
       document.getElementById('seperator_line').classList = 'absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-blue-500'
 
@@ -1301,7 +1302,7 @@ const TechnicalAnalysisComponent = (function () {
           Authorization: token,
         },
       });
-      console.log("Technical data response:", response);
+      // console.log("Technical data response:", response);
       return response.data;
     } catch (error) {
       console.error("Error fetching technical data:", error);
@@ -1387,14 +1388,14 @@ const TechnicalAnalysisComponent = (function () {
 
     document.getElementById('recommendationActionContainer').innerHTML = actionHTML;
 
-    console.log(pair_name);
+    // console.log(pair_name);
 
 
     // Build the primary signal display
     const signalHTML = `
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-2xl font-bold">$${signal.price.toFixed(2)} (${pair_name})</p>
+            <p class="text-2xl font-bold">$${parseFloat(signal.price).toFixed(2)} (${pair_name})</p>
             <p class="text-gray-500 text-sm">Current Price</p>
           </div>
           <div class="text-right">
@@ -1402,7 +1403,7 @@ const TechnicalAnalysisComponent = (function () {
               ${signal.value}
               <span id="signalArrow" class="ml-1"></span>
             </span>
-            <p class="mt-1 text-sm ${getScoreColor(signal.score)}">Score: ${signal.score}</p>
+            <p class="mt-1 text-sm ${getScoreColor(signal.score)}">Score: ${parseFloat(signal.score).toFixed(2)}</p>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
@@ -1423,11 +1424,9 @@ const TechnicalAnalysisComponent = (function () {
     const supportHTML = `
       <div class='flex gap-4'>
       <h4 class="text-lg font-semibold mb-4 text-green-600">Support Levels</h4>
-        <button id="support_info" class=" text-gray-400 hover:text-indigo-600 transition-colors hidden">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <button id="support_info" class="text-gray-400 hover:text-indigo-600 transition-colors hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
         </button>
         </div>
@@ -1437,12 +1436,12 @@ const TechnicalAnalysisComponent = (function () {
         .map(level => `
               <div class="flex justify-between items-center bg-green-50 p-3 rounded-lg">
                 <div>
-                  <span class="font-medium">$${level.price.toFixed(2)}</span>
+                  <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
                   <span class="text-sm text-green-500 ml-2">
-                    ${level.distance.toFixed(2)}% ${getTrendIcon("BULLISH")}
+                    ${parseFloat(level.distance).toFixed(2)}% ${getTrendIcon("BULLISH")}
                   </span>
                 </div>
-                <div class="text-sm text-green-700">Strength: ${level.strength.toFixed(2)}</div>
+                <div class="text-sm text-green-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
               </div>
             `)
         .join("")}
@@ -1728,12 +1727,12 @@ const TechnicalAnalysisComponent = (function () {
         .map(level => `
               <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg">
                 <div>
-                  <span class="font-medium">$${level.price.toFixed(2)}</span>
+                  <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
                   <span class="text-sm text-red-500 ml-2">
-                    ${Math.abs(level.distance).toFixed(2)}% ${getTrendIcon("BEARISH")}
+                    ${Math.abs(parseFloat(level.distance)).toFixed(2)}% ${getTrendIcon("BEARISH")}
                   </span>
                 </div>
-                <div class="text-sm text-red-700">Strength: ${level.strength.toFixed(2)}</div>
+                <div class="text-sm text-red-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
               </div>
             `)
         .join("")}
@@ -2122,15 +2121,30 @@ class CryptoDataComponent {
           donut: {
             labels: {
               show: true,
-              total: { show: true, label: title, formatter: () => '100%' }
+              name: { show: true },
+              value: {
+                show: true,
+                formatter: (val) => Math.round(val) + '%'
+              },
+              total: {
+                show: true,
+                label: title,
+                formatter: () => '100%'
+              }
             }
           }
         }
       },
       colors: ['#10B981', '#EF4444', '#64748B'],
-      tooltip: { theme: 'dark' }
+      tooltip: { 
+        theme: 'dark',
+        y: {
+          formatter: (value) => Math.round(value) + '%'
+        }
+      }
     });
   }
+  
 
   render() {
     let analysisSection = '';
