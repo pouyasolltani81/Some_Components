@@ -96,7 +96,7 @@ async function fetchNewsall(firstCandleTime) {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json; charset=utf-8",
-          Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
+          Authorization: 'e19ad04e557b1cc1fee6b60b4d421fef',
         },
       }
     );
@@ -140,7 +140,7 @@ async function fetchCoinList() {
             
 
             cryptoComponent = new CryptoDataComponent(
-              '189b4bf96bf5de782515c1b4f0b2a2c7',
+              'e19ad04e557b1cc1fee6b60b4d421fef',
               pair_name,
               document.getElementById('news_statistics')
             );

@@ -267,7 +267,7 @@ class SmartCoinAnalysCard {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json; charset=utf-8",
-          Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
+          Authorization: 'e19ad04e557b1cc1fee6b60b4d421fef',
         },
       });
 
@@ -293,7 +293,7 @@ class SmartCoinAnalysCard {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json; charset=utf-8",
-            Authorization: '189b4bf96bf5de782515c1b4f0b2a2c7',
+            Authorization: 'e19ad04e557b1cc1fee6b60b4d421fef',
           },
 
         });
