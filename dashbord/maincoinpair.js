@@ -147,6 +147,9 @@ async function fetchCoinList() {
             );
 
 
+            cryptoComponent.fetchData();
+
+
 
 
           }
@@ -948,8 +951,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (newsModeBtn) {
       newsModeBtn.addEventListener("click", function () {
 
-        cryptoComponent.fetchData();
-        document.getElementById('news_statistics').classList.toggle('hidden')
+        // cryptoComponent.fetchData();
+        // document.getElementById('news_statistics').classList.toggle('hidden')
         newsMode = !newsMode;
         this.classList.toggle("bg-blue-600", newsMode);
         this.classList.toggle("bg-gray-100", !newsMode);
@@ -1265,6 +1268,7 @@ const TechnicalAnalysisComponent = (function () {
   function getComponentsHTML(components) {
     let html = "";
     for (const [category, compData] of Object.entries(components)) {
+      console.log(compData);
       html += `<div class="space-y-1 border-b pb-2 mb-2">
                 <h5 class="font-semibold capitalize">${category}</h5>
                 <p><span class="font-semibold">Overall Score:</span> ${compData.score}</p>
@@ -1311,9 +1315,6 @@ const TechnicalAnalysisComponent = (function () {
   }
 
 
-
-
-  
 
   
   function updateUI(fetchedData) {
@@ -1426,7 +1427,13 @@ const TechnicalAnalysisComponent = (function () {
     `;
     // signalDataContainer.innerHTML = signalHTML;
     // document.getElementById("signalArrow").innerHTML = getTrendIcon(signal.value);
-
+    document.getElementById("TitleSignal").innerHTML = `<div class="text-right flex items-center gap-2">
+            <span class="${getStatusBgColor(signal.value)} px-3 py-1 rounded-full text-sm inline-flex items-center">
+              ${signal.value}
+              <span id="signalArrow" class="ml-1"></span>
+            </span>
+            <p class="mt-1 text-sm ${getScoreColor(signal.score)}">Score: ${parseFloat(signal.score).toFixed(2)}</p>
+          </div>`;
     // Build Support Levels display
     const supportHTML = `
       <div class='flex gap-4'>
@@ -1547,6 +1554,7 @@ const TechnicalAnalysisComponent = (function () {
       </div>
     `;
     document.getElementById('wallet_overview').innerHTML = walletHTML;
+      
 
     // Function to update the dynamic trade recommendations based on risk inputs.
     function updateTradeRecs() {
@@ -1599,6 +1607,8 @@ const TechnicalAnalysisComponent = (function () {
       }
 
       // Build the Suggested Actions section with dynamic profits and rec data.
+      // console.log(rec);
+      
       const recomendationHTML = `
         <div class='flex gap-4 mb-3'>
 
@@ -2332,6 +2342,5 @@ document.addEventListener("DOMContentLoaded", () => {
     document.removeEventListener("pointerup", dragEnd);
   }
 });
-
 
 
