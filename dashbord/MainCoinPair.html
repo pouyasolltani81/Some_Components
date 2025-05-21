@@ -139,61 +139,76 @@
     class="transition-all fixed bottom-6 right-6 bg-indigo-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-105 z-20">
     Show Analysis
   </button>
-<!-- ======== FULL MODAL HTML ======== -->
+
+
+
+  <!-- ===== FULL MODAL HTML ===== -->
 <div id="mainModal"
-     class="hidden fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-start justify-center pt-10 px-4 z-50 overflow-y-auto">
-  <div class="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden">
+class="hidden fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-start justify-center pt-10 px-4 z-50 overflow-y-auto">
+<div class="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden">
 
-    <!-- Header w/ popup -->
-    <div class="flex justify-between items-center px-5 py-4 border-b border-transparent relative">
-      <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-        Technical Analysis Dashboard
-        <span id="analysisDate" class="text-base font-normal text-gray-500 ml-2"></span>
-        <button id="titleInfoBtn" class="text-gray-400 hover:text-indigo-600 transition-colors">ℹ️</button>
-      </h3>
-      <button id="closeModalBtn" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
-      <div id="seperator_line" class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r to-gray-50"></div>
+<!-- Header w/ popup ℹ️ -->
+<div class="flex justify-between items-center px-5 py-4 border-b border-transparent relative">
+ <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+   Technical Analysis Dashboard
+   <span id="analysisDate" class="text-base font-normal text-gray-500 ml-2"></span>
+   <button id="modalInfoBtn" class="text-gray-400 hover:text-indigo-600 transition-colors">
+     ℹ️
+   </button>
+ </h3>
+ <button id="closeModalBtn" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+ <div id="seperator_line" class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r to-gray-50"></div>
 
-      <!-- Popup content -->
-      <div id="titleInfoPopover"
-           class="hidden absolute top-12 left-5 bg-white border border-gray-300 rounded-lg p-4 w-80 shadow-lg z-40">
-        <p class="text-sm text-gray-700">
-          This plan is driven by technical signals, support & resistance zones, plus dynamic risk controls.
-        </p>
-      </div>
-    </div>
+ <!-- POPUP CONTENT (toggled by modalInfoBtn) -->
+ <div id="modalInfoPopover"
+      class="absolute top-16 left-6 bg-white border border-gray-300 rounded shadow-lg p-4 w-80 hidden z-30">
+   <h5 class="font-semibold mb-2">Components</h5>
+   <div id="componentsContent" class="text-sm space-y-2">
+     <!-- populated by updateUI from fetchedData.signal.components -->
+   </div>
+ </div>
+</div>
 
-    <!-- Content Grid -->
-    <div class="grid gap-5 p-5 max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-gray-100">
+<!-- Content Grid -->
+<div class="grid gap-5 p-5 max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-gray-100">
 
-      <!-- 1) Support / Price / Resistance -->
-      <div class="grid grid-cols-3 gap-4">
-        <div id="supportLevelsContainer"
-             class="p-3 rounded-lg bg-green-50 border border-green-200 shadow-sm space-y-2">
-          <!-- supports injected -->
-        </div>
-        <div id="srPriceContainer"
-             class="flex items-center justify-center text-2xl font-bold text-yellow-600">
-          <!-- live price -->
-        </div>
-        <div id="resistanceLevelsContainer"
-             class="p-3 rounded-lg bg-red-50 border border-red-200 shadow-sm space-y-2">
-          <!-- resistances injected -->
-        </div>
-      </div>
+ <!-- NEW: Support / Price / Resistance Row -->
+ <div class="grid grid-cols-3 gap-4">
+   <div id="supportLevelsContainer"
+        class="p-3 rounded-lg bg-green-50 border border-green-200 shadow-sm">
+     <!-- clickable supports here -->
+   </div>
+   <div id="srPriceContainer"
+        class="flex items-center justify-center text-2xl font-bold text-yellow-600">
+     <!-- live price here -->
+   </div>
+   <div id="resistanceLevelsContainer"
+        class="p-3 rounded-lg bg-red-50 border border-red-200 shadow-sm">
+     <!-- clickable resistances here -->
+   </div>
+ </div>
 
-      <!-- 2) Trading Actions -->
-      <div id="recomendations" class="space-y-4">
-        <!-- all trade cards injected here -->
-      </div>
+ <!-- Second Row: Wallet & Recommendations -->
+ <div class="grid md:grid-cols-2 gap-4">
+   <!-- Wallet Overview -->
+   <div id="wallet_overview" class="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm space-y-3">
+     <!-- injected by updateUI -->
+   </div>
 
-      <!-- 3) Trading Notes -->
-      <div id="tradingNotesContainer" class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 shadow-sm">
-        <!-- notes injected -->
-      </div>
+   <!-- Trading Recommendations -->
+   <div id="recomendations" class="bg-green-50 p-4 rounded-lg border border-green-200 shadow-sm">
+     <!-- injected by updateUI -->
+   </div>
+ </div>
 
-    </div>
-  </div>
+ <!-- Third Row: Trading Notes -->
+ <div class="grid grid-cols-1">
+   <div id="tradingNotesContainer" class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 shadow-sm">
+     <!-- injected by updateUI -->
+   </div>
+ </div>
+</div>
+</div>
 </div>
 
 
