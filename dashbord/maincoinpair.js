@@ -1315,15 +1315,6 @@ const TechnicalAnalysisComponent = (function () {
  let selectedSupport = null;
  let selectedResistance = null;
 
- // toggle original popup
- document.getElementById('infoIcon').addEventListener('click', () => {
-   document.getElementById('componentsPopover').classList.toggle('hidden');
- });
- // close modal
- document.getElementById('closeModalBtn').addEventListener('click', () => {
-   document.getElementById('mainModal').classList.add('hidden');
- });
-
  function updateUI(fetchedData) {
    // 1) Header & components
    const analysisDate = new Date(fetchedData.signal.signal.timestamp).toLocaleDateString();
@@ -1505,6 +1496,37 @@ const TechnicalAnalysisComponent = (function () {
      <h4 class="text-lg font-semibold text-yellow-800 mb-2">Trading Notes</h4>
      <p class="text-yellow-800">${rec.notes}</p>
    `;
+
+
+
+
+  // --- Populate the components popover as you already do ---
+  const componentsContent = document.getElementById("componentsContent");
+  componentsContent.innerHTML =
+    fetchedData.signal.components
+      .map(c => `<div>• ${c.name}: ${c.value}</div>`)
+      .join("");
+
+  // --- Re-use your working infoIcon & popover ---
+  const infoBtn = document.getElementById("infoIcon");
+  const popover = document.getElementById("componentsPopover");
+
+  // Replace any old handler so we don’t stack listeners:
+  infoBtn.onclick = (e) => {
+    e.stopPropagation();            // Prevent the click-away from closing it immediately
+    popover.classList.toggle("hidden");
+  };
+
+  // Click anywhere else? hide the popover
+  // Again, replace the old listener so you don’t accumulate them:
+  window.onclick = (e) => {
+    if (
+      !popover.contains(e.target) &&
+      e.target.id !== "infoIcon"
+    ) {
+      popover.classList.add("hidden");
+    }
+  };
  }
   
 //   function updateUI(fetchedData) {
