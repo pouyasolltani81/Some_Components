@@ -1311,657 +1311,456 @@ const TechnicalAnalysisComponent = (function () {
   }
 
 
- // === NEW GLOBALS for S/R selection ===
- let selectedSupport = null;
- let selectedResistance = null;
 
- function updateUI(fetchedData) {
-   // ===== 1) HEADER DATE =====
-   const walletBalance = 1000;
-   const analysisDate = new Date(fetchedData.signal.signal.timestamp).toLocaleDateString();
-   document.getElementById('analysisDate').textContent = analysisDate;
-
-   const signal = fetchedData.signal.signal;
-   const rec    = fetchedData.signal.recommendation;
-   const price  = parseFloat(signal.price);
-
-   // ===== 2) INJECT LIVE PRICE =====
-   const signalEl = document.getElementById('signalDataContainer');
-   signalEl.innerHTML = `
-     <div class="flex items-center justify-between">
-       <div>
-         <p class="text-2xl font-bold">$${price.toFixed(2)} (${pair_name})</p>
-         <p class="text-gray-500 text-sm">Live Price</p>
-       </div>
-     </div>
-   `;
-
-   // ===== 3) BUILD CLICKABLE SUPPORTS =====
-   const supCon = document.getElementById('supportLevelsContainer');
-   supCon.innerHTML = '';
-   rec.support_levels.forEach(level => {
-     const btn = document.createElement('button');
-     btn.textContent = `🟢 $${parseFloat(level.price).toFixed(2)}`;
-     btn.className = `w-full text-left p-2 mb-1 rounded ${
-       selectedSupport === level.price ? 'bg-green-300' : 'bg-green-100 hover:bg-green-200'
-     }`;
-     btn.onclick = () => {
-       selectedSupport = level.price;
-       renderSR();
-       tryBuildCustomTrade(price);
-     };
-     supCon.appendChild(btn);
-   });
-
-   // ===== 4) BUILD CLICKABLE RESISTANCES =====
-   const resCon = document.getElementById('resistanceLevelsContainer');
-   resCon.innerHTML = '';
-   rec.resistance_levels.forEach(level => {
-     const btn = document.createElement('button');
-     btn.textContent = `🔴 $${parseFloat(level.price).toFixed(2)}`;
-     btn.className = `w-full text-left p-2 mb-1 rounded ${
-       selectedResistance === level.price ? 'bg-red-300' : 'bg-red-100 hover:bg-red-200'
-     }`;
-     btn.onclick = () => {
-       selectedResistance = level.price;
-       renderSR();
-       tryBuildCustomTrade(price);
-     };
-     resCon.appendChild(btn);
-   });
-
-   // helper to re-render S/R to update highlights
-   function renderSR() {
-     updateUI({ signal: { signal, recommendation: rec, components: fetchedData.signal.components } });
-   }
-
-   // ===== 5) ORIGINAL RECOMMENDATION ACTION CONTAINER =====
-   let actionHTML = `
-     <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
-       <!-- Header -->
-       <div class="flex items-center gap-3 mb-6">
-         <div class="p-2 bg-blue-100 rounded-lg">📈</div>
-         <h4 class="text-xl font-bold text-gray-800 flex flex-col items-center">
-           Trading Recommendation
-           <span class="block text-sm font-normal text-gray-500">Based on technical analysis</span>
-         </h4>
-         <button id="trading_recom_info" class=" text-gray-400 hover:text-indigo-600 transition-colors">
-           <!-- SVG... -->
-         </button>
-       </div>
-       <!-- Recommendation Grid -->
-       <div class="grid md:grid-cols-2 gap-4 mb-6">
-         <div class="bg-white p-4 rounded-lg border ${
-           (rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'border-green-200' : 'border-red-200'
-         }">
-           <div class="flex items-center gap-3 mb-2">
-             <span class="p-2 rounded-lg ${
-               (rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'bg-green-100' : 'bg-red-100'
-             }">${
-               (rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '🔼' : '🔽'
-             }</span>
-             <div>
-               <p class="text-sm text-gray-600">Recommended Action</p>
-               <p class="text-lg font-bold ${
-                 (rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'text-green-600' : 'text-red-600'
-               }">${rec.action}</p>
-             </div>
-           </div>
-         </div>
-
-         ${rec.risk_reward_ratio ? `
-         <!-- Risk/Reward Card -->
-         <div class="bg-white p-4 rounded-lg border border-blue-200">
-           <div class="flex items-center gap-3">
-             <span class="p-2 rounded-lg bg-blue-100">⚖️</span>
-             <div>
-               <p class="text-sm text-gray-600">Risk/Reward Ratio</p>
-               <p class="text-lg font-bold text-blue-600">${rec.risk_reward_ratio.toFixed(2)}</p>
-             </div>
-           </div>
-         </div>
-       </div>
-
-       <!-- Targets Grid -->
-       <div class="grid md:grid-cols-3 gap-4 mb-6">
-         <div class="bg-white p-4 rounded-lg border border-red-200">
-           <p class="text-sm text-gray-600 mb-1">🛑 Stop Loss</p>
-           <p class="font-semibold text-red-600">${rec.stop_loss.toFixed(2)}</p>
-         </div>
-         <div class="bg-white p-4 rounded-lg border border-green-200">
-           <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 1</p>
-           <p class="font-semibold text-green-600">${rec.take_profit_1.toFixed(2)}</p>
-         </div>
-         <div class="bg-white p-4 rounded-lg border border-green-200">
-           <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 2</p>
-           <p class="font-semibold text-green-600">${rec.take_profit_2.toFixed(2)}</p>
-         </div>
-       </div>
-       ` : ''}
-
-     </div>
-   `;
-   document.getElementById('recommendationActionContainer').innerHTML = actionHTML;
-
-   // ===== 6) ORIGINAL SUPPORT/RES-LEVEL DISPLAYS REMOVED (replaced above) =====
-
-   // ===== 7) WALLET OVERVIEW =====
-   const walletHTML = `
-     <div class='flex gap-4'>
-       <h4 class="text-base font-semibold flex items-center gap-2 text-gray-700">💰 Wallet Overview</h4>
-       <button id="wallet_info" class=" text-gray-400 hover:text-indigo-600 transition-colors">
-         <!-- SVG... -->
-       </button>
-     </div>
-     <div class="grid md:grid-cols-2 gap-3">
-       <div class="flex items-center gap-3">
-         <div class="p-2 bg-white rounded-lg border">👛</div>
-         <div>
-           <p class="text-sm text-gray-600">Current Balance</p>
-           <p class="text-lg font-semibold text-gray-800">${walletBalance} $</p>
-         </div>
-       </div>
-       <div class="flex items-center gap-3">
-         <div class="p-2 bg-white rounded-lg border">💹</div>
-         <div>
-           <p class="text-sm text-gray-600">Current Pair Value</p>
-           <p id="wallet_pair_value" class="text-lg font-semibold text-gray-800">${price.toFixed(2)}</p>
-         </div>
-       </div>
-     </div>
-     <!-- risk controls & helper note omitted for brevity -->
-   `;
-   document.getElementById('wallet_overview').innerHTML = walletHTML;
-
-   // ===== 8) ORIGINAL updateTradeRecs() & event listeners =====
-   updateTradeRecs();
-
-   // ===== 9) ORIGINAL RESISTANCE LEVELS & NOTES =====
-   const notesHTML = `
-     <h4 class="text-lg font-semibold text-yellow-800 mb-2">Trading Notes</h4>
-     <p class="text-yellow-800">${rec.notes}</p>
-   `;
-   document.getElementById('tradingNotesContainer').innerHTML = notesHTML;
- }
-
- // ===== CUSTOM S/R TRADE BUILDER =====
- function tryBuildCustomTrade(price) {
-   if (selectedSupport != null && selectedResistance != null) {
-     const size  = 1000 / price; // same as walletBalance/price
-     const profit = (selectedResistance - selectedSupport) * size;
-
-     const customCard = document.createElement('div');
-     customCard.className = 'cursor-pointer bg-white p-4 rounded-lg border border-purple-200 hover:bg-purple-100 mb-3';
-     customCard.innerHTML = `
-       <div class="flex items-center gap-2 mb-1 text-purple-600">🔧 <span class="font-medium">Custom S/R Trade</span></div>
-       <p class="text-sm">S: $${selectedSupport.toFixed(2)} | R: $${selectedResistance.toFixed(2)}</p>
-       <p class="text-lg font-semibold">Profit: $${profit.toFixed(2)}</p>
-       <button onclick="confirmAction('Custom S/R Trade', ${selectedSupport}, ${selectedResistance})"
-               class="mt-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-500">
-         Trade this Range
-       </button>
-     `;
-     // prepend into your existing Recommendation container
-     const recCon = document.getElementById('recommendationActionContainer');
-     recCon.insertBefore(customCard, recCon.firstChild);
-
-     // reset for next pick
-     selectedSupport = selectedResistance = null;
-   }
- }
-
- // CLOSE BUTTON
- document.getElementById('closeModalBtn')
-   .addEventListener('click', () => document.getElementById('mainModal').classList.add('hidden'));
   
-//   function updateUI(fetchedData) {
-//     // Assume a fixed wallet balance (e.g. 1000 $) – or get it dynamically if available.
-//     const walletBalance = 1000;
-//     const analysisDate = new Date(fetchedData.signal.signal.timestamp).toLocaleDateString();
-//     analysisDateEl.textContent = `${analysisDate}`;
+  function updateUI(fetchedData) {
+    // Assume a fixed wallet balance (e.g. 1000 $) – or get it dynamically if available.
+    const walletBalance = 1000;
+    const analysisDate = new Date(fetchedData.signal.signal.timestamp).toLocaleDateString();
+    analysisDateEl.textContent = `${analysisDate}`;
 
-//     const signal = fetchedData.signal.signal;
-//     const rec = fetchedData.signal.recommendation;
+    const signal = fetchedData.signal.signal;
+    const rec = fetchedData.signal.recommendation;
 
-//     const actionHTML = `
-//   <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
-//     <!-- Header -->
-//     <div class="flex items-center gap-3 mb-6">
-//       <div class="p-2 bg-blue-100 rounded-lg">
-//         📈
-//       </div>
-//       <h4 class="text-xl font-bold text-gray-800  flex flex-col items-center">
-//         Trading Recommendation
-//         <span class="block text-sm font-normal text-gray-500">Based on technical analysis</span>
-//       </h4>
+    const actionHTML = `
+  <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-6">
+      <div class="p-2 bg-blue-100 rounded-lg">
+        📈
+      </div>
+      <h4 class="text-xl font-bold text-gray-800  flex flex-col items-center">
+        Trading Recommendation
+        <span class="block text-sm font-normal text-gray-500">Based on technical analysis</span>
+      </h4>
 
-//         <button id="trading_recom_info" class=" text-gray-400 hover:text-indigo-600 transition-colors">
-//           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-//             stroke="currentColor">
-//             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-//               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-//           </svg>
-//         </button>
-//     </div>
+        <button id="trading_recom_info" class=" text-gray-400 hover:text-indigo-600 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+    </div>
 
-//     <!-- Recommendation Grid -->
-//     <div class="grid md:grid-cols-2 gap-4 mb-6">
-//       <!-- Action Card -->
-//       <div class="bg-white p-4 rounded-lg border ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? 'border-green-200' : 'border-red-200'}">
-//         <div class="flex items-center gap-3 mb-2">
-//           <span class="p-2 rounded-lg ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? 'bg-green-100' : 'bg-red-100'}">
-//             ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? '🔼' : '🔽'}
-//           </span>
-//           <div>
-//             <p class="text-sm text-gray-600">Recommended Action</p>
-//             <p class="text-lg font-bold ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? 'text-green-600' : 'text-red-600'}">${rec.action}</p>
-//           </div>
-//         </div>
-//       </div>
+    <!-- Recommendation Grid -->
+    <div class="grid md:grid-cols-2 gap-4 mb-6">
+      <!-- Action Card -->
+      <div class="bg-white p-4 rounded-lg border ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? 'border-green-200' : 'border-red-200'}">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="p-2 rounded-lg ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? 'bg-green-100' : 'bg-red-100'}">
+            ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? '🔼' : '🔽'}
+          </span>
+          <div>
+            <p class="text-sm text-gray-600">Recommended Action</p>
+            <p class="text-lg font-bold ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? 'text-green-600' : 'text-red-600'}">${rec.action}</p>
+          </div>
+        </div>
+      </div>
 
-//       ${rec.risk_reward_ratio ? `<!-- Risk/Reward Card -->
-//       <div class="bg-white p-4 rounded-lg border border-blue-200">
-//         <div class="flex items-center gap-3">
-//           <span class="p-2 rounded-lg bg-blue-100">⚖️</span>
-//           <div>
-//             <p class="text-sm text-gray-600">Risk/Reward Ratio</p>
-//             <p class="text-lg font-bold text-blue-600">${rec.risk_reward_ratio.toFixed(2)}</p>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
+      ${rec.risk_reward_ratio ? `<!-- Risk/Reward Card -->
+      <div class="bg-white p-4 rounded-lg border border-blue-200">
+        <div class="flex items-center gap-3">
+          <span class="p-2 rounded-lg bg-blue-100">⚖️</span>
+          <div>
+            <p class="text-sm text-gray-600">Risk/Reward Ratio</p>
+            <p class="text-lg font-bold text-blue-600">${rec.risk_reward_ratio.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
-//     <!-- Targets Grid -->
-//     <div class="grid md:grid-cols-3 gap-4 mb-6">
-//       <div class="bg-white p-4 rounded-lg border border-red-200">
-//         <p class="text-sm text-gray-600 mb-1">🛑 Stop Loss</p>
-//         <p class="font-semibold text-red-600">${rec.stop_loss.toFixed(2)}</p>
-//       </div>
-//       <div class="bg-white p-4 rounded-lg border border-green-200">
-//         <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 1</p>
-//         <p class="font-semibold text-green-600">${rec.take_profit_1.toFixed(2)}</p>
-//       </div>
-//       <div class="bg-white p-4 rounded-lg border border-green-200">
-//         <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 2</p>
-//         <p class="font-semibold text-green-600">${rec.take_profit_2.toFixed(2)}</p>
-//       </div>
-//     </div>` : ''}
+    <!-- Targets Grid -->
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-lg border border-red-200">
+        <p class="text-sm text-gray-600 mb-1">🛑 Stop Loss</p>
+        <p class="font-semibold text-red-600">${rec.stop_loss.toFixed(2)}</p>
+      </div>
+      <div class="bg-white p-4 rounded-lg border border-green-200">
+        <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 1</p>
+        <p class="font-semibold text-green-600">${rec.take_profit_1.toFixed(2)}</p>
+      </div>
+      <div class="bg-white p-4 rounded-lg border border-green-200">
+        <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 2</p>
+        <p class="font-semibold text-green-600">${rec.take_profit_2.toFixed(2)}</p>
+      </div>
+    </div>` : ''}
       
 
     
-// `;
+`;
 
-//     // document.getElementById('recommendationActionContainer').innerHTML = actionHTML;
+    // document.getElementById('recommendationActionContainer').innerHTML = actionHTML;
 
-//     // console.log(pair_name);
+    // console.log(pair_name);
 
 
-//     // Build the primary signal display
-//     const signalHTML = `
-//         <div class="flex items-center justify-between">
-//           <div>
-//             <p class="text-2xl font-bold">$${parseFloat(signal.price).toFixed(2)} (${pair_name})</p>
-//             <p class="text-gray-500 text-sm">Current Price</p>
-//           </div>
-//           <div class="text-right">
-//             <span class="${getStatusBgColor(signal.value)} px-3 py-1 rounded-full text-sm inline-flex items-center">
-//               ${signal.value}
-//               <span id="signalArrow" class="ml-1"></span>
-//             </span>
-//             <p class="mt-1 text-sm ${getScoreColor(signal.score)}">Score: ${parseFloat(signal.score).toFixed(2)}</p>
-//           </div>
-//         </div>
-//         <div class="grid grid-cols-2 gap-4">
-//           <div class="bg-white p-3 rounded-lg border">
-//             <p class="text-gray-500 text-sm">Timestamp</p>
-//             <p class="font-medium">${new Date(signal.timestamp).toLocaleString()}</p>
-//           </div>
-//           <div class="bg-white p-3 rounded-lg border">
-//             <p class="text-gray-500 text-sm">Analysis Time</p>
-//             <p class="font-medium">${signal.datetime.split(" ")[1]}</p>
-//           </div>
-//         </div>
-//     `;
-//     // signalDataContainer.innerHTML = signalHTML;
-//     // document.getElementById("signalArrow").innerHTML = getTrendIcon(signal.value);
+    // Build the primary signal display
+    const signalHTML = `
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-2xl font-bold">$${parseFloat(signal.price).toFixed(2)} (${pair_name})</p>
+            <p class="text-gray-500 text-sm">Current Price</p>
+          </div>
+          <div class="text-right">
+            <span class="${getStatusBgColor(signal.value)} px-3 py-1 rounded-full text-sm inline-flex items-center">
+              ${signal.value}
+              <span id="signalArrow" class="ml-1"></span>
+            </span>
+            <p class="mt-1 text-sm ${getScoreColor(signal.score)}">Score: ${parseFloat(signal.score).toFixed(2)}</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-white p-3 rounded-lg border">
+            <p class="text-gray-500 text-sm">Timestamp</p>
+            <p class="font-medium">${new Date(signal.timestamp).toLocaleString()}</p>
+          </div>
+          <div class="bg-white p-3 rounded-lg border">
+            <p class="text-gray-500 text-sm">Analysis Time</p>
+            <p class="font-medium">${signal.datetime.split(" ")[1]}</p>
+          </div>
+        </div>
+    `;
+    // signalDataContainer.innerHTML = signalHTML;
+    // document.getElementById("signalArrow").innerHTML = getTrendIcon(signal.value);
 
-//     // Build Support Levels display
-//     const supportHTML = `
-//       <div class='flex gap-4'>
-//       <h4 class="text-lg font-semibold mb-4 text-green-600">Support Levels</h4>
-//         <button id="support_info" class="text-gray-400 hover:text-indigo-600 transition-colors hidden">
-//           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-//           </svg>
-//         </button>
-//         </div>
+    // Build Support Levels display
+    const supportHTML = `
+      <div class='flex gap-4'>
+      <h4 class="text-lg font-semibold mb-4 text-green-600">Support Levels</h4>
+        <button id="support_info" class="text-gray-400 hover:text-indigo-600 transition-colors hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </button>
+        </div>
         
-//         <div class="space-y-3">
-//           ${rec.support_levels
-//         .map(level => `
-//               <div class="flex justify-between items-center bg-green-50 p-3 rounded-lg">
-//                 <div>
-//                   <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
-//                   <span class="text-sm text-green-500 ml-2">
-//                     ${parseFloat(level.distance).toFixed(2)}% ${getTrendIcon("BULLISH")}
-//                   </span>
-//                 </div>
-//                 <div class="text-sm text-green-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
-//               </div>
-//             `)
-//         .join("")}
-//         </div>
-//     `;
-//     supportLevelsContainer.innerHTML = supportHTML;
+        <div class="space-y-3">
+          ${rec.support_levels
+        .map(level => `
+              <div class="flex justify-between items-center bg-green-50 p-3 rounded-lg">
+                <div>
+                  <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
+                  <span class="text-sm text-green-500 ml-2">
+                    ${parseFloat(level.distance).toFixed(2)}% ${getTrendIcon("BULLISH")}
+                  </span>
+                </div>
+                <div class="text-sm text-green-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
+              </div>
+            `)
+        .join("")}
+        </div>
+    `;
+    supportLevelsContainer.innerHTML = supportHTML;
 
-//     // Compute strongest and weakest support & resistance levels.
-//     // (For BUY trades: optimal = strongest resistance (TP) and strongest support (SL),
-//     //  high risk = weakest resistance and weakest support.
-//     //  For SELL trades, the roles of support/resistance are reversed.)
-//     const strongestSupport = rec.support_levels.reduce((max, level) => level.strength > max.strength ? level : max, rec.support_levels[0]);
-//     const weakestSupport = rec.support_levels.reduce((min, level) => level.strength < min.strength ? level : min, rec.support_levels[0]);
-//     const strongestResistance = rec.resistance_levels.reduce((max, level) => level.strength > max.strength ? level : max, rec.resistance_levels[0]);
-//     const weakestResistance = rec.resistance_levels.reduce((min, level) => level.strength < min.strength ? level : min, rec.resistance_levels[0]);
+    // Compute strongest and weakest support & resistance levels.
+    // (For BUY trades: optimal = strongest resistance (TP) and strongest support (SL),
+    //  high risk = weakest resistance and weakest support.
+    //  For SELL trades, the roles of support/resistance are reversed.)
+    const strongestSupport = rec.support_levels.reduce((max, level) => level.strength > max.strength ? level : max, rec.support_levels[0]);
+    const weakestSupport = rec.support_levels.reduce((min, level) => level.strength < min.strength ? level : min, rec.support_levels[0]);
+    const strongestResistance = rec.resistance_levels.reduce((max, level) => level.strength > max.strength ? level : max, rec.resistance_levels[0]);
+    const weakestResistance = rec.resistance_levels.reduce((min, level) => level.strength < min.strength ? level : min, rec.resistance_levels[0]);
 
-//     // Wallet Overview (kept as before)
-//     const walletHTML = `
-//       <!-- Wallet Overview -->
-//       <div class='flex gap-4'>
-//       <h4 class="text-base font-semibold flex items-center gap-2 text-gray-700">💰 Wallet Overview</h4>
-//        <button id="wallet_info" class=" text-gray-400 hover:text-indigo-600 transition-colors">
-//           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-//             stroke="currentColor">
-//             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-//               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-//           </svg>
-//         </button>
-//       </div>
+    // Wallet Overview (kept as before)
+    const walletHTML = `
+      <!-- Wallet Overview -->
+      <div class='flex gap-4'>
+      <h4 class="text-base font-semibold flex items-center gap-2 text-gray-700">💰 Wallet Overview</h4>
+       <button id="wallet_info" class=" text-gray-400 hover:text-indigo-600 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+      </div>
       
-//       <div class="grid md:grid-cols-2 gap-3">
-//         <!-- Current Balance -->
-//         <div class="flex items-center gap-3">
-//           <div class="p-2 bg-white rounded-lg border">👛</div>
-//           <div>
-//             <p class="text-sm text-gray-600">Current Balance</p>
-//             <p class="text-lg font-semibold text-gray-800">${walletBalance} $</p>
-//           </div>
-//         </div>
-//         <!-- Current Pair Value -->
-//         <div class="flex items-center gap-3">
-//           <div class="p-2 bg-white rounded-lg border">💹</div>
-//           <div>
-//             <p class="text-sm text-gray-600">Current Pair Value</p>
-//             <p id="wallet_pair_value" class="text-lg font-semibold text-gray-800">${signal.price.toFixed(2)}</p>
-//           </div>
-//         </div>
-//       </div>
+      <div class="grid md:grid-cols-2 gap-3">
+        <!-- Current Balance -->
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-white rounded-lg border">👛</div>
+          <div>
+            <p class="text-sm text-gray-600">Current Balance</p>
+            <p class="text-lg font-semibold text-gray-800">${walletBalance} $</p>
+          </div>
+        </div>
+        <!-- Current Pair Value -->
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-white rounded-lg border">💹</div>
+          <div>
+            <p class="text-sm text-gray-600">Current Pair Value</p>
+            <p id="wallet_pair_value" class="text-lg font-semibold text-gray-800">${signal.price.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
     
-//       <!-- Risk Management and Controls -->
-//       <div class="bg-white p-2 rounded-lg border border-blue-200">
-//         <div class="flex flex-col sm:flex-row items-center gap-2">
-//           <!-- Risk Management Label -->
-//           <div class="flex items-center gap-1">
-//             <div class="p-1 bg-purple-100 rounded">⚠️</div>
-//             <span class="text-sm font-bold text-gray-800">Risk Management</span>
-//           </div>
-//           <!-- Inline Risk Controls -->
-//           <div class="flex flex-wrap items-center gap-1 ml-auto">
-//             <!-- Risk Mode and Value -->
-//             <select id="riskMode" class="px-1 py-1 border rounded text-xs">
-//               <option value="percentage">Percentage</option>
-//               <option value="amount">Amount</option>
-//             </select>
-//             <input type="number" id="riskValue" value="2" class="w-16 px-1 py-1 border rounded text-xs text-center" step="0.01">
-//             <span id="riskUnit" class="text-gray-500 text-xs">%</span>
-//             <!-- Coin Selector and Position Size (position size will be recalculated dynamically) -->
-//             <select id="coinSelect" class="hidden px-1 py-1 border rounded text-xs">
-//               <option value="BTC">₿ BTC</option>
-//               <option value="ETH">Ξ ETH</option>
-//             </select>
-//             <input class="hidden" type="number" id="positionSize" value="0.0002" class="w-20 px-1 py-1 border rounded text-xs" step="0.000001">
-//             <!-- Leverage -->
-//             <select id="leverage" class="px-1 py-1 border rounded text-xs">
-//               <option value="1">1x</option>
-//               <option value="2">2x</option>
-//               <option value="3">3x</option>
-//               <option value="4">4x</option>
-//               <option value="5">5x</option>
-//               <option value="10">10x</option>
-//               <option value="20">20x</option>
-//             </select>
-//           </div>
-//         </div>
-//       </div>
+      <!-- Risk Management and Controls -->
+      <div class="bg-white p-2 rounded-lg border border-blue-200">
+        <div class="flex flex-col sm:flex-row items-center gap-2">
+          <!-- Risk Management Label -->
+          <div class="flex items-center gap-1">
+            <div class="p-1 bg-purple-100 rounded">⚠️</div>
+            <span class="text-sm font-bold text-gray-800">Risk Management</span>
+          </div>
+          <!-- Inline Risk Controls -->
+          <div class="flex flex-wrap items-center gap-1 ml-auto">
+            <!-- Risk Mode and Value -->
+            <select id="riskMode" class="px-1 py-1 border rounded text-xs">
+              <option value="percentage">Percentage</option>
+              <option value="amount">Amount</option>
+            </select>
+            <input type="number" id="riskValue" value="2" class="w-16 px-1 py-1 border rounded text-xs text-center" step="0.01">
+            <span id="riskUnit" class="text-gray-500 text-xs">%</span>
+            <!-- Coin Selector and Position Size (position size will be recalculated dynamically) -->
+            <select id="coinSelect" class="hidden px-1 py-1 border rounded text-xs">
+              <option value="BTC">₿ BTC</option>
+              <option value="ETH">Ξ ETH</option>
+            </select>
+            <input class="hidden" type="number" id="positionSize" value="0.0002" class="w-20 px-1 py-1 border rounded text-xs" step="0.000001">
+            <!-- Leverage -->
+            <select id="leverage" class="px-1 py-1 border rounded text-xs">
+              <option value="1">1x</option>
+              <option value="2">2x</option>
+              <option value="3">3x</option>
+              <option value="4">4x</option>
+              <option value="5">5x</option>
+              <option value="10">10x</option>
+              <option value="20">20x</option>
+            </select>
+          </div>
+        </div>
+      </div>
     
-//       <!-- Helper Note -->
-//       <div class="p-2 bg-yellow-50 rounded-lg border border-yellow-200">
-//         <div class="flex items-center gap-1">
-//           <span class="text-yellow-600 text-xs">💡</span>
-//           <span class="text-xs font-medium text-gray-700">Risk Calculation</span>
-//         </div>
-//         <p class="text-[10px] text-gray-600" id="calculationNote">
-//           Risk Amount = (Risk Value ${'<span id="riskUnitDisplay">% or $</span>'}) × Balance ➔ Position Size = (Risk Amount / Price) × Leverage
-//         </p>
-//       </div>
-//     `;
-//     document.getElementById('wallet_overview').innerHTML = walletHTML;
+      <!-- Helper Note -->
+      <div class="p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+        <div class="flex items-center gap-1">
+          <span class="text-yellow-600 text-xs">💡</span>
+          <span class="text-xs font-medium text-gray-700">Risk Calculation</span>
+        </div>
+        <p class="text-[10px] text-gray-600" id="calculationNote">
+          Risk Amount = (Risk Value ${'<span id="riskUnitDisplay">% or $</span>'}) × Balance ➔ Position Size = (Risk Amount / Price) × Leverage
+        </p>
+      </div>
+    `;
+    document.getElementById('wallet_overview').innerHTML = walletHTML;
 
-//     // Function to update the dynamic trade recommendations based on risk inputs.
-//     function updateTradeRecs() {
-//       // Get current risk inputs:
-//       const riskModeEl = document.getElementById('riskMode');
-//       const riskValueEl = document.getElementById('riskValue');
-//       const leverageEl = document.getElementById('leverage');
-//       const posSizeEl = document.getElementById('positionSize');
+    // Function to update the dynamic trade recommendations based on risk inputs.
+    function updateTradeRecs() {
+      // Get current risk inputs:
+      const riskModeEl = document.getElementById('riskMode');
+      const riskValueEl = document.getElementById('riskValue');
+      const leverageEl = document.getElementById('leverage');
+      const posSizeEl = document.getElementById('positionSize');
 
-//       const riskMode = riskModeEl.value;
-//       const riskValue = parseFloat(riskValueEl.value) || 0;
-//       const leverage = parseFloat(leverageEl.value) || 1;
+      const riskMode = riskModeEl.value;
+      const riskValue = parseFloat(riskValueEl.value) || 0;
+      const leverage = parseFloat(leverageEl.value) || 1;
 
-//       // Update unit display in both places.
-//       const riskUnitEl = document.getElementById('riskUnit');
-//       riskUnitEl.textContent = (riskMode === 'percentage') ? '%' : '$';
+      // Update unit display in both places.
+      const riskUnitEl = document.getElementById('riskUnit');
+      riskUnitEl.textContent = (riskMode === 'percentage') ? '%' : '$';
 
-//       // Calculate the risk amount.
-//       let riskAmount = riskMode === 'percentage' ? (riskValue * walletBalance / 100) : riskValue;
-//       // Calculate dynamic position size using the risk formula: (riskAmount / currentPrice) × leverage
-//       const dynamicPosSize = (riskAmount / signal.price) * leverage;
-//       // Optionally update the positionSize input (if you want it auto-updated)
-//       posSizeEl.value = dynamicPosSize.toFixed(6);
+      // Calculate the risk amount.
+      let riskAmount = riskMode === 'percentage' ? (riskValue * walletBalance / 100) : riskValue;
+      // Calculate dynamic position size using the risk formula: (riskAmount / currentPrice) × leverage
+      const dynamicPosSize = (riskAmount / signal.price) * leverage;
+      // Optionally update the positionSize input (if you want it auto-updated)
+      posSizeEl.value = dynamicPosSize.toFixed(6);
 
-//       // Recalculate the potential profit for each recommendation.
-//       // For BUY trades, profit = dynamicPosSize × (TP - currentPrice)
-//       // For SELL trades, profit = dynamicPosSize × (currentPrice - TP)
-//       let optBuyTP = strongestResistance.price,
-//         optBuySL = strongestSupport.price,
-//         highBuyTP = weakestResistance.price,
-//         highBuySL = weakestSupport.price,
-//         optSellTP = strongestSupport.price,
-//         optSellSL = strongestResistance.price,
-//         highSellTP = weakestSupport.price,
-//         highSellSL = weakestResistance.price;
-//       let optProfit = 0, highProfit = 0, mirrorOptProfit = 0, mirrorHighProfit = 0;
+      // Recalculate the potential profit for each recommendation.
+      // For BUY trades, profit = dynamicPosSize × (TP - currentPrice)
+      // For SELL trades, profit = dynamicPosSize × (currentPrice - TP)
+      let optBuyTP = strongestResistance.price,
+        optBuySL = strongestSupport.price,
+        highBuyTP = weakestResistance.price,
+        highBuySL = weakestSupport.price,
+        optSellTP = strongestSupport.price,
+        optSellSL = strongestResistance.price,
+        highSellTP = weakestSupport.price,
+        highSellSL = weakestResistance.price;
+      let optProfit = 0, highProfit = 0, mirrorOptProfit = 0, mirrorHighProfit = 0;
 
-//       if (rec.action === 'BUY' || rec.action === 'STRONG_BUY') {
-//         optProfit = dynamicPosSize * (optBuyTP - signal.price);
-//         highProfit = dynamicPosSize * (highBuyTP - signal.price);
-//         // For mirror actions (sell recommendations for a BUY signal)
-//         mirrorOptProfit = dynamicPosSize * (signal.price - optSellTP);
-//         mirrorHighProfit = dynamicPosSize * (signal.price - highSellTP);
-//       } else {
-//         // For SELL recommendations:
-//         optProfit = dynamicPosSize * (signal.price - optSellTP);
-//         highProfit = dynamicPosSize * (signal.price - highSellTP);
-//         mirrorOptProfit = dynamicPosSize * (optBuyTP - signal.price);
-//         mirrorHighProfit = dynamicPosSize * (highBuyTP - signal.price);
-//       }
+      if (rec.action === 'BUY' || rec.action === 'STRONG_BUY') {
+        optProfit = dynamicPosSize * (optBuyTP - signal.price);
+        highProfit = dynamicPosSize * (highBuyTP - signal.price);
+        // For mirror actions (sell recommendations for a BUY signal)
+        mirrorOptProfit = dynamicPosSize * (signal.price - optSellTP);
+        mirrorHighProfit = dynamicPosSize * (signal.price - highSellTP);
+      } else {
+        // For SELL recommendations:
+        optProfit = dynamicPosSize * (signal.price - optSellTP);
+        highProfit = dynamicPosSize * (signal.price - highSellTP);
+        mirrorOptProfit = dynamicPosSize * (optBuyTP - signal.price);
+        mirrorHighProfit = dynamicPosSize * (highBuyTP - signal.price);
+      }
 
-//       // Build the Suggested Actions section with dynamic profits and rec data.
-//       const recomendationHTML = `
-//         <div class='flex gap-4 mb-3'>
+      // Build the Suggested Actions section with dynamic profits and rec data.
+      const recomendationHTML = `
+        <div class='flex gap-4 mb-3'>
 
-//           <h4 class="text-base font-semibold  flex items-center gap-2 text-gray-700">🚀 Suggested Actions</h4>
-//           <button id="actions_info" class=" text-gray-400 hover:text-indigo-600 transition-colors ">
-//             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-//               stroke="currentColor">
-//               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-//                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-//             </svg>
-//           </button>
+          <h4 class="text-base font-semibold  flex items-center gap-2 text-gray-700">🚀 Suggested Actions</h4>
+          <button id="actions_info" class=" text-gray-400 hover:text-indigo-600 transition-colors ">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
 
-//           </div>
+          </div>
 
-//         <div class="grid grid-cols-2 gap-3">
-//           <div class="space-y-3">
-//             <!-- Optimal Risk Buy/Sell -->
-//             <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Optimal Risk Buy' : 'Optimal Risk Sell'}')"
-//               class="cursor-pointer bg-white p-3 rounded-lg border ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'border-green-200 hover:bg-green-100' : 'border-red-200 hover:bg-red-100'}">
-//               <div class="flex items-center gap-1 ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'text-green-600' : 'text-red-600'} mb-1">
-//                 <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↑' : '↓'}</span>
-//                 <span class="font-medium">Optimal Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Buy' : 'Sell'}</span>
-//               </div>
-//               ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
-//           ? `<p class="text-sm">TP: $${optBuyTP.toFixed(2)} | SL: $${optBuySL.toFixed(2)}</p>
-//                    <p class="text-lg font-semibold">Profit: $${optProfit.toFixed(2)}</p>`
-//           : `<p class="text-sm">TP: $${optSellTP.toFixed(2)} | SL: $${optSellSL.toFixed(2)}</p>
-//                    <p class="text-lg font-semibold">Profit: $${optProfit.toFixed(2)}</p>`
-//         }
-//             </div>
-//             <!-- High Risk Buy/Sell -->
-//             <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'High Risk Buy' : 'High Risk Sell'}')"
-//               class="cursor-pointer bg-white p-3 rounded-lg border border-orange-200 hover:bg-orange-100">
-//               <div class="flex items-center gap-1 text-orange-600 mb-1">
-//                 <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↑' : '↓'}</span>
-//                 <span class="font-medium">High Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Buy' : 'Sell'}</span>
-//               </div>
-//               ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
-//           ? `<p class="text-sm">TP: $${highBuyTP.toFixed(2)} | SL: $${highBuySL.toFixed(2)}</p>
-//                    <p class="text-lg font-semibold">Profit: $${highProfit.toFixed(2)}</p>`
-//           : `<p class="text-sm">TP: $${highSellTP.toFixed(2)} | SL: $${highSellSL.toFixed(2)}</p>
-//                    <p class="text-lg font-semibold">Profit: $${highProfit.toFixed(2)}</p>`
-//         }
-//             </div>
-//           </div>
-//           <div class="space-y-3">
-//             <!-- Mirror Actions (opposite direction) -->
-//             <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Optimal Risk Sell' : 'Optimal Risk Buy'}')"
-//               class="cursor-pointer bg-white p-3 rounded-lg border ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'border-red-200 hover:bg-red-100' : 'border-green-200 hover:bg-green-100'}">
-//               <div class="flex items-center gap-1 ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'text-red-600' : 'text-green-600'} mb-1">
-//                 <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↓' : '↑'}</span>
-//                 <span class="font-medium">Optimal Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Sell' : 'Buy'}</span>
-//               </div>
-//               ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
-//           ? `<p class="text-sm">TP: $${optSellTP.toFixed(2)} | SL: $${optSellSL.toFixed(2)}</p>
-//                    <p class="text-lg font-semibold">Profit: $${mirrorOptProfit.toFixed(2)}</p>`
-//           : `<p class="text-sm">TP: $${optBuyTP.toFixed(2)} | SL: $${optBuySL.toFixed(2)}</p>
-//                    <p class="text-lg font-semibold">Profit: $${mirrorOptProfit.toFixed(2)}</p>`
-//         }
-//             </div>
-//             <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'High Risk Sell' : 'High Risk Buy'}')"
-//               class="cursor-pointer bg-white p-3 rounded-lg border border-orange-200 hover:bg-orange-100">
-//               <div class="flex items-center gap-1 text-orange-600 mb-1">
-//                 <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↓' : '↑'}</span>
-//                 <span class="font-medium">High Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Sell' : 'Buy'}</span>
-//               </div>
-//               ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
-//           ? `<p class="text-sm">TP: $${highSellTP.toFixed(2)} | SL: $${highSellSL.toFixed(2)}</p>
-//                    <p class="text-lg font-semibold">Profit: $${mirrorHighProfit.toFixed(2)}</p>`
-//           : `<p class="text-sm">TP: $${highBuyTP.toFixed(2)} | SL: $${highBuySL.toFixed(2)}</p>
-//                    <p class="text-lg font-semibold">Profit: $${mirrorHighProfit.toFixed(2)}</p>`
-//         }
-//             </div>
-//           </div>
-//         </div>
-//       `;
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-3">
+            <!-- Optimal Risk Buy/Sell -->
+            <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Optimal Risk Buy' : 'Optimal Risk Sell'}')"
+              class="cursor-pointer bg-white p-3 rounded-lg border ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'border-green-200 hover:bg-green-100' : 'border-red-200 hover:bg-red-100'}">
+              <div class="flex items-center gap-1 ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'text-green-600' : 'text-red-600'} mb-1">
+                <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↑' : '↓'}</span>
+                <span class="font-medium">Optimal Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Buy' : 'Sell'}</span>
+              </div>
+              ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
+          ? `<p class="text-sm">TP: $${optBuyTP.toFixed(2)} | SL: $${optBuySL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${optProfit.toFixed(2)}</p>`
+          : `<p class="text-sm">TP: $${optSellTP.toFixed(2)} | SL: $${optSellSL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${optProfit.toFixed(2)}</p>`
+        }
+            </div>
+            <!-- High Risk Buy/Sell -->
+            <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'High Risk Buy' : 'High Risk Sell'}')"
+              class="cursor-pointer bg-white p-3 rounded-lg border border-orange-200 hover:bg-orange-100">
+              <div class="flex items-center gap-1 text-orange-600 mb-1">
+                <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↑' : '↓'}</span>
+                <span class="font-medium">High Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Buy' : 'Sell'}</span>
+              </div>
+              ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
+          ? `<p class="text-sm">TP: $${highBuyTP.toFixed(2)} | SL: $${highBuySL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${highProfit.toFixed(2)}</p>`
+          : `<p class="text-sm">TP: $${highSellTP.toFixed(2)} | SL: $${highSellSL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${highProfit.toFixed(2)}</p>`
+        }
+            </div>
+          </div>
+          <div class="space-y-3">
+            <!-- Mirror Actions (opposite direction) -->
+            <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Optimal Risk Sell' : 'Optimal Risk Buy'}')"
+              class="cursor-pointer bg-white p-3 rounded-lg border ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'border-red-200 hover:bg-red-100' : 'border-green-200 hover:bg-green-100'}">
+              <div class="flex items-center gap-1 ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'text-red-600' : 'text-green-600'} mb-1">
+                <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↓' : '↑'}</span>
+                <span class="font-medium">Optimal Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Sell' : 'Buy'}</span>
+              </div>
+              ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
+          ? `<p class="text-sm">TP: $${optSellTP.toFixed(2)} | SL: $${optSellSL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${mirrorOptProfit.toFixed(2)}</p>`
+          : `<p class="text-sm">TP: $${optBuyTP.toFixed(2)} | SL: $${optBuySL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${mirrorOptProfit.toFixed(2)}</p>`
+        }
+            </div>
+            <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'High Risk Sell' : 'High Risk Buy'}')"
+              class="cursor-pointer bg-white p-3 rounded-lg border border-orange-200 hover:bg-orange-100">
+              <div class="flex items-center gap-1 text-orange-600 mb-1">
+                <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↓' : '↑'}</span>
+                <span class="font-medium">High Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Sell' : 'Buy'}</span>
+              </div>
+              ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
+          ? `<p class="text-sm">TP: $${highSellTP.toFixed(2)} | SL: $${highSellSL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${mirrorHighProfit.toFixed(2)}</p>`
+          : `<p class="text-sm">TP: $${highBuyTP.toFixed(2)} | SL: $${highBuySL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${mirrorHighProfit.toFixed(2)}</p>`
+        }
+            </div>
+          </div>
+        </div>
+      `;
 
-//       // AI Recommendations (if risk_reward_ratio exists)
-//       let aiRecommendsHTML = "";
-//       if (rec.risk_reward_ratio) {
-//         const secureTP = rec.take_profit_1;
-//         const bestTP = rec.take_profit_2;
-//         const secureProfit = (rec.action === "BUY" || rec.action === "STRONG_BUY")
-//           ? dynamicPosSize * (secureTP - signal.price)
-//           : dynamicPosSize * (signal.price - secureTP);
-//         const bestRewardProfit = (rec.action === "BUY" || rec.action === "STRONG_BUY")
-//           ? dynamicPosSize * (bestTP - signal.price)
-//           : dynamicPosSize * (signal.price - bestTP);
-//         aiRecommendsHTML = `
-//           <div class="mt-4">
-//             <h4 class="text-base font-semibold mb-3 flex items-center gap-2 text-gray-700">🤖 AI Recommends</h4>
-//             <div class="grid grid-cols-2 gap-3">
-//               <div onclick="confirmAction('Secure Trade')"
-//                 class="cursor-pointer bg-white p-3 rounded-lg border border-teal-200 hover:bg-teal-100">
-//                 <div class="flex items-center gap-1 text-teal-600 mb-1">
-//                   <span>🔒</span><span class="font-medium">Secure Trade</span>
-//                 </div>
-//                 <p class="text-sm">TP: $${secureTP.toFixed(2)} | SL: $${rec.stop_loss.toFixed(2)}</p>
-//                 <p class="text-lg font-semibold">Profit: $${secureProfit.toFixed(2)}</p>
-//               </div>
-//               <div onclick="confirmAction('Best Reward Trade')"
-//                 class="cursor-pointer bg-white p-3 rounded-lg border border-purple-200 hover:bg-purple-100">
-//                 <div class="flex items-center gap-1 text-purple-600 mb-1">
-//                   <span>🏆</span><span class="font-medium">Best Reward</span>
-//                 </div>
-//                 <p class="text-sm">TP: $${bestTP.toFixed(2)} | SL: $${rec.stop_loss.toFixed(2)}</p>
-//                 <p class="text-lg font-semibold">Profit: $${bestRewardProfit.toFixed(2)}</p>
-//               </div>
-//             </div>
-//           </div>
-//         `;
-//       }
+      // AI Recommendations (if risk_reward_ratio exists)
+      let aiRecommendsHTML = "";
+      if (rec.risk_reward_ratio) {
+        const secureTP = rec.take_profit_1;
+        const bestTP = rec.take_profit_2;
+        const secureProfit = (rec.action === "BUY" || rec.action === "STRONG_BUY")
+          ? dynamicPosSize * (secureTP - signal.price)
+          : dynamicPosSize * (signal.price - secureTP);
+        const bestRewardProfit = (rec.action === "BUY" || rec.action === "STRONG_BUY")
+          ? dynamicPosSize * (bestTP - signal.price)
+          : dynamicPosSize * (signal.price - bestTP);
+        aiRecommendsHTML = `
+          <div class="mt-4">
+            <h4 class="text-base font-semibold mb-3 flex items-center gap-2 text-gray-700">🤖 AI Recommends</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <div onclick="confirmAction('Secure Trade')"
+                class="cursor-pointer bg-white p-3 rounded-lg border border-teal-200 hover:bg-teal-100">
+                <div class="flex items-center gap-1 text-teal-600 mb-1">
+                  <span>🔒</span><span class="font-medium">Secure Trade</span>
+                </div>
+                <p class="text-sm">TP: $${secureTP.toFixed(2)} | SL: $${rec.stop_loss.toFixed(2)}</p>
+                <p class="text-lg font-semibold">Profit: $${secureProfit.toFixed(2)}</p>
+              </div>
+              <div onclick="confirmAction('Best Reward Trade')"
+                class="cursor-pointer bg-white p-3 rounded-lg border border-purple-200 hover:bg-purple-100">
+                <div class="flex items-center gap-1 text-purple-600 mb-1">
+                  <span>🏆</span><span class="font-medium">Best Reward</span>
+                </div>
+                <p class="text-sm">TP: $${bestTP.toFixed(2)} | SL: $${rec.stop_loss.toFixed(2)}</p>
+                <p class="text-lg font-semibold">Profit: $${bestRewardProfit.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-//       // Combine recommendations with AI recommends and update the container.
-//       document.getElementById('recomendations').innerHTML = recomendationHTML + aiRecommendsHTML;
+      // Combine recommendations with AI recommends and update the container.
+      document.getElementById('recomendations').innerHTML = recomendationHTML + aiRecommendsHTML;
 
 
-//     } // end updateTradeRecs
+    } // end updateTradeRecs
 
-//     // Initial call to update trade recommendations based on default risk management parameters.
-//     updateTradeRecs();
+    // Initial call to update trade recommendations based on default risk management parameters.
+    updateTradeRecs();
 
-//     // Add event listeners so that changes in risk parameters update the recommendations dynamically.
-//     document.getElementById('riskMode').addEventListener('change', updateTradeRecs);
-//     document.getElementById('riskValue').addEventListener('input', updateTradeRecs);
-//     document.getElementById('leverage').addEventListener('change', updateTradeRecs);
+    // Add event listeners so that changes in risk parameters update the recommendations dynamically.
+    document.getElementById('riskMode').addEventListener('change', updateTradeRecs);
+    document.getElementById('riskValue').addEventListener('input', updateTradeRecs);
+    document.getElementById('leverage').addEventListener('change', updateTradeRecs);
 
-//     // Build Resistance Levels
-//     const resistanceHTML = `
-//         <h4 class="text-lg font-semibold mb-4 text-red-600">Resistance Levels</h4>
-//         <div class="space-y-3">
-//           ${rec.resistance_levels
-//         .map(level => `
-//               <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg">
-//                 <div>
-//                   <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
-//                   <span class="text-sm text-red-500 ml-2">
-//                     ${Math.abs(parseFloat(level.distance)).toFixed(2)}% ${getTrendIcon("BEARISH")}
-//                   </span>
-//                 </div>
-//                 <div class="text-sm text-red-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
-//               </div>
-//             `)
-//         .join("")}
-//         </div>
-//     `;
-//     resistanceLevelsContainer.innerHTML = resistanceHTML;
+    // Build Resistance Levels
+    const resistanceHTML = `
+        <h4 class="text-lg font-semibold mb-4 text-red-600">Resistance Levels</h4>
+        <div class="space-y-3">
+          ${rec.resistance_levels
+        .map(level => `
+              <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg">
+                <div>
+                  <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
+                  <span class="text-sm text-red-500 ml-2">
+                    ${Math.abs(parseFloat(level.distance)).toFixed(2)}% ${getTrendIcon("BEARISH")}
+                  </span>
+                </div>
+                <div class="text-sm text-red-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
+              </div>
+            `)
+        .join("")}
+        </div>
+    `;
+    resistanceLevelsContainer.innerHTML = resistanceHTML;
 
-//     // Build Trading Notes
-//     const notesHTML = `
-//         <h4 class="text-lg font-semibold text-yellow-800 mb-2">Trading Notes</h4>
-//         <p class="text-yellow-800">${rec.notes}</p>
-//     `;
-//     tradingNotesContainer.innerHTML = notesHTML;
+    // Build Trading Notes
+    const notesHTML = `
+        <h4 class="text-lg font-semibold text-yellow-800 mb-2">Trading Notes</h4>
+        <p class="text-yellow-800">${rec.notes}</p>
+    `;
+    tradingNotesContainer.innerHTML = notesHTML;
 
-//     // Build additional components (if any)
-//     const componentsHTML = getComponentsHTML(fetchedData.signal.components);
-//     componentsContent.innerHTML = componentsHTML;
+    // Build additional components (if any)
+    const componentsHTML = getComponentsHTML(fetchedData.signal.components);
+    componentsContent.innerHTML = componentsHTML;
 
-//     // Optional: Update risk unit display in helper note if needed.
-//     document.getElementById('riskMode').addEventListener('change', function () {
-//       // This additional listener updates any extra unit displays if you want.
-//       document.getElementById('riskUnit').textContent = (this.value === 'percentage') ? '%' : '$';
-//     });
-//   }
+    // Optional: Update risk unit display in helper note if needed.
+    document.getElementById('riskMode').addEventListener('change', function () {
+      // This additional listener updates any extra unit displays if you want.
+      document.getElementById('riskUnit').textContent = (this.value === 'percentage') ? '%' : '$';
+    });
+  }
 
 
   function init() {
