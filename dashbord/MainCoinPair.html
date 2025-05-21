@@ -142,7 +142,7 @@
 
 
 
-  <!-- ===== FULL MODAL HTML ===== -->
+ <!-- ======== FULL MODAL HTML ======== -->
 <div id="mainModal"
 class="hidden fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-start justify-center pt-10 px-4 z-50 overflow-y-auto">
 <div class="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden">
@@ -152,63 +152,57 @@ class="hidden fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-start justify-center
  <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
    Technical Analysis Dashboard
    <span id="analysisDate" class="text-base font-normal text-gray-500 ml-2"></span>
-   <button id="modalInfoBtn" class="text-gray-400 hover:text-indigo-600 transition-colors">
-   <button id="infoIcon" class="text-gray-400 hover:text-indigo-600 transition-colors"></button>
-
-     ℹ️
-   </button>
+   <button id="infoIcon" class="text-gray-400 hover:text-indigo-600 transition-colors">ℹ️</button>
  </h3>
  <button id="closeModalBtn" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
  <div id="seperator_line" class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r to-gray-50"></div>
 
- <!-- POPUP CONTENT (toggled by modalInfoBtn) -->
- <div id="modalInfoPopover"
-      class="absolute top-16 left-6 bg-white border border-gray-300 rounded shadow-lg p-4 w-80 hidden z-30">
+ <!-- POPUP from original code -->
+ <div id="componentsPopover"
+      class="absolute top-16 left-6 bg-white border border-gray-300 rounded shadow-lg p-4 w-80 mt-2 hidden z-30">
    <h5 class="font-semibold mb-2">Components</h5>
-   <div id="componentsContent" class="text-sm space-y-2">
-     <!-- populated by updateUI from fetchedData.signal.components -->
-   </div>
+   <div id="componentsContent" class="text-sm space-y-2"></div>
  </div>
 </div>
 
 <!-- Content Grid -->
 <div class="grid gap-5 p-5 max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-gray-100">
 
- <!-- NEW: Support / Price / Resistance Row -->
+ <!-- NEW FIRST ROW: Support / Price / Resistance -->
  <div class="grid grid-cols-3 gap-4">
    <div id="supportLevelsContainer"
         class="p-3 rounded-lg bg-green-50 border border-green-200 shadow-sm">
-     <!-- clickable supports here -->
+     <!-- clickable supports -->
    </div>
-   <div id="srPriceContainer"
-        class="flex items-center justify-center text-2xl font-bold text-yellow-600">
-     <!-- live price here -->
+   <div id="signalDataContainer"
+        class="flex flex-col items-center justify-center">
+     <!-- live price will go here -->
+     <p class="text-2xl font-bold text-yellow-600 mb-1" id="livePrice"></p>
+     <p class="text-gray-500 text-sm">Live Price</p>
    </div>
    <div id="resistanceLevelsContainer"
         class="p-3 rounded-lg bg-red-50 border border-red-200 shadow-sm">
-     <!-- clickable resistances here -->
+     <!-- clickable resistances -->
    </div>
  </div>
 
- <!-- Second Row: Wallet & Recommendations -->
+ <!-- SECOND ROW: Wallet & Recommendation Actions -->
  <div class="grid md:grid-cols-2 gap-4">
-   <!-- Wallet Overview -->
    <div id="wallet_overview" class="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm space-y-3">
-     <!-- injected by updateUI -->
+     <!-- wallet overview injected -->
    </div>
-
-   <!-- Trading Recommendations -->
    <div id="recomendations" class="bg-green-50 p-4 rounded-lg border border-green-200 shadow-sm">
-     <!-- injected by updateUI -->
+     <!-- all trade-action cards injected -->
    </div>
  </div>
 
- <!-- Third Row: Trading Notes -->
+ <!-- THIRD ROW: Trading Notes -->
  <div class="grid grid-cols-1">
    <div id="tradingNotesContainer" class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 shadow-sm">
-     <!-- injected by updateUI -->
+     <!-- notes injected -->
    </div>
  </div>
+
 </div>
 </div>
 </div>
