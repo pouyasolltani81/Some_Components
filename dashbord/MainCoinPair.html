@@ -142,84 +142,59 @@
 
 
   <!-- Main Modal -->
-  <div id="mainModal"
-    class="hidden fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-start justify-center pt-10 px-4 z-50 overflow-y-auto">
-    <div class="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden">
+  <!-- ====================
+     Modal HTML
+==================== -->
+<div id="mainModal"
+class="hidden fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-start justify-center pt-10 px-4 z-50 overflow-y-auto">
+<div class="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden">
 
-      <!-- Header -->
-      <div class="flex justify-between items-center px-5 py-4 border-b border-transparent relative">
-        <h3 class="text-xl font-bold text-gray-800">
-          Technical Analysis Dashboard
-          <span id="analysisDate" class="text-base font-normal text-gray-500"></span>
-        </h3>
-        <button id="closeModalBtn" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
-        <!-- Gradient separator -->
-        <div id="seperator_line" class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50">
-        </div>
-      </div>
+<!-- Header -->
+<div class="flex justify-between items-center px-5 py-4 border-b border-transparent relative">
+ <h3 class="text-xl font-bold text-gray-800">
+   Technical Analysis Dashboard
+   <span id="analysisDate" class="text-base font-normal text-gray-500 ml-2"></span>
+   <span class="block text-sm font-normal text-gray-500 mt-1">
+     ℹ️ This plan is driven by technical signals, support/resistance zones & risk controls.
+   </span>
+ </h3>
+ <button id="closeModalBtn" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+ <div id="seperator_line" class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r to-gray-50"></div>
+</div>
 
-      <!-- Content Grid -->
-      <div
-        class="grid gap-5 p-5 max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-gray-100">
+<!-- Content Grid -->
+<div class="grid gap-5 p-5 max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-gray-100">
 
-        <!-- First Row -->
-        <div class="grid md:grid-cols-2 gap-4">
-          <div id="signalSection" class="grid md:grid-cols-1 rounded-lg  gap-4  relative hidden">
+ <!-- ==== New Support / Price / Resistance Row ==== -->
+ <div class="grid grid-cols-3 gap-4">
+   <div id="supportLevelsContainer"
+        class="p-3 rounded-lg bg-green-50 border border-green-200 shadow-sm">
+     <!-- JS will inject clickable supports here -->
+   </div>
+   <div id="srPriceContainer"
+        class="flex items-center justify-center text-2xl font-bold text-yellow-600">
+     <!-- live price -->
+   </div>
+   <div id="resistanceLevelsContainer"
+        class="p-3 rounded-lg bg-red-50 border border-red-200 shadow-sm">
+     <!-- JS will inject clickable resistances here -->
+   </div>
+ </div>
 
+ <!-- ==== Wallet / Recommendations Row ==== -->
+ <div class="grid md:grid-cols-2 gap-4">
+   <div id="wallet_overview" class="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm space-y-3"></div>
+   <div id="recomendations" class="bg-green-50 p-4 rounded-lg border border-green-200 shadow-sm"></div>
+ </div>
 
-            <div id="signalDataContainer" class="space-y-3 border border-gray-200 bg-gray-50 rounded-lg  shadow-sm p-3">
+ <!-- ==== Trading Notes ==== -->
+ <div class="grid grid-cols-1">
+   <div id="tradingNotesContainer" class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 shadow-sm"></div>
+ </div>
+</div>
+</div>
+</div>
 
-            </div>
-
-
-
-
-
-
-            <button id="infoIcon" class="absolute top-4 right-32 text-gray-400 hover:text-indigo-600 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-            <div id="componentsPopover"
-              class="absolute top-10 right-3 bg-white border border-gray-300 rounded shadow-lg p-3 w-72 mt-2 hidden z-30">
-              <h5 class="font-semibold mb-2">Components</h5>
-              <div id="componentsContent" class="text-sm space-y-2"></div>
-            </div>
-          </div>
-
-          <div id="recommendationActionContainer" class=" rounded-lg shadow-sm"></div>
-        </div>
-
-        <!-- Second Row -->
-        <div class="grid md:grid-cols-2 gap-4">
-          <div id="supportLevelsContainer" class="p-3 rounded-lg bg-green-50 border border-green-200 shadow-sm"></div>
-          <div id="resistanceLevelsContainer" class="p-3 rounded-lg bg-red-50 border border-red-200 shadow-sm"></div>
-        </div>
-
-        <!-- Third Row -->
-        <div class="grid md:grid-cols-2 gap-4">
-          <div id="wallet_overview" class="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm space-y-3">
-
-          </div>
-
-
-
-
-          <div id="recomendations" class="bg-green-50 p-4 rounded-lg border border-green-200 shadow-sm">
-
-          </div>
-        </div>
-
-        <!-- Final Row -->
-        <div class="grid grid-cols-1">
-          <div id="tradingNotesContainer" class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 shadow-sm"></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
 
 
