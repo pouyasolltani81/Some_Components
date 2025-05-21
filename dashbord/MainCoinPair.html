@@ -203,41 +203,7 @@
         <div class="grid md:grid-cols-2 gap-4">
           <div id="wallet_overview" class="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm space-y-3">
 
-            <!-- Risk Management Inputs -->
-            <div class="grid md:grid-cols-3 gap-4 items-end">
-              <!-- Risk Mode -->
-              <div>
-                <label for="riskMode" class="block text-sm font-medium text-gray-700">Risk Mode</label>
-                <select id="riskMode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-                  <option value="percentage" selected>Percentage</option>
-                  <option value="fixed">Fixed Amount</option>
-                </select>
-              </div>
-          
-              <!-- Risk Value -->
-              <div>
-                <label for="riskValue" class="block text-sm font-medium text-gray-700">Risk Value</label>
-                <div class="flex items-center gap-2 mt-1">
-                  <input id="riskValue" type="number" min="0" step="0.01" value="1" class="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-                  <span id="riskUnit" class="text-gray-500 text-sm">%</span>
-                </div>
-              </div>
-          
-              <!-- Leverage -->
-              <div>
-                <label for="leverage" class="block text-sm font-medium text-gray-700">Leverage</label>
-                <input id="leverage" type="number" min="1" step="1" value="5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-              </div>
-            </div>
-          
-            <!-- Position Size Output -->
-            <div>
-              <label for="positionSize" class="block text-sm font-medium text-gray-700">Calculated Position Size</label>
-              <input id="positionSize" type="number" readonly class="mt-1 block w-full bg-gray-100 rounded-md border border-gray-300 shadow-sm text-sm text-gray-700">
-            </div>
-          
           </div>
-          
 
 
 
