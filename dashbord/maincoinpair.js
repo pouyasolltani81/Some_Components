@@ -1501,11 +1501,10 @@ const TechnicalAnalysisComponent = (function () {
 
 
   // --- Populate the components popover as you already do ---
-  const componentsContent = document.getElementById("componentsContent");
-  componentsContent.innerHTML =
-    fetchedData.signal.components
-      .map(c => `<div>• ${c.name}: ${c.value}</div>`)
-      .join("");
+   // Populate components popup (use your existing helper)
+   const componentsContent = document.getElementById("componentsContent");
+   componentsContent.innerHTML = getComponentsHTML(fetchedData.signal.components);
+ 
 
   // --- Re-use your working infoIcon & popover ---
   const infoBtn = document.getElementById("infoIcon");
