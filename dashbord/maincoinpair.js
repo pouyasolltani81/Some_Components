@@ -1,27 +1,34 @@
 import ApexCharts from "apexcharts";
-import {GetNewsbyDateCategory,GetMarketPair,ListPairs,exGetTrendWithOHLCV,exGetOHLCV,exGetIntelligentSupportResistanceLevels,exGetMultipleTechnicalIndicatorSignal,ex_getSymbolInfo} from './endpoints'
+import {
+  GetNewsbyDateCategory,
+  GetMarketPair,
+  ListPairs,
+  exGetTrendWithOHLCV,
+  exGetOHLCV,
+  exGetIntelligentSupportResistanceLevels,
+  exGetMultipleTechnicalIndicatorSignal,
+  ex_getSymbolInfo,
+} from "./endpoints";
 // ----------------------------------------------------------------------------------------
 // Global Variables & URL Params
 // ----------------------------------------------------------------------------------------
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
-console.log(id); // Outputs: "Foo Bar"
+// console.log(id); // Outputs: "Foo Bar"
 
 // Global settings and state variables
 const token = "23b30428c4102a9280abbbd75762cf01";
 const priceHistory = []; // Price history (up to 20 points)
 const maxDataPoints = 20;
 
-
 // ----------------------------------------------------------------------------------------
 
 let srMode = false;
 let srModeInterval = null;
 
-
 let cryptoComponent = null;
 let first_time = true;
-let pair_name = null
+let pair_name = null;
 let chart, volumeChart;
 let currentCandleCount = 0;
 let currentVolumeCount = 0;
@@ -41,66 +48,59 @@ let currentMarketId = id;
 let firstCandleTime = null;
 let time_interval_for_chart = 5000; // May update based on API response
 
+const modal = document.getElementById("news-modal");
+const closeBtn = document.getElementById("close-modal-btn");
 
-const modal = document.getElementById('news-modal');
-const closeBtn = document.getElementById('close-modal-btn');
-
-closeBtn.addEventListener('click', () => {
-  modal.classList.add('hidden');
+closeBtn.addEventListener("click", () => {
+  modal.classList.add("hidden");
 });
 
 // Optional: click outside to close
-modal.addEventListener('click', (e) => {
+modal.addEventListener("click", (e) => {
   if (e.target === modal) {
-    modal.classList.add('hidden');
+    modal.classList.add("hidden");
   }
 });
 
-const infoBtn = document.getElementById('info-btn');
-const infoPopup = document.getElementById('info-popup');
+const infoBtn = document.getElementById("info-btn");
+const infoPopup = document.getElementById("info-popup");
 
-infoBtn.addEventListener('click', (e) => {
+infoBtn.addEventListener("click", (e) => {
   e.stopPropagation();
-  infoPopup.classList.toggle('hidden');
+  infoPopup.classList.toggle("hidden");
 });
 
 // Optional: close popup if clicking elsewhere
-document.addEventListener('click', () => {
-  infoPopup.classList.add('hidden');
+document.addEventListener("click", () => {
+  infoPopup.classList.add("hidden");
 });
-
 
 // ----------------------------------------------------------------------------------------
 // Fetch Coin Data & Update Data Cards / Price History
 // ----------------------------------------------------------------------------------------
 
-
 async function fetchNewsall(firstCandleTime) {
-
-
-
   // console.log(pair_name);
-
 
   try {
     let params = {
       symbols: pair_name,
       startDate: firstCandleTime,
-      category: "cryptocurrencies"
+      category: "cryptocurrencies",
     };
     let newsResponse = await axios.post(
       GetNewsbyDateCategory,
-      
+
       params,
       {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json; charset=utf-8",
-          Authorization: 'd4735e3a265e16ee2393953',
+          Authorization: "d4735e3a265e16ee2393953",
         },
       }
     );
-    console.log('newsResponse',newsResponse);
+    // console.log("newsResponse", newsResponse);
     if (newsResponse.data && newsResponse.data.return) {
       // console.log('fetchedNews',fetchedNews);
 
@@ -115,7 +115,7 @@ async function fetchNewsall(firstCandleTime) {
 // Fetch Coin Data & Update Data Cards / Price History
 // ----------------------------------------------------------------------------------------
 async function fetchCoinList() {
-  const url = GetMarketPair ;
+  const url = GetMarketPair;
   const params = { marketpair_id: id };
 
   try {
@@ -129,29 +129,16 @@ async function fetchCoinList() {
       .then((response) => {
         const data = response.data.market_pair;
         if (data) {
-
-
-          pair_name = data.pair.name
-
-
-
+          pair_name = data.pair.name;
 
           if (first_time) {
-
-            
-
             cryptoComponent = new CryptoDataComponent(
-              'e19ad04e557b1cc1fee6b60b4d421fef',
+              "e19ad04e557b1cc1fee6b60b4d421fef",
               pair_name,
-              document.getElementById('news_statistics')
+              document.getElementById("news_statistics")
             );
 
-
             cryptoComponent.fetchData();
-
-
-
-
           }
 
           first_time = false;
@@ -161,16 +148,22 @@ async function fetchCoinList() {
           document.getElementById("price").textContent = data.formatted_price;
           document.getElementById("askPrice").textContent = data.ask_price;
           document.getElementById("bidPrice").textContent = data.bid_price;
-          document.getElementById("volume").textContent =
-            parseFloat(data.volume).toFixed(2);
-          document.getElementById("changePrice").textContent = data.change_price;
+          document.getElementById("volume").textContent = parseFloat(
+            data.volume
+          ).toFixed(2);
+          document.getElementById("changePrice").textContent =
+            data.change_price;
           document.getElementById("changeRate").textContent = data.change_rate;
           if (data.pair.src) {
-            document.getElementById("srcCoinName").textContent = `${data.pair.src.name} (${data.pair.src.symbol})`;
+            document.getElementById(
+              "srcCoinName"
+            ).textContent = `${data.pair.src.name} (${data.pair.src.symbol})`;
             document.getElementById("srcLogo").src = data.pair.src.logo_url;
           }
           if (data.pair.base) {
-            document.getElementById("baseCoinName").textContent = `${data.pair.base.name} (${data.pair.base.symbol})`;
+            document.getElementById(
+              "baseCoinName"
+            ).textContent = `${data.pair.base.name} (${data.pair.base.symbol})`;
             document.getElementById("baseLogo").src = data.pair.base.logo_url;
           }
           document.getElementById("openPrice").textContent = data.open_price;
@@ -198,7 +191,6 @@ async function fetchCoinList() {
 fetchCoinList();
 setInterval(fetchCoinList, time_interval_for_chart);
 // setInterval(fetchNewsall, time_interval_for_chart);
-
 
 // ----------------------------------------------------------------------------------------
 // Active Markets & Market Select Dropdown Helpers
@@ -245,22 +237,18 @@ function updateMarketInfo(market) {
 // ----------------------------------------------------------------------------------------
 async function fetchOHLCVData() {
   const marketpair_id = currentMarketId;
-  console.log("Market ID:", marketpair_id);
+  // console.log("Market ID:", marketpair_id);
   const timeframe = document.getElementById("timeframe").value;
   const limit = parseInt(document.getElementById("limit").value);
   const since = getDate(limit, timeframe);
   let chart_type = document.getElementById("chart_type").checked;
-  let url = chart_type
-    ? exGetTrendWithOHLCV
-    : exGetOHLCV;
+  let url = chart_type ? exGetTrendWithOHLCV : exGetOHLCV;
   if (chart_type) {
     // document.getElementById("advanced_chart_tools").classList.remove("hidden");
     document.getElementById("modal-wrapper").classList.remove("hidden");
-
   } else {
     // document.getElementById("advanced_chart_tools").classList.add("hidden");
     document.getElementById("modal-wrapper").classList.add("hidden");
-
   }
 
   try {
@@ -306,7 +294,10 @@ function getAnnotations(data) {
         borderColor: line.alertOn ? "orange" : "gray",
         label: {
           borderColor: line.alertOn ? "orange" : "gray",
-          style: { color: "#fff", background: line.alertOn ? "orange" : "gray" },
+          style: {
+            color: "#fff",
+            background: line.alertOn ? "orange" : "gray",
+          },
           text: `Line ${index + 1}`,
         },
       });
@@ -384,16 +375,14 @@ async function updateAnnotationsWrapper(data) {
 // ----------------------------------------------------------------------------------------
 async function fetchAndUpdateSRLevels() {
   try {
-
     const marketpair_id = currentMarketId;
-    console.log("Market ID:", marketpair_id);
+    // console.log("Market ID:", marketpair_id);
     const timeframe = document.getElementById("timeframe").value;
     const limit = parseInt(document.getElementById("limit").value);
     const since = getDate(limit, timeframe);
     // Change the URL to your specific SR levels endpoint.
     const response = await axios.post(
-      exGetIntelligentSupportResistanceLevels
-      ,
+      exGetIntelligentSupportResistanceLevels,
       { marketpair_id, timeframe, since, limit },
       {
         headers: {
@@ -453,7 +442,6 @@ async function fetchAndUpdateSRLevels() {
       chart.updateOptions({ annotations: { yaxis: annotations } });
       // Force a chart resize/redraw to address any blank render issues.
       // window.dispatchEvent(new Event("resize"));
-      ;
     }
   } catch (error) {
     console.error("Error fetching SR levels:", error);
@@ -463,7 +451,7 @@ async function fetchAndUpdateSRLevels() {
 // ----------------------------------------------------------------------------------------
 // Main Chart Update Function with Optimized Data Append & Resize
 // ----------------------------------------------------------------------------------------
-let first_time_candles = true ;
+let first_time_candles = true;
 let bullishColor = document.getElementById("bullish-color")
   ? document.getElementById("bullish-color").value
   : "#008000";
@@ -473,12 +461,12 @@ let bearishColor = document.getElementById("bearish-color")
   : "#ff0000";
 async function updateChart() {
   try {
-    if (first_time_candles){
-      showLoading()
+    if (first_time_candles) {
+      showLoading();
     }
     const data = await fetchOHLCVData();
-    hideLoading()
-    first_time_candles =false ; 
+    hideLoading();
+    first_time_candles = false;
     // console.log("OHLCV Data:", data);
     if (!data || !Array.isArray(data) || data.length === 0) {
       console.warn("No OHLCV data available.");
@@ -492,7 +480,12 @@ async function updateChart() {
 
     const candlestickData = data.map((d) => ({
       x: new Date(d.datetime),
-      y: [parseFloat(d.open).toFixed(2), parseFloat(d.high).toFixed(2), parseFloat(d.low).toFixed(2), parseFloat(d.close).toFixed(2)],
+      y: [
+        parseFloat(d.open).toFixed(2),
+        parseFloat(d.high).toFixed(2),
+        parseFloat(d.low).toFixed(2),
+        parseFloat(d.close).toFixed(2),
+      ],
     }));
 
     bullishColor = document.getElementById("bullish-color")
@@ -510,7 +503,8 @@ async function updateChart() {
     let newXMax = null;
     if (candlestickData.length >= 2) {
       const lastTime = candlestickData[candlestickData.length - 1].x.getTime();
-      const secondLastTime = candlestickData[candlestickData.length - 2].x.getTime();
+      const secondLastTime =
+        candlestickData[candlestickData.length - 2].x.getTime();
       const diff = lastTime - secondLastTime;
       newXMax = lastTime + diff * 5;
     }
@@ -607,8 +601,6 @@ async function updateChart() {
 
     // Force a chart update/resize to solve the blank display issue.
     // window.dispatchEvent(new Event("resize"));
-    ;
-
     // Update other UI elements (MACD, Price, Trend indicators, etc.)
     const lastCandle = data[data.length - 1];
     const macdSignal = lastCandle.MACD_signal == lastCandle.MACD;
@@ -625,54 +617,58 @@ async function updateChart() {
     const currentPriceColor =
       lastCandle.close > lastCandle.open ? bullishColor : bearishColor;
 
-    console.log('update trend', lastCandle.TREND_RECOMMENDATION);
+    // console.log("update trend", lastCandle.TREND_RECOMMENDATION);
 
+    document.getElementById("advance_chart_pair_name").innerText = pair_name;
 
-    document.getElementById('advance_chart_pair_name').innerText = pair_name
-
-
-
-    updateTrend(lastCandle.TREND_RECOMMENDATION, lastCandle.TREND_STRENGTH)
+    updateTrend(lastCandle.TREND_RECOMMENDATION, lastCandle.TREND_STRENGTH);
     if (document.getElementById("trend-recommendation")) {
       document.getElementById("trend-recommendation").innerText =
         lastCandle.TREND_RECOMMENDATION || "N/A";
     }
     if (document.getElementById("trend-strength")) {
       document.getElementById("trend-strength").innerText =
-        lastCandle.TREND_STRENGTH !== undefined ? lastCandle.TREND_STRENGTH.toFixed(2) : "N/A";
+        lastCandle.TREND_STRENGTH !== undefined
+          ? lastCandle.TREND_STRENGTH.toFixed(2)
+          : "N/A";
     }
     if (document.getElementById("current-price")) {
-      document.getElementById("current-price").innerHTML =
-        `<span style="color:${currentPriceColor}; font-weight:bold;">${currentPrice.toFixed(2)}</span>`;
+      document.getElementById(
+        "current-price"
+      ).innerHTML = `<span style="color:${currentPriceColor}; font-weight:bold;">${currentPrice.toFixed(
+        2
+      )}</span>`;
     }
   } catch (err) {
     console.error("Error in updateChart function:", err);
   }
 }
 
-
 function updateTrend(recommendation, strength) {
   const icons = {
-    'STRONG_UPTREND': '#strong-uptrend',
-    'UPTREND': '#uptrend',
-    'STRONG_DOWNTREND': '#strong-downtrend',
-    'DOWNTREND': '#downtrend',
-    'NEUTRAL': '#neutral'
+    STRONG_UPTREND: "#strong-uptrend",
+    UPTREND: "#uptrend",
+    STRONG_DOWNTREND: "#strong-downtrend",
+    DOWNTREND: "#downtrend",
+    NEUTRAL: "#neutral",
   };
 
   // console.log('icon things : ', recommendation ,icons[recommendation]);
-  
+  if (icons[recommendation]) {
+
   const icon = document.querySelector(icons[recommendation]).cloneNode(true);
-  icon.classList.remove('hidden');
-  document.getElementById('trend-icon').innerHTML = '';
-  document.getElementById('trend-icon').appendChild(icon);
+  icon.classList.remove("hidden");
+  document.getElementById("trend-icon").innerHTML = "";
+  document.getElementById("trend-icon").appendChild(icon);
 
   // Update strength meter
-  const strengthBar = document.getElementById('strength-bar');
+  const strengthBar = document.getElementById("strength-bar");
   strengthBar.style.width = `${Math.abs(strength)}%`;
-  strengthBar.style.background = strength >= 0
-    ? `linear-gradient(90deg, ${bullishColor} 0%, #fff 100%)`
-    : `linear-gradient(90deg, #fff 0%, ${bearishColor} 100%)`;
+  strengthBar.style.background =
+    strength >= 0
+      ? `linear-gradient(90deg, ${bullishColor} 0%, #fff 100%)`
+      : `linear-gradient(90deg, #fff 0%, ${bearishColor} 100%)`;
+  }
 }
 
 // ----------------------------------------------------------------------------------------
@@ -699,22 +695,30 @@ const chartOptions = {
         if (newsMode) {
           try {
             const candleIndex = config.dataPointIndex;
-            if (candleIndex >= 0 && currentChartData && currentChartData[candleIndex]) {
-              const candleTime = new Date(currentChartData[candleIndex].datetime);
+            if (
+              candleIndex >= 0 &&
+              currentChartData &&
+              currentChartData[candleIndex]
+            ) {
+              const candleTime = new Date(
+                currentChartData[candleIndex].datetime
+              );
               let timeRange = 3600000;
               if (currentChartData.length >= 2 && candleIndex > 0) {
-                const prevTime = new Date(currentChartData[candleIndex - 1].datetime).getTime();
+                const prevTime = new Date(
+                  currentChartData[candleIndex - 1].datetime
+                ).getTime();
                 const currTime = candleTime.getTime();
                 timeRange = currTime - prevTime;
               }
               const relatedNews = fetchedNews
                 ? fetchedNews.filter((news) => {
-                  let newsTime = news.pubDate * 1000;
-                  return (
-                    newsTime >= candleTime.getTime() &&
-                    newsTime < candleTime.getTime() + timeRange
-                  );
-                })
+                    let newsTime = news.pubDate * 1000;
+                    return (
+                      newsTime >= candleTime.getTime() &&
+                      newsTime < candleTime.getTime() + timeRange
+                    );
+                  })
                 : [];
               showNewsModal(relatedNews);
             }
@@ -734,9 +738,16 @@ const chartOptions = {
             const gridSpacing = 5;
             const extraPoints = gridSpacing + 2;
             const price =
-              Math.round((maxY - (offsetY / gridHeight) * (maxY - minY)) * 100) / 100 +
+              Math.round(
+                (maxY - (offsetY / gridHeight) * (maxY - minY)) * 100
+              ) /
+                100 +
               extraPoints;
-            drawnLines.push({ price, alertOn: alertDrawingMode, alertTriggered: false });
+            drawnLines.push({
+              price,
+              alertOn: alertDrawingMode,
+              alertTriggered: false,
+            });
             updateAnnotationsWrapper(currentChartData);
           } catch (err) {
             console.error("Error during drawing click event:", err);
@@ -756,36 +767,43 @@ const chartOptions = {
   annotations: { yaxis: [] },
   tooltip: newsMode
     ? {
-      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-        let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
-        let timeRange = 3600000;
-        if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
-          let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
-          let currTime = candleTime.getTime();
-          timeRange = currTime - prevTime;
-        }
-        const relatedNews = fetchedNews
-          ? fetchedNews.filter((news) => {
-            let newsTime = news.pubDate * 1000;
-            return (
-              newsTime >= candleTime.getTime() &&
-              newsTime < candleTime.getTime() + timeRange
-            );
-          })
-          : [];
-        return relatedNews.length > 0
-          ? `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`
-          : `<div class="p-2">No news available</div>`;
-      },
-    }
+        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+          let candleTime = new Date(
+            w.globals.seriesX[seriesIndex][dataPointIndex]
+          );
+          let timeRange = 3600000;
+          if (
+            w.globals.seriesX[seriesIndex].length >= 2 &&
+            dataPointIndex > 0
+          ) {
+            let prevTime = new Date(
+              w.globals.seriesX[seriesIndex][dataPointIndex - 1]
+            ).getTime();
+            let currTime = candleTime.getTime();
+            timeRange = currTime - prevTime;
+          }
+          const relatedNews = fetchedNews
+            ? fetchedNews.filter((news) => {
+                let newsTime = news.pubDate * 1000;
+                return (
+                  newsTime >= candleTime.getTime() &&
+                  newsTime < candleTime.getTime() + timeRange
+                );
+              })
+            : [];
+          return relatedNews.length > 0
+            ? `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`
+            : `<div class="p-2">No news available</div>`;
+        },
+      }
     : {
-      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-        if (!currentChartData || !currentChartData[dataPointIndex]) {
-          return `<div class="apexcharts-tooltip">Loading...</div>`;
-        }
-        const item = currentChartData[dataPointIndex];
-        const dateStr = new Date(item.datetime).toLocaleString();
-        return `<div class="apexcharts-tooltip" style="padding:10px;">
+        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+          if (!currentChartData || !currentChartData[dataPointIndex]) {
+            return `<div class="apexcharts-tooltip">Loading...</div>`;
+          }
+          const item = currentChartData[dataPointIndex];
+          const dateStr = new Date(item.datetime).toLocaleString();
+          return `<div class="apexcharts-tooltip" style="padding:10px;">
                     <div><strong>${dateStr}</strong></div>
                     <div>Open: ${parseFloat(item.open).toFixed(2)}</div>
                     <div>High: ${parseFloat(item.high).toFixed(2)}</div>
@@ -793,10 +811,10 @@ const chartOptions = {
                     <div>Close: ${parseFloat(item.close).toFixed(2)}</div>
                     <div>Volume: ${parseFloat(item.volume).toFixed(2)}</div>
                   </div>`;
+        },
+        shared: true,
+        intersect: false,
       },
-      shared: true,
-      intersect: false,
-    },
 };
 
 const volumeOptions = {
@@ -839,7 +857,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const chartContainer = document.querySelector("#chart");
     const volumeContainer = document.querySelector("#volume-chart");
     if (!chartContainer) throw new Error("Element with id 'chart' not found.");
-    if (!volumeContainer) throw new Error("Element with id 'volume-chart' not found.");
+    if (!volumeContainer)
+      throw new Error("Element with id 'volume-chart' not found.");
 
     // Initialize charts
     chart = new ApexCharts(chartContainer, chartOptions);
@@ -884,7 +903,10 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
         const listStr = drawnLines
-          .map((line, index) => `${index + 1}: Price = ${parseFloat(line.price).toFixed(2)}`)
+          .map(
+            (line, index) =>
+              `${index + 1}: Price = ${parseFloat(line.price).toFixed(2)}`
+          )
           .join("<br>");
         document.getElementById("modal-lines").innerHTML = listStr;
         document.getElementById("removal-modal").classList.remove("hidden");
@@ -950,7 +972,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const newsModeBtn = document.getElementById("news-mode-button");
     if (newsModeBtn) {
       newsModeBtn.addEventListener("click", function () {
-
         // cryptoComponent.fetchData();
         // document.getElementById('news_statistics').classList.toggle('hidden')
         newsMode = !newsMode;
@@ -961,21 +982,28 @@ document.addEventListener("DOMContentLoaded", function () {
           chart.updateOptions({
             tooltip: {
               custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-                let candleTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]);
+                let candleTime = new Date(
+                  w.globals.seriesX[seriesIndex][dataPointIndex]
+                );
                 let timeRange = 3600000;
-                if (w.globals.seriesX[seriesIndex].length >= 2 && dataPointIndex > 0) {
-                  let prevTime = new Date(w.globals.seriesX[seriesIndex][dataPointIndex - 1]).getTime();
+                if (
+                  w.globals.seriesX[seriesIndex].length >= 2 &&
+                  dataPointIndex > 0
+                ) {
+                  let prevTime = new Date(
+                    w.globals.seriesX[seriesIndex][dataPointIndex - 1]
+                  ).getTime();
                   let currTime = candleTime.getTime();
                   timeRange = currTime - prevTime;
                 }
                 const relatedNews = fetchedNews
                   ? fetchedNews.filter((news) => {
-                    let newsTime = news.pubDate * 1000;
-                    return (
-                      newsTime >= candleTime.getTime() &&
-                      newsTime < candleTime.getTime() + timeRange
-                    );
-                  })
+                      let newsTime = news.pubDate * 1000;
+                      return (
+                        newsTime >= candleTime.getTime() &&
+                        newsTime < candleTime.getTime() + timeRange
+                      );
+                    })
                   : [];
                 return relatedNews.length > 0
                   ? `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`
@@ -999,7 +1027,9 @@ document.addEventListener("DOMContentLoaded", function () {
                           <div>High: ${parseFloat(item.high).toFixed(2)}</div>
                           <div>Low: ${parseFloat(item.low).toFixed(2)}</div>
                           <div>Close: ${parseFloat(item.close).toFixed(2)}</div>
-                          <div>Volume: ${parseFloat(item.volume).toFixed(2)}</div>
+                          <div>Volume: ${parseFloat(item.volume).toFixed(
+                            2
+                          )}</div>
                         </div>`;
               },
               shared: true,
@@ -1029,7 +1059,9 @@ document.addEventListener("DOMContentLoaded", function () {
             clearInterval(srModeInterval);
             srModeInterval = null;
           }
-          chart.updateOptions({ annotations: { yaxis: getAnnotations(currentChartData) } });
+          chart.updateOptions({
+            annotations: { yaxis: getAnnotations(currentChartData) },
+          });
         }
       });
     } else {
@@ -1037,7 +1069,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Start regular chart updates every 10 seconds.
-    updateChart()
+    updateChart();
     setInterval(updateChart, 5000);
   } catch (err) {
     console.error("Error during DOMContentLoaded initialization:", err);
@@ -1065,7 +1097,9 @@ function getDate(limit, timeframe) {
       multiplier = 24 * 60 * 60 * 1000;
       break;
     default:
-      throw new Error("Unsupported timeframe unit. Use 'm' for minutes, 'h' for hours, or 'd' for days.");
+      throw new Error(
+        "Unsupported timeframe unit. Use 'm' for minutes, 'h' for hours, or 'd' for days."
+      );
   }
   const totalMilliseconds = limit * value * multiplier;
   const targetTime = new Date(now.getTime() - totalMilliseconds);
@@ -1097,8 +1131,7 @@ function getSentimentIndicator(news) {
   }
 }
 
-
-// show more 
+// show more
 //<button class="show-more text-blue-500 underline" onclick="toggleDescription(this)">Show More</button>
 
 function showNewsModal(relatedNews) {
@@ -1114,18 +1147,19 @@ function showNewsModal(relatedNews) {
     html += `
       <div class="flex items-center p-2 border rounded-md bg-gray-50 text-xs mb-2">
         <div class="w-16 h-16 flex-shrink-0 mr-2">
-          <img src="${news.thImage}" alt="news image" class="w-full h-full object-cover rounded-md">
+          <img src="${
+            news.thImage
+          }" alt="news image" class="w-full h-full object-cover rounded-md">
         </div>
         <div class="flex-1">
           <h4 class="font-bold">${index + 1}. ${news.title}</h4>
           <p class="news-description" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
             ${news.articleBody}
           </p>
-          ${news.articleBody && news.articleBody.length > 100
-        ? ``
-        : ""
-      }
-          <a href="${news.link}" target="_blank" class="text-blue-500 underline">Read more</a>
+          ${news.articleBody && news.articleBody.length > 100 ? `` : ""}
+          <a href="${
+            news.link
+          }" target="_blank" class="text-blue-500 underline">Read more</a>
         </div>
         <div class="w-24 text-center ml-2">
           ${getSentimentIndicator(news)}
@@ -1139,18 +1173,19 @@ function showNewsModal(relatedNews) {
       html += `
         <div class="flex items-center p-2 border rounded-md bg-gray-50 text-xs mb-2">
           <div class="w-16 h-16 flex-shrink-0 mr-2">
-            <img src="${news.thImage}" alt="news image" class="w-full h-full object-cover rounded-md">
+            <img src="${
+              news.thImage
+            }" alt="news image" class="w-full h-full object-cover rounded-md">
           </div>
           <div class="flex-1">
             <h4 class="font-bold">${index + 6}. ${news.title}</h4>
             <p class="news-description" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
               ${news.articleBody}
             </p>
-            ${news.articleBody && news.articleBody.length > 100
-          ? ``
-          : ""
-        }
-            <a href="${news.link}" target="_blank" class="text-blue-500 underline">Read more</a>
+            ${news.articleBody && news.articleBody.length > 100 ? `` : ""}
+            <a href="${
+              news.link
+            }" target="_blank" class="text-blue-500 underline">Read more</a>
           </div>
           <div class="w-24 text-center ml-2">
             ${getSentimentIndicator(news)}
@@ -1199,10 +1234,18 @@ const TechnicalAnalysisComponent = (function () {
   const closeModalBtn = document.getElementById("closeModalBtn");
   const analysisDateEl = document.getElementById("analysisDate");
   const signalDataContainer = document.getElementById("signalDataContainer");
-  const supportLevelsContainer = document.getElementById("supportLevelsContainer");
-  const recommendationActionContainer = document.getElementById("recommendationActionContainer");
-  const resistanceLevelsContainer = document.getElementById("resistanceLevelsContainer");
-  const tradingNotesContainer = document.getElementById("tradingNotesContainer");
+  const supportLevelsContainer = document.getElementById(
+    "supportLevelsContainer"
+  );
+  const recommendationActionContainer = document.getElementById(
+    "recommendationActionContainer"
+  );
+  const resistanceLevelsContainer = document.getElementById(
+    "resistanceLevelsContainer"
+  );
+  const tradingNotesContainer = document.getElementById(
+    "tradingNotesContainer"
+  );
   const infoIcon = document.getElementById("infoIcon");
   const componentsPopover = document.getElementById("componentsPopover");
   const componentsContent = document.getElementById("componentsContent");
@@ -1231,18 +1274,18 @@ const TechnicalAnalysisComponent = (function () {
     if (score > 20) {
       // console.log('green');
 
-      document.getElementById('seperator_line').classList = 'absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-green-500'
+      document.getElementById("seperator_line").classList =
+        "absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-green-500";
     } else if (score < 20) {
-
       // console.log('red');
 
-      document.getElementById('seperator_line').classList = 'absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-red-500'
-
+      document.getElementById("seperator_line").classList =
+        "absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-red-500";
     } else {
       // console.log('blue');
 
-      document.getElementById('seperator_line').classList = 'absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-blue-500'
-
+      document.getElementById("seperator_line").classList =
+        "absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r  to-gray-50 from-blue-500";
     }
     if (score >= 20) return "text-green-600";
     if (score >= 10) return "text-blue-600";
@@ -1268,16 +1311,20 @@ const TechnicalAnalysisComponent = (function () {
   function getComponentsHTML(components) {
     let html = "";
     for (const [category, compData] of Object.entries(components)) {
-      console.log(compData);
+      // console.log(compData);
       html += `<div class="space-y-1 border-b pb-2 mb-2">
                 <h5 class="font-semibold capitalize">${category}</h5>
                 <p><span class="font-semibold">Overall Score:</span> ${compData.score}</p>
                 <ul class="ml-4 list-disc">`;
-      for (const [indicator, indicatorData] of Object.entries(compData.analysis)) {
+      for (const [indicator, indicatorData] of Object.entries(
+        compData.analysis
+      )) {
         const indicatorName = indicator.replace(/_/g, " ");
         html += `<li>
                   <span class="font-semibold capitalize">${indicatorName}:</span>
-                  <span class="${getStatusTextColor(indicatorData.status)}">${indicatorData.status.replace(/_/g, " ")}</span>
+                  <span class="${getStatusTextColor(
+                    indicatorData.status
+                  )}">${indicatorData.status.replace(/_/g, " ")}</span>
                   ${getTrendIcon(indicatorData.status)}
                   (Score: ${indicatorData.score})
                  </li>`;
@@ -1314,13 +1361,14 @@ const TechnicalAnalysisComponent = (function () {
     }
   }
 
-
-
-  
   function updateUI(fetchedData) {
+    console.log(fetchedData);
+
     // Assume a fixed wallet balance (e.g. 1000 $) – or get it dynamically if available.
     const walletBalance = 1000;
-    const analysisDate = new Date(fetchedData.signal.signal.timestamp).toLocaleDateString();
+    const analysisDate = new Date(
+      fetchedData.signal.signal.timestamp
+    ).toLocaleDateString();
     analysisDateEl.textContent = `${analysisDate}`;
 
     const signal = fetchedData.signal.signal;
@@ -1350,25 +1398,41 @@ const TechnicalAnalysisComponent = (function () {
     <!-- Recommendation Grid -->
     <div class="grid md:grid-cols-2 gap-4 mb-6">
       <!-- Action Card -->
-      <div class="bg-white p-4 rounded-lg border ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? 'border-green-200' : 'border-red-200'}">
+      <div class="bg-white p-4 rounded-lg border ${
+        rec.action === "BUY" || rec.action === "STRONG_BUY"
+          ? "border-green-200"
+          : "border-red-200"
+      }">
         <div class="flex items-center gap-3 mb-2">
-          <span class="p-2 rounded-lg ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? 'bg-green-100' : 'bg-red-100'}">
-            ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? '🔼' : '🔽'}
+          <span class="p-2 rounded-lg ${
+            rec.action === "BUY" || rec.action === "STRONG_BUY"
+              ? "bg-green-100"
+              : "bg-red-100"
+          }">
+            ${rec.action === "BUY" || rec.action === "STRONG_BUY" ? "🔼" : "🔽"}
           </span>
           <div>
             <p class="text-sm text-gray-600">Recommended Action</p>
-            <p class="text-lg font-bold ${rec.action === 'BUY' || rec.action === 'STRONG_BUY' ? 'text-green-600' : 'text-red-600'}">${rec.action}</p>
+            <p class="text-lg font-bold ${
+              rec.action === "BUY" || rec.action === "STRONG_BUY"
+                ? "text-green-600"
+                : "text-red-600"
+            }">${rec.action}</p>
           </div>
         </div>
       </div>
 
-      ${rec.risk_reward_ratio ? `<!-- Risk/Reward Card -->
+      ${
+        rec.risk_reward_ratio
+          ? `<!-- Risk/Reward Card -->
       <div class="bg-white p-4 rounded-lg border border-blue-200">
         <div class="flex items-center gap-3">
           <span class="p-2 rounded-lg bg-blue-100">⚖️</span>
           <div>
             <p class="text-sm text-gray-600">Risk/Reward Ratio</p>
-            <p class="text-lg font-bold text-blue-600">${rec.risk_reward_ratio.toFixed(2)}</p>
+            <p class="text-lg font-bold text-blue-600">${rec.risk_reward_ratio.toFixed(
+              2
+            )}</p>
           </div>
         </div>
       </div>
@@ -1382,13 +1446,19 @@ const TechnicalAnalysisComponent = (function () {
       </div>
       <div class="bg-white p-4 rounded-lg border border-green-200">
         <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 1</p>
-        <p class="font-semibold text-green-600">${rec.take_profit_1.toFixed(2)}</p>
+        <p class="font-semibold text-green-600">${rec.take_profit_1.toFixed(
+          2
+        )}</p>
       </div>
       <div class="bg-white p-4 rounded-lg border border-green-200">
         <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 2</p>
-        <p class="font-semibold text-green-600">${rec.take_profit_2.toFixed(2)}</p>
+        <p class="font-semibold text-green-600">${rec.take_profit_2.toFixed(
+          2
+        )}</p>
       </div>
-    </div>` : ''}
+    </div>`
+          : ""
+      }
       
 
     
@@ -1398,26 +1468,33 @@ const TechnicalAnalysisComponent = (function () {
 
     // console.log(pair_name);
 
-
     // Build the primary signal display
     const signalHTML = `
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-2xl font-bold">$${parseFloat(signal.price).toFixed(2)} (${pair_name})</p>
+            <p class="text-2xl font-bold">$${parseFloat(signal.price).toFixed(
+              2
+            )} (${pair_name})</p>
             <p class="text-gray-500 text-sm">Current Price</p>
           </div>
           <div class="text-right">
-            <span class="${getStatusBgColor(signal.value)} px-3 py-1 rounded-full text-sm inline-flex items-center">
+            <span class="${getStatusBgColor(
+              signal.value
+            )} px-3 py-1 rounded-full text-sm inline-flex items-center">
               ${signal.value}
               <span id="signalArrow" class="ml-1"></span>
             </span>
-            <p class="mt-1 text-sm ${getScoreColor(signal.score)}">Score: ${parseFloat(signal.score).toFixed(2)}</p>
+            <p class="mt-1 text-sm ${getScoreColor(
+              signal.score
+            )}">Score: ${parseFloat(signal.score).toFixed(2)}</p>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div class="bg-white p-3 rounded-lg border">
             <p class="text-gray-500 text-sm">Timestamp</p>
-            <p class="font-medium">${new Date(signal.timestamp).toLocaleString()}</p>
+            <p class="font-medium">${new Date(
+              signal.timestamp
+            ).toLocaleString()}</p>
           </div>
           <div class="bg-white p-3 rounded-lg border">
             <p class="text-gray-500 text-sm">Analysis Time</p>
@@ -1427,12 +1504,18 @@ const TechnicalAnalysisComponent = (function () {
     `;
     // signalDataContainer.innerHTML = signalHTML;
     // document.getElementById("signalArrow").innerHTML = getTrendIcon(signal.value);
-    document.getElementById("TitleSignal").innerHTML = `<div class="text-right flex items-center gap-2">
-            <span class="${getStatusBgColor(signal.value)} px-3 py-1 rounded-full text-sm inline-flex items-center">
+    document.getElementById(
+      "TitleSignal"
+    ).innerHTML = `<div class="text-right flex items-center gap-2">
+            <span class="${getStatusBgColor(
+              signal.value
+            )} px-3 py-1 rounded-full text-sm inline-flex items-center">
               ${signal.value}
               <span id="signalArrow" class="ml-1"></span>
             </span>
-            <p class="mt-1 text-sm ${getScoreColor(signal.score)}">Score: ${parseFloat(signal.score).toFixed(2)}</p>
+            <p class="mt-1 text-sm ${getScoreColor(
+              signal.score
+            )}">Score: ${parseFloat(signal.score).toFixed(2)}</p>
           </div>`;
     // Build Support Levels display
     const supportHTML = `
@@ -1445,10 +1528,15 @@ const TechnicalAnalysisComponent = (function () {
         </button>
         </div>
         
-        <div class="space-y-3">
+        <div class="space-y-3" id="support-levels-container">
           ${rec.support_levels
-        .map(level => `
-              <div class="flex justify-between items-center bg-green-50 p-3 rounded-lg">
+            .map(
+              (level, index) => `
+              <div class="flex justify-between items-center bg-green-50 hover:bg-green-100 cursor-pointer transition-colors p-3 rounded-lg support-level" 
+                   data-price="${level.price}" 
+                   data-strength="${level.strength}"
+                   data-type="support"
+                   data-index="${index}">
                 <div>
                   <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
                   <span class="text-sm text-green-500 ml-2">
@@ -1457,21 +1545,186 @@ const TechnicalAnalysisComponent = (function () {
                 </div>
                 <div class="text-sm text-green-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
               </div>
-            `)
-        .join("")}
+            `
+            )
+            .join("")}
         </div>
     `;
     supportLevelsContainer.innerHTML = supportHTML;
+
+    // Build Resistance Levels
+    const resistanceHTML = `
+        <h4 class="text-lg font-semibold mb-4 text-red-600">Resistance Levels</h4>
+        <div class="space-y-3" id="resistance-levels-container">
+          ${rec.resistance_levels
+            .map(
+              (level, index) => `
+              <div class="flex justify-between items-center bg-red-50 hover:bg-red-100 cursor-pointer transition-colors p-3 rounded-lg resistance-level" 
+                   data-price="${level.price}" 
+                   data-strength="${level.strength}"
+                   data-type="resistance"
+                   data-index="${index}">
+                <div>
+                  <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
+                  <span class="text-sm text-red-500 ml-2">
+                    ${Math.abs(parseFloat(level.distance)).toFixed(2)}% ${getTrendIcon("BEARISH")}
+                  </span>
+                </div>
+                <div class="text-sm text-red-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
+              </div>
+            `
+            )
+            .join("")}
+        </div>
+    `;
+    resistanceLevelsContainer.innerHTML = resistanceHTML;
+
+    // Add event listeners for level selection
+    document.querySelectorAll('.support-level, .resistance-level').forEach(element => {
+        element.addEventListener('click', function() {
+            // Remove selection from other elements of the same type
+            const type = this.dataset.type;
+            document.querySelectorAll(`.${type}-level`).forEach(el => {
+                el.classList.remove('ring-2', 'ring-blue-500');
+            });
+            
+            // Add selection to clicked element
+            this.classList.add('ring-2', 'ring-blue-500');
+            
+            // Get selected levels
+            const selectedSupport = document.querySelector('.support-level.ring-2');
+            const selectedResistance = document.querySelector('.resistance-level.ring-2');
+           
+            // If both types are selected, log them
+            if (selectedSupport || selectedResistance) {
+
+              let shortProfit = 0;
+              let longProfit = 0;
+              let supportData = null;
+              let resistanceData = null;
+              if (selectedSupport) {
+               supportData = {
+                  price: selectedSupport.dataset.price,
+                  strength: selectedSupport.dataset.strength,
+                  type: 'support',
+                  index: selectedSupport.dataset.index
+              }; } else {
+                supportData = null;
+              }
+              if (selectedResistance) {
+               resistanceData = {
+                  price: selectedResistance.dataset.price,
+                  strength: selectedResistance.dataset.strength,
+                  type: 'resistance',
+                  index: selectedResistance.dataset.index
+              }; } else {
+                resistanceData = null;
+              }
+      
+              // Get current wallet parameters
+              const riskMode = document.getElementById("riskMode").value;
+              const riskValue = parseFloat(document.getElementById("riskValue").value) || 0;
+              const leverage = parseFloat(document.getElementById("leverage").value) || 1;
+              const walletBalance = 1000; 
+              
+              // Calculate risk amount
+              const riskAmount = riskMode === "percentage" ? (riskValue * walletBalance) / 100 : riskValue;
+              
+              // Calculate position size
+              const positionSize = (riskAmount / signal.price) * leverage;
+              
+              // Calculate potential profits
+              if (resistanceData) {
+               longProfit = positionSize * (parseFloat(resistanceData.price) - signal.price);
+              } else {
+                longProfit = 0;
+              }
+              if (supportData) {
+               shortProfit = positionSize * (signal.price - parseFloat(supportData.price));
+              } else {
+                shortProfit = 0;
+              }
+              
+              // Create profit calculation component
+              const profitComponent = `
+                 
+                      <h4 class="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-700">
+                          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          Potential Profit Analysis
+                      </h4>
+                      
+                      <div class="flex justify-between items-center gap-4">
+                      ${resistanceData ? `
+                          <!-- Long Position -->
+                          <div class="bg-green-50 p-3 rounded-lg border border-green-200 w-full ">
+                              <div class="flex items-center gap-2 mb-2">
+                                  <span class="text-green-600">↗</span>
+                                  <span class="font-medium text-green-700">Long Position</span>
+                              </div>
+                              <div class="space-y-1 text-sm">
+                                  <p>Entry: $${signal.price.toFixed(2)}</p>
+                                  <p>Target: $${parseFloat(resistanceData.price).toFixed(2)}</p>
+                                  <p>Position Size: ${positionSize.toFixed(6)}</p>
+                                  <p class="font-semibold text-green-600">Potential Profit: $${longProfit.toFixed(2)}</p>
+                              </div>
+                          </div>
+                          ` : ''}
+                          ${supportData ? `
+                          <!-- Short Position -->
+                          <div class="bg-red-50 p-3 rounded-lg border border-red-200 w-full ">
+                              <div class="flex items-center gap-2 mb-2">
+                                  <span class="text-red-600">↘</span>
+                                  <span class="font-medium text-red-700">Short Position</span>
+                              </div>
+                              <div class="space-y-1 text-sm">
+                                  <p>Entry: $${signal.price.toFixed(2)}</p>
+                                  <p>Target: $${parseFloat(supportData.price).toFixed(2)}</p>
+                                  <p>Position Size: ${positionSize.toFixed(6)}</p>
+                                  <p class="font-semibold text-red-600">Potential Profit: $${shortProfit.toFixed(2)}</p>
+                              </div>
+                          </div>
+                          ` : ''}
+                      </div>
+                      
+                 
+              `;
+              
+              document.getElementById("wallet_profit_analysis").innerHTML = profitComponent;
+              
+              console.log('Selected Levels:', {
+                  support: supportData,
+                  resistance: resistanceData
+              });
+          }
+        });
+    });
 
     // Compute strongest and weakest support & resistance levels.
     // (For BUY trades: optimal = strongest resistance (TP) and strongest support (SL),
     //  high risk = weakest resistance and weakest support.
     //  For SELL trades, the roles of support/resistance are reversed.)
-    const strongestSupport = rec.support_levels.reduce((max, level) => level.strength > max.strength ? level : max, rec.support_levels[0]);
-    const weakestSupport = rec.support_levels.reduce((min, level) => level.strength < min.strength ? level : min, rec.support_levels[0]);
-    const strongestResistance = rec.resistance_levels.reduce((max, level) => level.strength > max.strength ? level : max, rec.resistance_levels[0]);
-    const weakestResistance = rec.resistance_levels.reduce((min, level) => level.strength < min.strength ? level : min, rec.resistance_levels[0]);
+    const strongestSupport = rec.support_levels.reduce(
+      (max, level) => (level.strength > max.strength ? level : max),
+      rec.support_levels[0]
+    );
+    const weakestSupport = rec.support_levels.reduce(
+      (min, level) => (level.strength < min.strength ? level : min),
+      rec.support_levels[0]
+    );
+    const strongestResistance = rec.resistance_levels.reduce(
+      (max, level) => (level.strength > max.strength ? level : max),
+      rec.resistance_levels[0]
+    );
+    const weakestResistance = rec.resistance_levels.reduce(
+      (min, level) => (level.strength < min.strength ? level : min),
+      rec.resistance_levels[0]
+    );
 
+    document.getElementById("current_pair_value").innerHTML = `${signal.price.toFixed(
+      2
+    )}`
     // Wallet Overview (kept as before)
     const walletHTML = `
       <!-- Wallet Overview -->
@@ -1500,9 +1753,19 @@ const TechnicalAnalysisComponent = (function () {
           <div class="p-2 bg-white rounded-lg border">💹</div>
           <div>
             <p class="text-sm text-gray-600">Current Pair Value</p>
-            <p id="wallet_pair_value" class="text-lg font-semibold text-gray-800">${signal.price.toFixed(2)}</p>
+            <p id="wallet_pair_value" class="text-lg font-semibold text-gray-800">${signal.price.toFixed(
+              2
+            )}</p>
           </div>
         </div>
+          <div class="flex items-center gap-3">
+          <div class="p-2 bg-white rounded-lg border">🪙</div>
+          <div>
+            <p class="text-sm text-gray-600">Current Pair Name</p>
+            <p id="wallet_pair_name" class="text-lg font-semibold text-gray-800">${pair_name}</p>
+          </div>
+        </div>
+
       </div>
     
       <!-- Risk Management and Controls -->
@@ -1544,36 +1807,35 @@ const TechnicalAnalysisComponent = (function () {
     
       <!-- Helper Note -->
       <div class="p-2 bg-yellow-50 rounded-lg border border-yellow-200">
-        <div class="flex items-center gap-1">
-          <span class="text-yellow-600 text-xs">💡</span>
-          <span class="text-xs font-medium text-gray-700">Risk Calculation</span>
-        </div>
-        <p class="text-[10px] text-gray-600" id="calculationNote">
-          Risk Amount = (Risk Value ${'<span id="riskUnitDisplay">% or $</span>'}) × Balance ➔ Position Size = (Risk Amount / Price) × Leverage
-        </p>
+         <h4 class="text-lg font-semibold text-yellow-800 mb-2">Trading Notes</h4>
+        <p class="text-yellow-800">${rec.notes}</p>
       </div>
+
+      <div id="wallet_profit_analysis"></div>
     `;
-    document.getElementById('wallet_overview').innerHTML = walletHTML;
-      
+    document.getElementById("wallet_overview").innerHTML = walletHTML;
 
     // Function to update the dynamic trade recommendations based on risk inputs.
     function updateTradeRecs() {
       // Get current risk inputs:
-      const riskModeEl = document.getElementById('riskMode');
-      const riskValueEl = document.getElementById('riskValue');
-      const leverageEl = document.getElementById('leverage');
-      const posSizeEl = document.getElementById('positionSize');
+      const riskModeEl = document.getElementById("riskMode");
+      const riskValueEl = document.getElementById("riskValue");
+      const leverageEl = document.getElementById("leverage");
+      const posSizeEl = document.getElementById("positionSize");
 
       const riskMode = riskModeEl.value;
       const riskValue = parseFloat(riskValueEl.value) || 0;
       const leverage = parseFloat(leverageEl.value) || 1;
 
       // Update unit display in both places.
-      const riskUnitEl = document.getElementById('riskUnit');
-      riskUnitEl.textContent = (riskMode === 'percentage') ? '%' : '$';
+      const riskUnitEl = document.getElementById("riskUnit");
+      riskUnitEl.textContent = riskMode === "percentage" ? "%" : "$";
 
       // Calculate the risk amount.
-      let riskAmount = riskMode === 'percentage' ? (riskValue * walletBalance / 100) : riskValue;
+      let riskAmount =
+        riskMode === "percentage"
+          ? (riskValue * walletBalance) / 100
+          : riskValue;
       // Calculate dynamic position size using the risk formula: (riskAmount / currentPrice) × leverage
       const dynamicPosSize = (riskAmount / signal.price) * leverage;
       // Optionally update the positionSize input (if you want it auto-updated)
@@ -1590,9 +1852,12 @@ const TechnicalAnalysisComponent = (function () {
         optSellSL = strongestResistance.price,
         highSellTP = weakestSupport.price,
         highSellSL = weakestResistance.price;
-      let optProfit = 0, highProfit = 0, mirrorOptProfit = 0, mirrorHighProfit = 0;
+      let optProfit = 0,
+        highProfit = 0,
+        mirrorOptProfit = 0,
+        mirrorHighProfit = 0;
 
-      if (rec.action === 'BUY' || rec.action === 'STRONG_BUY') {
+      if (rec.action === "BUY" || rec.action === "STRONG_BUY") {
         optProfit = dynamicPosSize * (optBuyTP - signal.price);
         highProfit = dynamicPosSize * (highBuyTP - signal.price);
         // For mirror actions (sell recommendations for a BUY signal)
@@ -1608,7 +1873,7 @@ const TechnicalAnalysisComponent = (function () {
 
       // Build the Suggested Actions section with dynamic profits and rec data.
       // console.log(rec);
-      
+
       const recomendationHTML = `
         <div class='flex gap-4 mb-3'>
 
@@ -1626,61 +1891,161 @@ const TechnicalAnalysisComponent = (function () {
         <div class="grid grid-cols-2 gap-3">
           <div class="space-y-3">
             <!-- Optimal Risk Buy/Sell -->
-            <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Optimal Risk Buy' : 'Optimal Risk Sell'}')"
-              class="cursor-pointer bg-white p-3 rounded-lg border ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'border-green-200 hover:bg-green-100' : 'border-red-200 hover:bg-red-100'}">
-              <div class="flex items-center gap-1 ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'text-green-600' : 'text-red-600'} mb-1">
-                <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↑' : '↓'}</span>
-                <span class="font-medium">Optimal Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Buy' : 'Sell'}</span>
+            <div onclick="confirmAction('${
+              rec.action === "BUY" || rec.action === "STRONG_BUY"
+                ? "Optimal Risk Buy"
+                : "Optimal Risk Sell"
+            }')"
+              class="cursor-pointer bg-white p-3 rounded-lg border ${
+                rec.action === "BUY" || rec.action === "STRONG_BUY"
+                  ? "border-green-200 hover:bg-green-100"
+                  : "border-red-200 hover:bg-red-100"
+              }">
+              <div class="flex items-center gap-1 ${
+                rec.action === "BUY" || rec.action === "STRONG_BUY"
+                  ? "text-green-600"
+                  : "text-red-600"
+              } mb-1">
+                <span>${
+                  rec.action === "BUY" || rec.action === "STRONG_BUY"
+                    ? "↑"
+                    : "↓"
+                }</span>
+                <span class="font-medium">Optimal Risk ${
+                  rec.action === "BUY" || rec.action === "STRONG_BUY"
+                    ? "Buy"
+                    : "Sell"
+                }</span>
               </div>
-              ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
-          ? `<p class="text-sm">TP: $${optBuyTP.toFixed(2)} | SL: $${optBuySL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${optProfit.toFixed(2)}</p>`
-          : `<p class="text-sm">TP: $${optSellTP.toFixed(2)} | SL: $${optSellSL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${optProfit.toFixed(2)}</p>`
-        }
+              ${
+                rec.action === "BUY" || rec.action === "STRONG_BUY"
+                  ? `<p class="text-sm">TP: $${optBuyTP.toFixed(
+                      2
+                    )} | SL: $${optBuySL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${optProfit.toFixed(
+                     2
+                   )}</p>`
+                  : `<p class="text-sm">TP: $${optSellTP.toFixed(
+                      2
+                    )} | SL: $${optSellSL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${optProfit.toFixed(
+                     2
+                   )}</p>`
+              }
             </div>
             <!-- High Risk Buy/Sell -->
-            <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'High Risk Buy' : 'High Risk Sell'}')"
+            <div onclick="confirmAction('${
+              rec.action === "BUY" || rec.action === "STRONG_BUY"
+                ? "High Risk Buy"
+                : "High Risk Sell"
+            }')"
               class="cursor-pointer bg-white p-3 rounded-lg border border-orange-200 hover:bg-orange-100">
               <div class="flex items-center gap-1 text-orange-600 mb-1">
-                <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↑' : '↓'}</span>
-                <span class="font-medium">High Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Buy' : 'Sell'}</span>
+                <span>${
+                  rec.action === "BUY" || rec.action === "STRONG_BUY"
+                    ? "↑"
+                    : "↓"
+                }</span>
+                <span class="font-medium">High Risk ${
+                  rec.action === "BUY" || rec.action === "STRONG_BUY"
+                    ? "Buy"
+                    : "Sell"
+                }</span>
               </div>
-              ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
-          ? `<p class="text-sm">TP: $${highBuyTP.toFixed(2)} | SL: $${highBuySL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${highProfit.toFixed(2)}</p>`
-          : `<p class="text-sm">TP: $${highSellTP.toFixed(2)} | SL: $${highSellSL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${highProfit.toFixed(2)}</p>`
-        }
+              ${
+                rec.action === "BUY" || rec.action === "STRONG_BUY"
+                  ? `<p class="text-sm">TP: $${highBuyTP.toFixed(
+                      2
+                    )} | SL: $${highBuySL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${highProfit.toFixed(
+                     2
+                   )}</p>`
+                  : `<p class="text-sm">TP: $${highSellTP.toFixed(
+                      2
+                    )} | SL: $${highSellSL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${highProfit.toFixed(
+                     2
+                   )}</p>`
+              }
             </div>
           </div>
           <div class="space-y-3">
             <!-- Mirror Actions (opposite direction) -->
-            <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Optimal Risk Sell' : 'Optimal Risk Buy'}')"
-              class="cursor-pointer bg-white p-3 rounded-lg border ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'border-red-200 hover:bg-red-100' : 'border-green-200 hover:bg-green-100'}">
-              <div class="flex items-center gap-1 ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'text-red-600' : 'text-green-600'} mb-1">
-                <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↓' : '↑'}</span>
-                <span class="font-medium">Optimal Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Sell' : 'Buy'}</span>
+            <div onclick="confirmAction('${
+              rec.action === "BUY" || rec.action === "STRONG_BUY"
+                ? "Optimal Risk Sell"
+                : "Optimal Risk Buy"
+            }')"
+              class="cursor-pointer bg-white p-3 rounded-lg border ${
+                rec.action === "BUY" || rec.action === "STRONG_BUY"
+                  ? "border-red-200 hover:bg-red-100"
+                  : "border-green-200 hover:bg-green-100"
+              }">
+              <div class="flex items-center gap-1 ${
+                rec.action === "BUY" || rec.action === "STRONG_BUY"
+                  ? "text-red-600"
+                  : "text-green-600"
+              } mb-1">
+                <span>${
+                  rec.action === "BUY" || rec.action === "STRONG_BUY"
+                    ? "↓"
+                    : "↑"
+                }</span>
+                <span class="font-medium">Optimal Risk ${
+                  rec.action === "BUY" || rec.action === "STRONG_BUY"
+                    ? "Sell"
+                    : "Buy"
+                }</span>
               </div>
-              ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
-          ? `<p class="text-sm">TP: $${optSellTP.toFixed(2)} | SL: $${optSellSL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${mirrorOptProfit.toFixed(2)}</p>`
-          : `<p class="text-sm">TP: $${optBuyTP.toFixed(2)} | SL: $${optBuySL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${mirrorOptProfit.toFixed(2)}</p>`
-        }
+              ${
+                rec.action === "BUY" || rec.action === "STRONG_BUY"
+                  ? `<p class="text-sm">TP: $${optSellTP.toFixed(
+                      2
+                    )} | SL: $${optSellSL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${mirrorOptProfit.toFixed(
+                     2
+                   )}</p>`
+                  : `<p class="text-sm">TP: $${optBuyTP.toFixed(
+                      2
+                    )} | SL: $${optBuySL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${mirrorOptProfit.toFixed(
+                     2
+                   )}</p>`
+              }
             </div>
-            <div onclick="confirmAction('${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'High Risk Sell' : 'High Risk Buy'}')"
+            <div onclick="confirmAction('${
+              rec.action === "BUY" || rec.action === "STRONG_BUY"
+                ? "High Risk Sell"
+                : "High Risk Buy"
+            }')"
               class="cursor-pointer bg-white p-3 rounded-lg border border-orange-200 hover:bg-orange-100">
               <div class="flex items-center gap-1 text-orange-600 mb-1">
-                <span>${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? '↓' : '↑'}</span>
-                <span class="font-medium">High Risk ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY') ? 'Sell' : 'Buy'}</span>
+                <span>${
+                  rec.action === "BUY" || rec.action === "STRONG_BUY"
+                    ? "↓"
+                    : "↑"
+                }</span>
+                <span class="font-medium">High Risk ${
+                  rec.action === "BUY" || rec.action === "STRONG_BUY"
+                    ? "Sell"
+                    : "Buy"
+                }</span>
               </div>
-              ${(rec.action === 'BUY' || rec.action === 'STRONG_BUY')
-          ? `<p class="text-sm">TP: $${highSellTP.toFixed(2)} | SL: $${highSellSL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${mirrorHighProfit.toFixed(2)}</p>`
-          : `<p class="text-sm">TP: $${highBuyTP.toFixed(2)} | SL: $${highBuySL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${mirrorHighProfit.toFixed(2)}</p>`
-        }
+              ${
+                rec.action === "BUY" || rec.action === "STRONG_BUY"
+                  ? `<p class="text-sm">TP: $${highSellTP.toFixed(
+                      2
+                    )} | SL: $${highSellSL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${mirrorHighProfit.toFixed(
+                     2
+                   )}</p>`
+                  : `<p class="text-sm">TP: $${highBuyTP.toFixed(
+                      2
+                    )} | SL: $${highBuySL.toFixed(2)}</p>
+                   <p class="text-lg font-semibold">Profit: $${mirrorHighProfit.toFixed(
+                     2
+                   )}</p>`
+              }
             </div>
           </div>
         </div>
@@ -1691,12 +2056,14 @@ const TechnicalAnalysisComponent = (function () {
       if (rec.risk_reward_ratio) {
         const secureTP = rec.take_profit_1;
         const bestTP = rec.take_profit_2;
-        const secureProfit = (rec.action === "BUY" || rec.action === "STRONG_BUY")
-          ? dynamicPosSize * (secureTP - signal.price)
-          : dynamicPosSize * (signal.price - secureTP);
-        const bestRewardProfit = (rec.action === "BUY" || rec.action === "STRONG_BUY")
-          ? dynamicPosSize * (bestTP - signal.price)
-          : dynamicPosSize * (signal.price - bestTP);
+        const secureProfit =
+          rec.action === "BUY" || rec.action === "STRONG_BUY"
+            ? dynamicPosSize * (secureTP - signal.price)
+            : dynamicPosSize * (signal.price - secureTP);
+        const bestRewardProfit =
+          rec.action === "BUY" || rec.action === "STRONG_BUY"
+            ? dynamicPosSize * (bestTP - signal.price)
+            : dynamicPosSize * (signal.price - bestTP);
         aiRecommendsHTML = `
           <div class="mt-4">
             <h4 class="text-base font-semibold mb-3 flex items-center gap-2 text-gray-700">🤖 AI Recommends</h4>
@@ -1706,16 +2073,24 @@ const TechnicalAnalysisComponent = (function () {
                 <div class="flex items-center gap-1 text-teal-600 mb-1">
                   <span>🔒</span><span class="font-medium">Secure Trade</span>
                 </div>
-                <p class="text-sm">TP: $${secureTP.toFixed(2)} | SL: $${rec.stop_loss.toFixed(2)}</p>
-                <p class="text-lg font-semibold">Profit: $${secureProfit.toFixed(2)}</p>
+                <p class="text-sm">TP: $${secureTP.toFixed(
+                  2
+                )} | SL: $${rec.stop_loss.toFixed(2)}</p>
+                <p class="text-lg font-semibold">Profit: $${secureProfit.toFixed(
+                  2
+                )}</p>
               </div>
               <div onclick="confirmAction('Best Reward Trade')"
                 class="cursor-pointer bg-white p-3 rounded-lg border border-purple-200 hover:bg-purple-100">
                 <div class="flex items-center gap-1 text-purple-600 mb-1">
                   <span>🏆</span><span class="font-medium">Best Reward</span>
                 </div>
-                <p class="text-sm">TP: $${bestTP.toFixed(2)} | SL: $${rec.stop_loss.toFixed(2)}</p>
-                <p class="text-lg font-semibold">Profit: $${bestRewardProfit.toFixed(2)}</p>
+                <p class="text-sm">TP: $${bestTP.toFixed(
+                  2
+                )} | SL: $${rec.stop_loss.toFixed(2)}</p>
+                <p class="text-lg font-semibold">Profit: $${bestRewardProfit.toFixed(
+                  2
+                )}</p>
               </div>
             </div>
           </div>
@@ -1723,39 +2098,23 @@ const TechnicalAnalysisComponent = (function () {
       }
 
       // Combine recommendations with AI recommends and update the container.
-      document.getElementById('recomendations').innerHTML = recomendationHTML + aiRecommendsHTML;
-
-
+      document.getElementById("recomendations").innerHTML =
+        recomendationHTML + aiRecommendsHTML;
     } // end updateTradeRecs
 
     // Initial call to update trade recommendations based on default risk management parameters.
     updateTradeRecs();
 
     // Add event listeners so that changes in risk parameters update the recommendations dynamically.
-    document.getElementById('riskMode').addEventListener('change', updateTradeRecs);
-    document.getElementById('riskValue').addEventListener('input', updateTradeRecs);
-    document.getElementById('leverage').addEventListener('change', updateTradeRecs);
-
-    // Build Resistance Levels
-    const resistanceHTML = `
-        <h4 class="text-lg font-semibold mb-4 text-red-600">Resistance Levels</h4>
-        <div class="space-y-3">
-          ${rec.resistance_levels
-        .map(level => `
-              <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg">
-                <div>
-                  <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
-                  <span class="text-sm text-red-500 ml-2">
-                    ${Math.abs(parseFloat(level.distance)).toFixed(2)}% ${getTrendIcon("BEARISH")}
-                  </span>
-                </div>
-                <div class="text-sm text-red-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
-              </div>
-            `)
-        .join("")}
-        </div>
-    `;
-    resistanceLevelsContainer.innerHTML = resistanceHTML;
+    document
+      .getElementById("riskMode")
+      .addEventListener("change", updateTradeRecs);
+    document
+      .getElementById("riskValue")
+      .addEventListener("input", updateTradeRecs);
+    document
+      .getElementById("leverage")
+      .addEventListener("change", updateTradeRecs);
 
     // Build Trading Notes
     const notesHTML = `
@@ -1769,12 +2128,12 @@ const TechnicalAnalysisComponent = (function () {
     componentsContent.innerHTML = componentsHTML;
 
     // Optional: Update risk unit display in helper note if needed.
-    document.getElementById('riskMode').addEventListener('change', function () {
+    document.getElementById("riskMode").addEventListener("change", function () {
       // This additional listener updates any extra unit displays if you want.
-      document.getElementById('riskUnit').textContent = (this.value === 'percentage') ? '%' : '$';
+      document.getElementById("riskUnit").textContent =
+        this.value === "percentage" ? "%" : "$";
     });
   }
-
 
   function init() {
     fetchBtn.addEventListener("click", async function () {
@@ -1803,7 +2162,10 @@ const TechnicalAnalysisComponent = (function () {
       componentsPopover.classList.toggle("hidden");
     });
     window.addEventListener("click", function (event) {
-      if (!componentsPopover.contains(event.target) && event.target.id !== "infoIcon") {
+      if (
+        !componentsPopover.contains(event.target) &&
+        event.target.id !== "infoIcon"
+      ) {
         componentsPopover.classList.add("hidden");
       }
     });
@@ -1821,31 +2183,23 @@ document.addEventListener("DOMContentLoaded", function () {
   TechnicalAnalysisComponent.init();
 });
 
-
-
-
-// loading 
+// loading
 
 function showLoading() {
-  const loading = document.getElementById('globalLoading');
-  loading.classList.remove('hidden');
-  document.body.style.overflow = 'hidden'; // prevent scroll
-  document.body.style.pointerEvents = 'none'; // prevent interaction
+  const loading = document.getElementById("globalLoading");
+  loading.classList.remove("hidden");
+  document.body.style.overflow = "hidden"; // prevent scroll
+  document.body.style.pointerEvents = "none"; // prevent interaction
 }
 
 function hideLoading() {
-  const loading = document.getElementById('globalLoading');
-  loading.classList.add('hidden');
-  document.body.style.overflow = ''; // restore scroll
-  document.body.style.pointerEvents = ''; // restore interaction
+  const loading = document.getElementById("globalLoading");
+  loading.classList.add("hidden");
+  document.body.style.overflow = ""; // restore scroll
+  document.body.style.pointerEvents = ""; // restore interaction
 }
 
-
-
-
-
-// news components 
-
+// news components
 
 // class CryptoDataComponent {
 //   constructor(userToken, coinPair, parentElement) {
@@ -1879,16 +2233,11 @@ function hideLoading() {
 //     }
 //   }
 
-
 //   createDampChart(elementId) {
-
 
 //     const { daily_timeseries } = this.data;
 
-
-
 //     let new_timestamp = daily_timeseries.timestamp.map(t => t * 1000)
-
 
 //     return new ApexCharts(document.querySelector(elementId), {
 //       chart: {
@@ -1921,7 +2270,6 @@ function hideLoading() {
 
 //   createNewsCountChart(elementId) {
 //     const { daily_timeseries } = this.data;
-
 
 //     let new_timestamp = daily_timeseries.timestamp.map(t => t * 1000)
 
@@ -1982,10 +2330,7 @@ function hideLoading() {
 
 //     console.log("news data :" , latest_news_info);
 
-
 //     this.parentElement.innerHTML = `
-
-
 
 //       <!-- Stats Grid -->
 //       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -1999,13 +2344,10 @@ function hideLoading() {
 //           </div>
 //         </div>
 
-
-
 //       <!-- DAMP Chart -->
 //       <div id="dampChart" class="bg-white p-6 rounded-lg shadow-md "></div>
 
 //       </div>
-
 
 //       <!-- News Count Chart -->
 //       <div id="newsCountChart" class="bg-white p-6 rounded-lg shadow-md"></div>
@@ -2026,7 +2368,7 @@ class CryptoDataComponent {
     this.parentElement = parentElement;
     this.data = null;
     this.newsChart = null;
-    this.newsAnalysis = JSON.parse(localStorage.getItem('newsAnalysis'));
+    this.newsAnalysis = JSON.parse(localStorage.getItem("newsAnalysis"));
     this.fetchData = this.fetchData.bind(this);
   }
 
@@ -2039,14 +2381,14 @@ class CryptoDataComponent {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json; charset=utf-8",
-            Authorization: this.userToken
-          }
+            Authorization: this.userToken,
+          },
         }
       );
       this.data = response.data.data[0];
       this.render();
     } catch (error) {
-      console.error('Data fetch error:', error);
+      console.error("Data fetch error:", error);
       this.parentElement.innerHTML = `
         <div class="p-3 bg-red-50 text-red-600 rounded-lg text-sm flex items-center gap-2">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2064,22 +2406,25 @@ class CryptoDataComponent {
     const { daily_timeseries } = this.data;
     return new ApexCharts(document.querySelector(elementId), {
       chart: {
-        type: 'line',
-        height: '100%',
+        type: "line",
+        height: "100%",
         zoom: { enabled: true },
-        toolbar: { show: true, tools: { download: false } }
+        toolbar: { show: true, tools: { download: false } },
       },
       series: [
-        { name: 'DAMP 5', data: daily_timeseries.damp_5 },
-        { name: 'DAMP 10', data: daily_timeseries.damp_10 },
-        { name: 'DAMP 15', data: daily_timeseries.damp_15 },
-        { name: 'DAMP 20', data: daily_timeseries.damp_20 },
-        { name: 'DAMP 30', data: daily_timeseries.damp_30 }
+        { name: "DAMP 5", data: daily_timeseries.damp_5 },
+        { name: "DAMP 10", data: daily_timeseries.damp_10 },
+        { name: "DAMP 15", data: daily_timeseries.damp_15 },
+        { name: "DAMP 20", data: daily_timeseries.damp_20 },
+        { name: "DAMP 30", data: daily_timeseries.damp_30 },
       ],
-      xaxis: { type: 'datetime', categories: daily_timeseries.timestamp.map(t => t * 1000) },
-      stroke: { width: 1.5, curve: 'smooth' },
-      colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#64748B'],
-      tooltip: { theme: 'dark', x: { format: 'dd MMM yyyy HH:mm' } }
+      xaxis: {
+        type: "datetime",
+        categories: daily_timeseries.timestamp.map((t) => t * 1000),
+      },
+      stroke: { width: 1.5, curve: "smooth" },
+      colors: ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#64748B"],
+      tooltip: { theme: "dark", x: { format: "dd MMM yyyy HH:mm" } },
     });
   }
 
@@ -2087,51 +2432,60 @@ class CryptoDataComponent {
     const { daily_timeseries } = this.data;
     const raw = daily_timeseries.timestamp
       .map((t, i) => ({ t: t * 1000, count: daily_timeseries.newsCount[i] }))
-      .filter(pt => pt.t >= Date.now() - 7 * 86400000);
+      .filter((pt) => pt.t >= Date.now() - 7 * 86400000);
 
     let zoomTimeout;
     const zoomHandler = (_chartCtx, { xaxis }) => {
       clearTimeout(zoomTimeout);
       zoomTimeout = setTimeout(() => {
         const { min, max } = xaxis;
-        const groupMs = (max - min) <= 86400000 ? 3600000 : 86400000;
+        const groupMs = max - min <= 86400000 ? 3600000 : 86400000;
         const bins = {};
-        raw.filter(pt => pt.t >= min && pt.t <= max).forEach(pt => {
-          const bucket = Math.floor(pt.t / groupMs) * groupMs;
-          bins[bucket] = (bins[bucket] || 0) + pt.count;
+        raw
+          .filter((pt) => pt.t >= min && pt.t <= max)
+          .forEach((pt) => {
+            const bucket = Math.floor(pt.t / groupMs) * groupMs;
+            bins[bucket] = (bins[bucket] || 0) + pt.count;
+          });
+        this.newsChart.updateOptions({
+          series: [
+            { data: Object.entries(bins).map(([k, v]) => [Number(k), v]) },
+          ],
         });
-        this.newsChart.updateOptions({ series: [{ data: Object.entries(bins).map(([k, v]) => [Number(k), v]) }] });
       }, 300);
     };
 
     this.newsChart = new ApexCharts(document.querySelector(elementId), {
       chart: {
-        type: 'bar',
-        height: '100%',
+        type: "bar",
+        height: "100%",
         toolbar: { show: true, tools: { download: false } },
         zoom: { enabled: true },
-        events: { zoomed: zoomHandler }
+        events: { zoomed: zoomHandler },
       },
-      series: [{ name: 'News Count', data: raw.map(pt => [pt.t, pt.count]) }],
-      xaxis: { type: 'datetime' },
-      plotOptions: { bar: { columnWidth: '60%' } },
+      series: [{ name: "News Count", data: raw.map((pt) => [pt.t, pt.count]) }],
+      xaxis: { type: "datetime" },
+      plotOptions: { bar: { columnWidth: "60%" } },
       dataLabels: { enabled: false },
-      tooltip: { theme: 'dark', x: { format: 'dd MMM yyyy HH:mm' } }
+      tooltip: { theme: "dark", x: { format: "dd MMM yyyy HH:mm" } },
     });
     return this.newsChart;
   }
 
   createSentimentDonut(elementId, sentimentData, title) {
-    const hasData = sentimentData.positive || sentimentData.negative || sentimentData.neutral;
+    const hasData =
+      sentimentData.positive || sentimentData.negative || sentimentData.neutral;
     return new ApexCharts(document.querySelector(elementId), {
-      chart: { type: 'donut', height: 160, animations: { enabled: false } },
-      series: hasData ? [
-        sentimentData.positive * 100,
-        sentimentData.negative * 100,
-        sentimentData.neutral * 100
-      ] : [],
-      labels: ['Positive', 'Negative', 'Neutral'],
-      legend: { position: 'bottom' },
+      chart: { type: "donut", height: 160, animations: { enabled: false } },
+      series: hasData
+        ? [
+            sentimentData.positive * 100,
+            sentimentData.negative * 100,
+            sentimentData.neutral * 100,
+          ]
+        : [],
+      labels: ["Positive", "Negative", "Neutral"],
+      legend: { position: "bottom" },
       dataLabels: { enabled: false },
       plotOptions: {
         pie: {
@@ -2141,30 +2495,29 @@ class CryptoDataComponent {
               name: { show: true },
               value: {
                 show: true,
-                formatter: (val) => Math.round(val) + '%'
+                formatter: (val) => Math.round(val) + "%",
               },
               total: {
                 show: true,
                 label: title,
-                formatter: () => '100%'
-              }
-            }
-          }
-        }
+                formatter: () => "100%",
+              },
+            },
+          },
+        },
       },
-      colors: ['#10B981', '#EF4444', '#64748B'],
-      tooltip: { 
-        theme: 'dark',
+      colors: ["#10B981", "#EF4444", "#64748B"],
+      tooltip: {
+        theme: "dark",
         y: {
-          formatter: (value) => Math.round(value) + '%'
-        }
-      }
+          formatter: (value) => Math.round(value) + "%",
+        },
+      },
     });
   }
-  
 
   render() {
-    let analysisSection = '';
+    let analysisSection = "";
     if (this.newsAnalysis) {
       const na = this.newsAnalysis;
       analysisSection = `
@@ -2175,10 +2528,16 @@ class CryptoDataComponent {
             </svg>
             <div class="flex-1">
               <h3 class="text-sm font-semibold text-gray-800">Fundamental Analysis</h3>
-              <p class="text-xs text-gray-500">Last updated: ${new Date(na.updatedAt * 1000).toLocaleDateString()}</p>
+              <p class="text-xs text-gray-500">Last updated: ${new Date(
+                na.updatedAt * 1000
+              ).toLocaleDateString()}</p>
             </div>
-            <span class="px-2 py-1 rounded-full text-xs font-medium ${na.decision === 'خرید' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
-              ${na.decision} ${na.decision === 'خرید' ? '↗' : '↘'}
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${
+              na.decision === "خرید"
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }">
+              ${na.decision} ${na.decision === "خرید" ? "↗" : "↘"}
             </span>
           </div>
 
@@ -2201,7 +2560,7 @@ class CryptoDataComponent {
             <div class="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded">
               <span class="text-gray-400">🔄</span>
               <span class="font-medium text-gray-600">Volatility:</span>
-              <span class="text-gray-800">${na.volatility || 'N/A'}</span>
+              <span class="text-gray-800">${na.volatility || "N/A"}</span>
             </div>
           </div>
 
@@ -2227,11 +2586,15 @@ class CryptoDataComponent {
                   Related News (${na.news.length})
                 </summary>
                 <ul class="mt-1.5 pl-4 space-y-1.5 text-xs text-gray-600">
-                  ${na.news.map(item => `
+                  ${na.news
+                    .map(
+                      (item) => `
                     <li class="relative before:absolute before:-left-4 before:top-2 before:w-1.5 before:h-1.5 before:bg-gray-300 before:rounded-full">
                       ${item}
                     </li>
-                  `).join('')}
+                  `
+                    )
+                    .join("")}
                 </ul>
               </details>
             </div>
@@ -2250,7 +2613,9 @@ class CryptoDataComponent {
         ${analysisSection}
 
         <div class="grid gap-4 md:grid-cols-3">
-          ${showDay || showWeek ? `
+          ${
+            showDay || showWeek
+              ? `
             <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div class="flex items-center gap-2 mb-3">
                 <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2258,9 +2623,19 @@ class CryptoDataComponent {
                 </svg>
                 <h3 class="text-sm font-semibold text-gray-800">Market Sentiment</h3>
               </div>
-              ${showDay ? `<div id="sentimentDayChart" class="-mx-1"></div>` : ''}
-              ${showWeek ? `<div id="sentimentWeekChart" class="-mx-1 mt-4"></div>` : ''}
-            </div>` : ''}
+              ${
+                showDay
+                  ? `<div id="sentimentDayChart" class="-mx-1"></div>`
+                  : ""
+              }
+              ${
+                showWeek
+                  ? `<div id="sentimentWeekChart" class="-mx-1 mt-4"></div>`
+                  : ""
+              }
+            </div>`
+              : ""
+          }
           
           <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm md:col-span-2">
             <div class="flex items-center gap-2 mb-3">
@@ -2285,33 +2660,43 @@ class CryptoDataComponent {
       </div>`;
 
     if (this.data) {
-      if (showDay) this.createSentimentDonut('#sentimentDayChart', daySent, '24H').render();
-      if (showWeek) this.createSentimentDonut('#sentimentWeekChart', weekSent, '7D').render();
-      this.createDampChart('#dampChart').render();
-      this.createNewsCountChart('#newsCountChart').render();
+      if (showDay)
+        this.createSentimentDonut(
+          "#sentimentDayChart",
+          daySent,
+          "24H"
+        ).render();
+      if (showWeek)
+        this.createSentimentDonut(
+          "#sentimentWeekChart",
+          weekSent,
+          "7D"
+        ).render();
+      this.createDampChart("#dampChart").render();
+      this.createNewsCountChart("#newsCountChart").render();
     }
   }
 }
 
-// draggable modal 
+// draggable modal
 document.addEventListener("DOMContentLoaded", () => {
   const wrapper = document.getElementById("modal-wrapper");
   const header = document.getElementById("draggable-header");
   const drawer = document.getElementById("left-drawer");
   const toggleBtn = document.getElementById("drawer-toggle");
 
-
   // Drawer toggle
   let open = false;
   toggleBtn.addEventListener("click", () => {
     open = !open;
     drawer.classList.toggle("translate-x-full", !open);
-    document.getElementById('drawer_svg').classList.toggle('rotate-180')
+    document.getElementById("drawer_svg").classList.toggle("rotate-180");
   });
 
   // Drag logic
   let isDragging = false;
-  let offsetX = 0, offsetY = 0;
+  let offsetX = 0,
+    offsetY = 0;
 
   header.addEventListener("pointerdown", (e) => {
     isDragging = true;
@@ -2343,4 +2728,40 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-
+// Add this function at the end of the file, before the last closing brace
+function handleLevelSelection(element) {
+    // Remove selection from other elements of the same type
+    const type = element.dataset.type;
+    document.querySelectorAll(`.${type}-level`).forEach(el => {
+        el.classList.remove('ring-2', 'ring-blue-500');
+    });
+    
+    // Add selection to clicked element
+    element.classList.add('ring-2', 'ring-blue-500');
+    
+    // Get selected levels
+    const selectedSupport = document.querySelector('.support-level.ring-2');
+    const selectedResistance = document.querySelector('.resistance-level.ring-2');
+    
+    // If both types are selected, log them
+    if (selectedSupport && selectedResistance) {
+        const supportData = {
+            price: selectedSupport.dataset.price,
+            strength: selectedSupport.dataset.strength,
+            type: 'support',
+            index: selectedSupport.dataset.index
+        };
+        
+        const resistanceData = {
+            price: selectedResistance.dataset.price,
+            strength: selectedResistance.dataset.strength,
+            type: 'resistance',
+            index: selectedResistance.dataset.index
+        };
+        
+        console.log('Selected Levels:', {
+            support: supportData,
+            resistance: resistanceData
+        });
+    }
+}
