@@ -757,8 +757,29 @@ const chartOptions = {
     },
   },
   series: [],
-  xaxis: { type: "datetime" },
-  yaxis: { tooltip: { enabled: true }, opposite: true },
+  xaxis: { 
+    type: "datetime",
+    labels: {
+      formatter: function(value) {
+        return new Date(value).toLocaleString(undefined, {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    }
+  },
+  yaxis: { 
+    tooltip: { enabled: true }, 
+    opposite: true,
+    labels: {
+      formatter: function(value) {
+        return value.toFixed(2);
+      }
+    }
+  },
   plotOptions: {
     candlestick: {
       colors: { upward: "#008000", downward: "#ff0000" },
@@ -1379,13 +1400,12 @@ const TechnicalAnalysisComponent = (function () {
     <!-- Header -->
     <div class="flex items-center gap-3 mb-6">
       <div class="p-2 bg-blue-100 rounded-lg">
-        📈
+        <svg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6 text-blue-500' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 3v18h18V3H3zm3 3h12v12H6V6z'/></svg>
       </div>
-      <h4 class="text-xl font-bold text-gray-800  flex flex-col items-center">
+      <h4 class="text-lg font-bold text-gray-800  flex flex-col items-center">
         Trading Recommendation
-        <span class="block text-sm font-normal text-gray-500">Based on technical analysis</span>
+        <span class="block text-xs font-normal text-gray-500">Based on technical analysis</span>
       </h4>
-
         <button id="trading_recom_info" class=" text-gray-400 hover:text-indigo-600 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
@@ -1409,11 +1429,18 @@ const TechnicalAnalysisComponent = (function () {
               ? "bg-green-100"
               : "bg-red-100"
           }">
-            ${rec.action === "BUY" || rec.action === "STRONG_BUY" ? "🔼" : "🔽"}
+            ${rec.action === "BUY" || rec.action === "STRONG_BUY" 
+              ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>`
+              : `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
+                </svg>`
+            }
           </span>
           <div>
-            <p class="text-sm text-gray-600">Recommended Action</p>
-            <p class="text-lg font-bold ${
+            <p class="text-xs text-gray-600">Recommended Action</p>
+            <p class="text-base font-bold ${
               rec.action === "BUY" || rec.action === "STRONG_BUY"
                 ? "text-green-600"
                 : "text-red-600"
@@ -1427,12 +1454,14 @@ const TechnicalAnalysisComponent = (function () {
           ? `<!-- Risk/Reward Card -->
       <div class="bg-white p-4 rounded-lg border border-blue-200">
         <div class="flex items-center gap-3">
-          <span class="p-2 rounded-lg bg-blue-100">⚖️</span>
+          <span class="p-2 rounded-lg bg-blue-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+          </span>
           <div>
-            <p class="text-sm text-gray-600">Risk/Reward Ratio</p>
-            <p class="text-lg font-bold text-blue-600">${rec.risk_reward_ratio.toFixed(
-              2
-            )}</p>
+            <p class="text-xs text-gray-600">Risk/Reward Ratio</p>
+            <p class="text-base font-bold text-blue-600">${rec.risk_reward_ratio.toFixed(2)}</p>
           </div>
         </div>
       </div>
@@ -1441,20 +1470,26 @@ const TechnicalAnalysisComponent = (function () {
     <!-- Targets Grid -->
     <div class="grid md:grid-cols-3 gap-4 mb-6">
       <div class="bg-white p-4 rounded-lg border border-red-200">
-        <p class="text-sm text-gray-600 mb-1">🛑 Stop Loss</p>
+        <p class="text-xs text-gray-600 mb-1"> 
+          <svg xmlns='http://www.w3.org/2000/svg' class='inline h-4 w-4 text-red-500 mr-1' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'/></svg>
+          Stop Loss</p>
         <p class="font-semibold text-red-600">${rec.stop_loss.toFixed(2)}</p>
       </div>
       <div class="bg-white p-4 rounded-lg border border-green-200">
-        <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 1</p>
-        <p class="font-semibold text-green-600">${rec.take_profit_1.toFixed(
-          2
-        )}</p>
+        <p class="text-xs text-gray-600 mb-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4 text-green-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Take Profit 1</p>
+        <p class="font-semibold text-green-600">${rec.take_profit_1.toFixed(2)}</p>
       </div>
       <div class="bg-white p-4 rounded-lg border border-green-200">
-        <p class="text-sm text-gray-600 mb-1">🎯 Take Profit 2</p>
-        <p class="font-semibold text-green-600">${rec.take_profit_2.toFixed(
-          2
-        )}</p>
+        <p class="text-xs text-gray-600 mb-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4 text-green-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Take Profit 2</p>
+        <p class="font-semibold text-green-600">${rec.take_profit_2.toFixed(2)}</p>
       </div>
     </div>`
           : ""
@@ -1472,32 +1507,32 @@ const TechnicalAnalysisComponent = (function () {
     const signalHTML = `
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-2xl font-bold">$${parseFloat(signal.price).toFixed(
+            <p class="text-xl font-bold">$${parseFloat(signal.price).toFixed(
               2
             )} (${pair_name})</p>
-            <p class="text-gray-500 text-sm">Current Price</p>
+            <p class="text-gray-500 text-xs">Current Price</p>
           </div>
           <div class="text-right">
             <span class="${getStatusBgColor(
               signal.value
-            )} px-3 py-1 rounded-full text-sm inline-flex items-center">
+            )} px-3 py-1 rounded-full text-xs inline-flex items-center">
               ${signal.value}
               <span id="signalArrow" class="ml-1"></span>
             </span>
-            <p class="mt-1 text-sm ${getScoreColor(
+            <p class="mt-1 text-xs ${getScoreColor(
               signal.score
             )}">Score: ${parseFloat(signal.score).toFixed(2)}</p>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div class="bg-white p-3 rounded-lg border">
-            <p class="text-gray-500 text-sm">Timestamp</p>
+            <p class="text-gray-500 text-xs">Timestamp</p>
             <p class="font-medium">${new Date(
               signal.timestamp
             ).toLocaleString()}</p>
           </div>
           <div class="bg-white p-3 rounded-lg border">
-            <p class="text-gray-500 text-sm">Analysis Time</p>
+            <p class="text-gray-500 text-xs">Analysis Time</p>
             <p class="font-medium">${signal.datetime.split(" ")[1]}</p>
           </div>
         </div>
@@ -1509,18 +1544,18 @@ const TechnicalAnalysisComponent = (function () {
     ).innerHTML = `<div class="text-right flex items-center gap-2">
             <span class="${getStatusBgColor(
               signal.value
-            )} px-3 py-1 rounded-full text-sm inline-flex items-center">
+            )} px-3 py-1 rounded-full text-xs inline-flex items-center">
               ${signal.value}
               <span id="signalArrow" class="ml-1"></span>
             </span>
-            <p class="mt-1 text-sm ${getScoreColor(
+            <p class="mt-1 text-xs ${getScoreColor(
               signal.score
             )}">Score: ${parseFloat(signal.score).toFixed(2)}</p>
           </div>`;
     // Build Support Levels display
     const supportHTML = `
       <div class='flex gap-4'>
-      <h4 class="text-lg font-semibold mb-4 text-green-600">Support Levels</h4>
+      <h4 class="text-base font-semibold mb-4 text-green-600">Support Levels</h4>
         <button id="support_info" class="text-gray-400 hover:text-indigo-600 transition-colors hidden">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -1532,18 +1567,27 @@ const TechnicalAnalysisComponent = (function () {
           ${rec.support_levels
             .map(
               (level, index) => `
-              <div class="flex justify-between items-center bg-green-50 hover:bg-green-100 cursor-pointer transition-colors p-3 rounded-lg support-level" 
+              <div class="flex justify-between items-center bg-green-50 hover:bg-green-100 cursor-pointer transition-all duration-200 p-3 rounded-lg support-level group relative" 
                    data-price="${level.price}" 
                    data-strength="${level.strength}"
                    data-type="support"
                    data-index="${index}">
-                <div>
+                <div class="flex items-center gap-2">
                   <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
-                  <span class="text-sm text-green-500 ml-2">
+                  <span class="text-xs text-green-500 ml-2">
                     ${parseFloat(level.distance).toFixed(2)}% ${getTrendIcon("BULLISH")}
                   </span>
                 </div>
-                <div class="text-sm text-green-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
+                <div class="flex items-center gap-2">
+                  <div class="text-xs text-green-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
+                  <div class="flex items-center gap-1">
+                    <span class="text-xs text-green-600 font-medium">Click to select</span>
+                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="absolute inset-0 border-2 border-green-200 rounded-lg transition-colors duration-200"></div>
               </div>
             `
             )
@@ -1554,23 +1598,32 @@ const TechnicalAnalysisComponent = (function () {
 
     // Build Resistance Levels
     const resistanceHTML = `
-        <h4 class="text-lg font-semibold mb-4 text-red-600">Resistance Levels</h4>
+        <h4 class="text-base font-semibold mb-4 text-red-600">Resistance Levels</h4>
         <div class="space-y-3" id="resistance-levels-container">
           ${rec.resistance_levels
             .map(
               (level, index) => `
-              <div class="flex justify-between items-center bg-red-50 hover:bg-red-100 cursor-pointer transition-colors p-3 rounded-lg resistance-level" 
+              <div class="flex justify-between items-center bg-red-50 hover:bg-red-100 cursor-pointer transition-all duration-200 p-3 rounded-lg resistance-level group relative" 
                    data-price="${level.price}" 
                    data-strength="${level.strength}"
                    data-type="resistance"
                    data-index="${index}">
-                <div>
+                <div class="flex items-center gap-2">
                   <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
-                  <span class="text-sm text-red-500 ml-2">
+                  <span class="text-xs text-red-500 ml-2">
                     ${Math.abs(parseFloat(level.distance)).toFixed(2)}% ${getTrendIcon("BEARISH")}
                   </span>
                 </div>
-                <div class="text-sm text-red-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
+                <div class="flex items-center gap-2">
+                  <div class="text-xs text-red-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
+                  <div class="flex items-center gap-1">
+                    <span class="text-xs text-red-600 font-medium">Click to select</span>
+                    <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="absolute inset-0 border-2 border-red-200 rounded-lg transition-colors duration-200"></div>
               </div>
             `
             )
@@ -1648,7 +1701,7 @@ const TechnicalAnalysisComponent = (function () {
               // Create profit calculation component
               const profitComponent = `
                  
-                      <h4 class="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-700">
+                      <h4 class="text-base font-semibold mb-3 flex items-center gap-2 text-gray-700">
                           <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                           </svg>
@@ -1663,7 +1716,7 @@ const TechnicalAnalysisComponent = (function () {
                                   <span class="text-green-600">↗</span>
                                   <span class="font-medium text-green-700">Long Position</span>
                               </div>
-                              <div class="space-y-1 text-sm">
+                              <div class="space-y-1 text-xs">
                                   <p>Entry: $${signal.price.toFixed(2)}</p>
                                   <p>Target: $${parseFloat(resistanceData.price).toFixed(2)}</p>
                                   <p>Position Size: ${positionSize.toFixed(6)}</p>
@@ -1678,7 +1731,7 @@ const TechnicalAnalysisComponent = (function () {
                                   <span class="text-red-600">↘</span>
                                   <span class="font-medium text-red-700">Short Position</span>
                               </div>
-                              <div class="space-y-1 text-sm">
+                              <div class="space-y-1 text-xs">
                                   <p>Entry: $${signal.price.toFixed(2)}</p>
                                   <p>Target: $${parseFloat(supportData.price).toFixed(2)}</p>
                                   <p>Position Size: ${positionSize.toFixed(6)}</p>
@@ -1729,7 +1782,7 @@ const TechnicalAnalysisComponent = (function () {
     const walletHTML = `
       <!-- Wallet Overview -->
       <div class='flex gap-4'>
-      <h4 class="text-base font-semibold flex items-center gap-2 text-gray-700">💰 Wallet Overview</h4>
+      <h4 class="text-sm font-semibold flex items-center gap-2 text-gray-700">💰 Wallet Overview</h4>
        <button id="wallet_info" class=" text-gray-400 hover:text-indigo-600 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
@@ -1742,30 +1795,27 @@ const TechnicalAnalysisComponent = (function () {
       <div class="grid md:grid-cols-2 gap-3">
         <!-- Current Balance -->
         <div class="flex items-center gap-3">
-          <div class="p-2 bg-white rounded-lg border">👛</div>
+          <div class="p-2 bg-white rounded-lg border">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+          </div>
           <div>
-            <p class="text-sm text-gray-600">Current Balance</p>
-            <p class="text-lg font-semibold text-gray-800">${walletBalance} $</p>
+            <p class="text-xs text-gray-600">Current Balance</p>
+            <p class="text-base font-semibold text-gray-800">${walletBalance} $</p>
           </div>
         </div>
-        <!-- Current Pair Value -->
         <div class="flex items-center gap-3">
-          <div class="p-2 bg-white rounded-lg border">💹</div>
+          <div class="p-2 bg-white rounded-lg border">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
           <div>
-            <p class="text-sm text-gray-600">Current Pair Value</p>
-            <p id="wallet_pair_value" class="text-lg font-semibold text-gray-800">${signal.price.toFixed(
-              2
-            )}</p>
+            <p class="text-xs text-gray-600">Current Pair Name</p>
+            <p id="wallet_pair_name" class="text-base font-semibold text-gray-800">${pair_name}</p>
           </div>
         </div>
-          <div class="flex items-center gap-3">
-          <div class="p-2 bg-white rounded-lg border">🪙</div>
-          <div>
-            <p class="text-sm text-gray-600">Current Pair Name</p>
-            <p id="wallet_pair_name" class="text-lg font-semibold text-gray-800">${pair_name}</p>
-          </div>
-        </div>
-
       </div>
     
       <!-- Risk Management and Controls -->
@@ -1774,7 +1824,7 @@ const TechnicalAnalysisComponent = (function () {
           <!-- Risk Management Label -->
           <div class="flex items-center gap-1">
             <div class="p-1 bg-purple-100 rounded">⚠️</div>
-            <span class="text-sm font-bold text-gray-800">Risk Management</span>
+            <span class="text-xs font-bold text-gray-800">Risk Management</span>
           </div>
           <!-- Inline Risk Controls -->
           <div class="flex flex-wrap items-center gap-1 ml-auto">
@@ -1807,7 +1857,7 @@ const TechnicalAnalysisComponent = (function () {
     
       <!-- Helper Note -->
       <div class="p-2 bg-yellow-50 rounded-lg border border-yellow-200">
-         <h4 class="text-lg font-semibold text-yellow-800 mb-2">Trading Notes</h4>
+         <h4 class="text-base font-semibold text-yellow-800 mb-2">Trading Notes</h4>
         <p class="text-yellow-800">${rec.notes}</p>
       </div>
 
@@ -1877,7 +1927,7 @@ const TechnicalAnalysisComponent = (function () {
       const recomendationHTML = `
         <div class='flex gap-4 mb-3'>
 
-          <h4 class="text-base font-semibold  flex items-center gap-2 text-gray-700">🚀 Suggested Actions</h4>
+          <h4 class="text-sm font-semibold  flex items-center gap-2 text-gray-700">🚀 Suggested Actions</h4>
           <button id="actions_info" class=" text-gray-400 hover:text-indigo-600 transition-colors ">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
               stroke="currentColor">
@@ -1919,16 +1969,16 @@ const TechnicalAnalysisComponent = (function () {
               </div>
               ${
                 rec.action === "BUY" || rec.action === "STRONG_BUY"
-                  ? `<p class="text-sm">TP: $${optBuyTP.toFixed(
+                  ? `<p class="text-xs">TP: $${optBuyTP.toFixed(
                       2
                     )} | SL: $${optBuySL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${optProfit.toFixed(
+                   <p class="text-base font-semibold">Profit: $${optProfit.toFixed(
                      2
                    )}</p>`
-                  : `<p class="text-sm">TP: $${optSellTP.toFixed(
+                  : `<p class="text-xs">TP: $${optSellTP.toFixed(
                       2
                     )} | SL: $${optSellSL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${optProfit.toFixed(
+                   <p class="text-base font-semibold">Profit: $${optProfit.toFixed(
                      2
                    )}</p>`
               }
@@ -1954,16 +2004,16 @@ const TechnicalAnalysisComponent = (function () {
               </div>
               ${
                 rec.action === "BUY" || rec.action === "STRONG_BUY"
-                  ? `<p class="text-sm">TP: $${highBuyTP.toFixed(
+                  ? `<p class="text-xs">TP: $${highBuyTP.toFixed(
                       2
                     )} | SL: $${highBuySL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${highProfit.toFixed(
+                   <p class="text-base font-semibold">Profit: $${highProfit.toFixed(
                      2
                    )}</p>`
-                  : `<p class="text-sm">TP: $${highSellTP.toFixed(
+                  : `<p class="text-xs">TP: $${highSellTP.toFixed(
                       2
                     )} | SL: $${highSellSL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${highProfit.toFixed(
+                   <p class="text-base font-semibold">Profit: $${highProfit.toFixed(
                      2
                    )}</p>`
               }
@@ -1999,16 +2049,16 @@ const TechnicalAnalysisComponent = (function () {
               </div>
               ${
                 rec.action === "BUY" || rec.action === "STRONG_BUY"
-                  ? `<p class="text-sm">TP: $${optSellTP.toFixed(
+                  ? `<p class="text-xs">TP: $${optSellTP.toFixed(
                       2
                     )} | SL: $${optSellSL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${mirrorOptProfit.toFixed(
+                   <p class="text-base font-semibold">Profit: $${mirrorOptProfit.toFixed(
                      2
                    )}</p>`
-                  : `<p class="text-sm">TP: $${optBuyTP.toFixed(
+                  : `<p class="text-xs">TP: $${optBuyTP.toFixed(
                       2
                     )} | SL: $${optBuySL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${mirrorOptProfit.toFixed(
+                   <p class="text-base font-semibold">Profit: $${mirrorOptProfit.toFixed(
                      2
                    )}</p>`
               }
@@ -2033,16 +2083,16 @@ const TechnicalAnalysisComponent = (function () {
               </div>
               ${
                 rec.action === "BUY" || rec.action === "STRONG_BUY"
-                  ? `<p class="text-sm">TP: $${highSellTP.toFixed(
+                  ? `<p class="text-xs">TP: $${highSellTP.toFixed(
                       2
                     )} | SL: $${highSellSL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${mirrorHighProfit.toFixed(
+                   <p class="text-base font-semibold">Profit: $${mirrorHighProfit.toFixed(
                      2
                    )}</p>`
-                  : `<p class="text-sm">TP: $${highBuyTP.toFixed(
+                  : `<p class="text-xs">TP: $${highBuyTP.toFixed(
                       2
                     )} | SL: $${highBuySL.toFixed(2)}</p>
-                   <p class="text-lg font-semibold">Profit: $${mirrorHighProfit.toFixed(
+                   <p class="text-base font-semibold">Profit: $${mirrorHighProfit.toFixed(
                      2
                    )}</p>`
               }
@@ -2066,29 +2116,35 @@ const TechnicalAnalysisComponent = (function () {
             : dynamicPosSize * (signal.price - bestTP);
         aiRecommendsHTML = `
           <div class="mt-4">
-            <h4 class="text-base font-semibold mb-3 flex items-center gap-2 text-gray-700">🤖 AI Recommends</h4>
+            <h4 class="text-sm font-semibold mb-3 flex items-center gap-2 text-gray-700">🤖 AI Recommends</h4>
             <div class="grid grid-cols-2 gap-3">
               <div onclick="confirmAction('Secure Trade')"
                 class="cursor-pointer bg-white p-3 rounded-lg border border-teal-200 hover:bg-teal-100">
                 <div class="flex items-center gap-1 text-teal-600 mb-1">
-                  <span>🔒</span><span class="font-medium">Secure Trade</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                  </svg>
+                  <span class="font-medium">Secure Trade</span>
                 </div>
-                <p class="text-sm">TP: $${secureTP.toFixed(
+                <p class="text-xs">TP: $${secureTP.toFixed(
                   2
                 )} | SL: $${rec.stop_loss.toFixed(2)}</p>
-                <p class="text-lg font-semibold">Profit: $${secureProfit.toFixed(
+                <p class="text-base font-semibold">Profit: $${secureProfit.toFixed(
                   2
                 )}</p>
               </div>
               <div onclick="confirmAction('Best Reward Trade')"
                 class="cursor-pointer bg-white p-3 rounded-lg border border-purple-200 hover:bg-purple-100">
                 <div class="flex items-center gap-1 text-purple-600 mb-1">
-                  <span>🏆</span><span class="font-medium">Best Reward</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                  </svg>
+                  <span class="font-medium">Best Reward</span>
                 </div>
-                <p class="text-sm">TP: $${bestTP.toFixed(
+                <p class="text-xs">TP: $${bestTP.toFixed(
                   2
                 )} | SL: $${rec.stop_loss.toFixed(2)}</p>
-                <p class="text-lg font-semibold">Profit: $${bestRewardProfit.toFixed(
+                <p class="text-base font-semibold">Profit: $${bestRewardProfit.toFixed(
                   2
                 )}</p>
               </div>
@@ -2099,7 +2155,7 @@ const TechnicalAnalysisComponent = (function () {
 
       // Combine recommendations with AI recommends and update the container.
       document.getElementById("recomendations").innerHTML =
-        recomendationHTML + aiRecommendsHTML;
+         aiRecommendsHTML;
     } // end updateTradeRecs
 
     // Initial call to update trade recommendations based on default risk management parameters.
@@ -2118,7 +2174,7 @@ const TechnicalAnalysisComponent = (function () {
 
     // Build Trading Notes
     const notesHTML = `
-        <h4 class="text-lg font-semibold text-yellow-800 mb-2">Trading Notes</h4>
+        <h4 class="text-base font-semibold text-yellow-800 mb-2">Trading Notes</h4>
         <p class="text-yellow-800">${rec.notes}</p>
     `;
     tradingNotesContainer.innerHTML = notesHTML;
@@ -2336,7 +2392,7 @@ function hideLoading() {
 //       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 //         <!-- News Stats with Donut -->
 //         <div class="bg-white p-6 rounded-lg shadow-md">
-//           <h3 class="text-xl font-semibold mb-4">News Statistics</h3>
+//           <h3 class="text-lg font-semibold mb-4">News Statistics</h3>
 //           <div class="space-y-4">
 //             <div>24H News: ${latest_news_info.last_day_count}</div>
 //             <div>7D Avg: ${latest_news_info.avg_news_week}</div>
@@ -2390,7 +2446,7 @@ class CryptoDataComponent {
     } catch (error) {
       console.error("Data fetch error:", error);
       this.parentElement.innerHTML = `
-        <div class="p-3 bg-red-50 text-red-600 rounded-lg text-sm flex items-center gap-2">
+        <div class="p-3 bg-red-50 text-red-600 rounded-lg text-xs flex items-center gap-2">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
           </svg>
@@ -2404,28 +2460,134 @@ class CryptoDataComponent {
 
   createDampChart(elementId) {
     const { daily_timeseries } = this.data;
-    return new ApexCharts(document.querySelector(elementId), {
+    const timestamps = daily_timeseries.timestamp.map(t => t * 1000);
+    const now = Date.now();
+    
+    // Create time range selector
+    const chartContainer = document.querySelector(elementId);
+    const selectorHTML = `
+      <div class="flex justify-end mb-2">
+        <select id="dampTimeRange" class="text-xs border rounded px-2 py-1 bg-white">
+          <option value="3m">Last 3 Months</option>
+          <option value="1m">Last Month</option>
+          <option value="1y">Last Year</option>
+          <option value="all">All Time</option>
+        </select>
+      </div>
+    `;
+    chartContainer.insertAdjacentHTML('beforebegin', selectorHTML);
+
+    // Function to filter data based on time range
+    const filterDataByTimeRange = (range) => {
+      const filteredTimestamps = [];
+      const filteredData = {
+        damp_5: [],
+        damp_10: [],
+        damp_15: [],
+        damp_20: [],
+        damp_30: []
+      };
+
+      timestamps.forEach((timestamp, index) => {
+        if (!range || timestamp >= range) {
+          filteredTimestamps.push(timestamp);
+          filteredData.damp_5.push(daily_timeseries.damp_5[index]);
+          filteredData.damp_10.push(daily_timeseries.damp_10[index]);
+          filteredData.damp_15.push(daily_timeseries.damp_15[index]);
+          filteredData.damp_20.push(daily_timeseries.damp_20[index]);
+          filteredData.damp_30.push(daily_timeseries.damp_30[index]);
+        }
+      });
+
+      return { timestamps: filteredTimestamps, data: filteredData };
+    };
+
+    // Initial data filtering for 3 months
+    const initialRange = now - (90 * 24 * 60 * 60 * 1000);
+    const initialData = filterDataByTimeRange(initialRange);
+
+    const chart = new ApexCharts(chartContainer, {
       chart: {
         type: "line",
         height: "100%",
         zoom: { enabled: true },
         toolbar: { show: true, tools: { download: false } },
+        animations: { 
+          enabled: true,
+          easing: 'easeinout',
+          speed: 800,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 350
+          }
+        }
       },
       series: [
-        { name: "DAMP 5", data: daily_timeseries.damp_5 },
-        { name: "DAMP 10", data: daily_timeseries.damp_10 },
-        { name: "DAMP 15", data: daily_timeseries.damp_15 },
-        { name: "DAMP 20", data: daily_timeseries.damp_20 },
-        { name: "DAMP 30", data: daily_timeseries.damp_30 },
+        { name: "DAMP 5", data: initialData.data.damp_5 },
+        { name: "DAMP 10", data: initialData.data.damp_10 },
+        { name: "DAMP 15", data: initialData.data.damp_15 },
+        { name: "DAMP 20", data: initialData.data.damp_20 },
+        { name: "DAMP 30", data: initialData.data.damp_30 }
       ],
       xaxis: {
         type: "datetime",
-        categories: daily_timeseries.timestamp.map((t) => t * 1000),
+        categories: initialData.timestamps
       },
       stroke: { width: 1.5, curve: "smooth" },
       colors: ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#64748B"],
       tooltip: { theme: "dark", x: { format: "dd MMM yyyy HH:mm" } },
+      legend: {
+        position: 'bottom',
+        fontSize: '10px',
+        itemMargin: {
+          horizontal: 5,
+          vertical: 2
+        }
+      }
     });
+
+    // Add event listener for time range selection
+    document.getElementById('dampTimeRange').addEventListener('change', function(e) {
+      const value = e.target.value;
+      let range;
+      
+      switch(value) {
+        case '3m':
+          range = now - (90 * 24 * 60 * 60 * 1000);
+          break;
+        case '1m':
+          range = now - (30 * 24 * 60 * 60 * 1000);
+          break;
+        case '1y':
+          range = now - (365 * 24 * 60 * 60 * 1000);
+          break;
+        case 'all':
+          range = undefined;
+          break;
+      }
+      
+      const filteredData = filterDataByTimeRange(range);
+      
+      chart.updateOptions({
+        xaxis: {
+          categories: filteredData.timestamps
+        }
+      });
+
+      chart.updateSeries([
+        { data: filteredData.data.damp_5 },
+        { data: filteredData.data.damp_10 },
+        { data: filteredData.data.damp_15 },
+        { data: filteredData.data.damp_20 },
+        { data: filteredData.data.damp_30 }
+      ]);
+    });
+
+    return chart;
   }
 
   createNewsCountChart(elementId) {
@@ -2485,21 +2647,35 @@ class CryptoDataComponent {
           ]
         : [],
       labels: ["Positive", "Negative", "Neutral"],
-      legend: { position: "bottom" },
+      legend: { 
+        position: "bottom",
+        fontSize: '10px',
+        itemMargin: {
+          horizontal: 5,
+          vertical: 2
+        }
+      },
       dataLabels: { enabled: false },
       plotOptions: {
         pie: {
           donut: {
             labels: {
               show: true,
-              name: { show: true },
+              name: { 
+                show: true,
+                fontSize: '10px',
+                offsetY: -5
+              },
               value: {
                 show: true,
+                fontSize: '12px',
                 formatter: (val) => Math.round(val) + "%",
+                offsetY: 5
               },
               total: {
                 show: true,
                 label: title,
+                fontSize: '10px',
                 formatter: () => "100%",
               },
             },
@@ -2527,7 +2703,7 @@ class CryptoDataComponent {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <div class="flex-1">
-              <h3 class="text-sm font-semibold text-gray-800">Fundamental Analysis</h3>
+              <h3 class="text-xs font-semibold text-gray-800">Fundamental Analysis</h3>
               <p class="text-xs text-gray-500">Last updated: ${new Date(
                 na.updatedAt * 1000
               ).toLocaleDateString()}</p>
@@ -2543,22 +2719,30 @@ class CryptoDataComponent {
 
           <div class="grid grid-cols-2 gap-2 text-xs mb-3">
             <div class="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded">
-              <span class="text-gray-400">🌐</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+              </svg>
               <span class="font-medium text-gray-600">Pair:</span>
               <span class="text-gray-800">${na.pair}</span>
             </div>
             <div class="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded">
-              <span class="text-gray-400">📊</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
               <span class="font-medium text-gray-600">Pattern:</span>
               <span class="text-gray-800">${na.pattern}</span>
             </div>
             <div class="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded">
-              <span class="text-gray-400">⏳</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
               <span class="font-medium text-gray-600">Duration:</span>
               <span class="text-gray-800">${na.duration}</span>
             </div>
             <div class="flex items-center gap-1.5 p-1.5 bg-gray-50 rounded">
-              <span class="text-gray-400">🔄</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
               <span class="font-medium text-gray-600">Volatility:</span>
               <span class="text-gray-800">${na.volatility || "N/A"}</span>
             </div>
@@ -2621,7 +2805,7 @@ class CryptoDataComponent {
                 <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                 </svg>
-                <h3 class="text-sm font-semibold text-gray-800">Market Sentiment</h3>
+                <h3 class="text-xs font-semibold text-gray-800">Market Sentiment</h3>
               </div>
               ${
                 showDay
@@ -2639,10 +2823,10 @@ class CryptoDataComponent {
           
           <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm md:col-span-2">
             <div class="flex items-center gap-2 mb-3">
-              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
               </svg>
-              <h3 class="text-sm font-semibold text-gray-800">DAMP Trends</h3>
+              <h3 class="text-xs font-semibold text-gray-800">DAMP Trends</h3>
             </div>
             <div id="dampChart" class="h-80"></div>
           </div>
@@ -2650,10 +2834,10 @@ class CryptoDataComponent {
 
         <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
           <div class="flex items-center gap-2 mb-3">
-            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <h3 class="text-sm font-semibold text-gray-800">News Frequency</h3>
+            <h3 class="text-xs font-semibold text-gray-800">News Frequency</h3>
           </div>
           <div id="newsCountChart" class="h-64"></div>
         </div>
