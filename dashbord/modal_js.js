@@ -405,6 +405,7 @@ class SmartCoinAnalysCard {
           `#${this.prefixId}_useIndicator`
         ).value,
         useMarketData: true,
+        language: "en",
       };
 
       this.cardElement
