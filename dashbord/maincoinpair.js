@@ -639,6 +639,24 @@ async function updateChart() {
         2
       )}</span>`;
     }
+    document.getElementById("current_pair_value").innerHTML = `
+      <div class="flex items-center gap-6 text-xs">
+        <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
+          <span class="text-gray-500">Price</span>
+          <span class="font-medium text-blue-600">$${signal.price.toFixed(2)}</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
+          <span class="text-gray-500">24h</span>
+          <span class="font-medium ${signal.change_rate >= 0 ? 'text-green-600' : 'text-red-600'}">
+            ${signal.change_rate >= 0 ? '↑' : '↓'} ${Math.abs(signal.change_rate).toFixed(2)}%
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
+          <span class="text-gray-500">Vol</span>
+          <span class="font-medium text-gray-700">$${parseFloat(signal.volume).toLocaleString()}</span>
+        </div>
+      </div>
+    `;
   } catch (err) {
     console.error("Error in updateChart function:", err);
   }
@@ -1713,7 +1731,9 @@ const TechnicalAnalysisComponent = (function () {
                           <!-- Long Position -->
                           <div class="bg-green-50 p-3 rounded-lg border border-green-200 w-full ">
                               <div class="flex items-center gap-2 mb-2">
-                                  <span class="text-green-600">↗</span>
+                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                  </svg>
                                   <span class="font-medium text-green-700">Long Position</span>
                               </div>
                               <div class="space-y-1 text-xs">
@@ -1728,7 +1748,9 @@ const TechnicalAnalysisComponent = (function () {
                           <!-- Short Position -->
                           <div class="bg-red-50 p-3 rounded-lg border border-red-200 w-full ">
                               <div class="flex items-center gap-2 mb-2">
-                                  <span class="text-red-600">↘</span>
+                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
+                                  </svg>
                                   <span class="font-medium text-red-700">Short Position</span>
                               </div>
                               <div class="space-y-1 text-xs">
@@ -1775,9 +1797,24 @@ const TechnicalAnalysisComponent = (function () {
       rec.resistance_levels[0]
     );
 
-    document.getElementById("current_pair_value").innerHTML = `${signal.price.toFixed(
-      2
-    )}`
+    document.getElementById("current_pair_value").innerHTML = `
+      <div class="flex items-center gap-6 text-xs">
+        <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
+          <span class="text-gray-500">Price</span>
+          <span class="font-medium text-blue-600">$${signal.price.toFixed(2)}</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
+          <span class="text-gray-500">24h</span>
+          <span class="font-medium ${signal.change_rate >= 0 ? 'text-green-600' : 'text-red-600'}">
+            ${signal.change_rate >= 0 ? '↑' : '↓'} ${Math.abs(signal.change_rate).toFixed(2)}%
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
+          <span class="text-gray-500">Vol</span>
+          <span class="font-medium text-gray-700">$${parseFloat(signal.volume).toLocaleString()}</span>
+        </div>
+      </div>
+    `;
     // Wallet Overview (kept as before)
     const walletHTML = `
       <!-- Wallet Overview -->
