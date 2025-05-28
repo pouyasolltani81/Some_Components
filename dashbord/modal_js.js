@@ -57,6 +57,7 @@ class SmartCoinAnalysCard {
     this.cardElement = null;
     this.triggerButton = null;
     this.newsItems = this.generateMockNews();
+    this.newsLinks = null ;
     this.visibleNewsCount = 5;
     this.createTriggerButton();
     this.createModal();
@@ -233,10 +234,10 @@ class SmartCoinAnalysCard {
       `#${this.prefixId}_showMoreNews`
     );
     newsList.innerHTML = "";
-    this.newsItems.slice(0, this.visibleNewsCount).forEach((news) => {
+    this.newsItems.slice(0, this.visibleNewsCount).forEach((news , index) => {
       const newsItem = document.createElement("a");
       // newsItem.href = news.link;
-      newsItem.href = 'https://example.com/news/';
+      newsItem.href = this.newsLinks[index];
 
       newsItem.target = "_blank";
       newsItem.className =
@@ -307,6 +308,8 @@ class SmartCoinAnalysCard {
           console.log(getResponse.data.data[0].result);
 
           this.newsItems = getResponse.data.data[0].result.newsTitles;
+          this.newsLinks = getResponse.data.data[0].result.newsLinks;
+
 
 
           my_json = {
@@ -318,7 +321,9 @@ class SmartCoinAnalysCard {
             // updatedAt: moment.unix(getResponse.data.data[0].result.response.timestamp *).format("YYYY/MM/DD HH:mm:ss"),
             updatedAt: getResponse.data.data[0].result.response.updatedAt ,
 
-            news: getResponse.data.data[0].result.newsTitles,
+            news_titles: getResponse.data.data[0].result.newsTitles,
+            news_links: getResponse.data.data[0].result.newsLinks,
+
             analyse: getResponse.data.data[0].result.response.analysis,
             summery: getResponse.data.data[0].result.response.summaryFa,
 
