@@ -1,4 +1,5 @@
 import ApexCharts from "apexcharts";
+import MoodAnalysisModal from './components/modals/moodanalysis.js';
 import {
   GetNewsbyDateCategory,
   GetMarketPair,
@@ -163,6 +164,13 @@ async function fetchCoinList() {
         );
 
         cryptoComponent.fetchData();
+
+ 
+        const container = document.getElementById("analysis-root");
+        const moodModal = new MoodAnalysisModal(pair_name, container);
+        moodModal.start();      
+
+   
       }
 
       first_time = false;
@@ -3007,3 +3015,4 @@ function handleLevelSelection(element) {
         });
     }
 }
+
