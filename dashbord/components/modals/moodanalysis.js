@@ -1,7 +1,8 @@
 class MoodAnalysisModal {
-    constructor(symbol, container = document.body) {
+    constructor(symbol, container = document.body, enableLogging = false) {
       this.symbol = symbol;
       this.container = container;
+      this.enableLogging = enableLogging;
       this.prefixId = `modal_${Math.random().toString(36).substring(2, 10)}`;
       this.triggerButton = null;
       this.modalElement = null;
@@ -116,17 +117,25 @@ class MoodAnalysisModal {
       };
   
       try {
-        console.log("📤 Sending mood analysis request:", submitParams);
+        if (this.enableLogging) {
+          console.log("📤 Sending mood analysis request:", submitParams);
+        }
         const startResponse = await axios.post(submitUrl, submitParams, { headers });
         const taskId = startResponse.data.data;
-        console.log("✅ Task ID:", taskId);
+        if (this.enableLogging) {
+          console.log("✅ Task ID:", taskId);
+        }
   
         while (true) {
           const getParams = { task_id: taskId };
-          console.log("🔁 Polling:", getParams);
+          if (this.enableLogging) {
+            console.log("🔁 Polling:", getParams);
+          }
   
           const result = await axios.post(getUrl, getParams, { headers });
-          console.log("📬 Response:", result.data);
+          if (this.enableLogging) {
+            console.log("📬 Response:", result.data);
+          }
   
           if (result.data.message === "completed" && result.data.return) {
             return result.data.data[0].result;
@@ -135,7 +144,9 @@ class MoodAnalysisModal {
           await new Promise(res => setTimeout(res, 2000));
         }
       } catch (err) {
-        console.error("❌ Error:", err);
+        if (this.enableLogging) {
+          console.error("❌ Error:", err);
+        }
         return { error: "Fetch failed. Check console." };
       }
     }

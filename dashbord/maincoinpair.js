@@ -10,6 +10,7 @@ import {
   exGetMultipleTechnicalIndicatorSignal,
   ex_getSymbolInfo,
 } from "./endpoints";
+import connect from './utils/helpers/connect';
 // ----------------------------------------------------------------------------------------
 // Global Variables & URL Params
 // ----------------------------------------------------------------------------------------
@@ -28,6 +29,7 @@ const LOG_COIN_LIST = false;
 const LOG_ACTIVE_MARKETS = false;
 const LOG_SR_LEVELS = false;
 const LOG_TECHNICAL_DATA = false;
+const LOG_MOOD_DATA = false
 
 // ----------------------------------------------------------------------------------------
 
@@ -167,7 +169,7 @@ async function fetchCoinList() {
 
  
         const container = document.getElementById("analysis-root");
-        const moodModal = new MoodAnalysisModal(pair_name, container);
+        const moodModal = new MoodAnalysisModal(pair_name, container , LOG_MOOD_DATA);
         moodModal.start();      
 
    
