@@ -66,9 +66,11 @@ class SmartCoinAnalysCard {
 
   createTriggerButton() {
     const button = document.createElement("button");
-    button.className =
-      "py-3 px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-lg";
-    button.textContent = `${this.coin_one} / ${this.coin_two}`;
+    button.className = "group relative inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ease-in-out rounded-lg bg-white border border-gray-200 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 h-full w-full flex items-center justify-center";
+    button.innerHTML = `
+      <span class="pair-label">${this.coin_one} / ${this.coin_two}</span>
+      <span class="tick-indicator hidden ml-2"><svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></span>
+    `;
     this.triggerButton = button;
   }
 
@@ -77,12 +79,12 @@ class SmartCoinAnalysCard {
         <!-- Modal Backdrop & Container -->
 <div id="${this.prefixId}" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <!-- Modal -->
-  <div class="w-full max-w-5xl bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+  <div class="w-full max-w-5xl bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden animate-fade-in" dir='ltr'>
     
     <!-- Header -->
     <div class="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-300">
-      <h2 class="text-lg font-semibold text-gray-900">📊 تحلیل کوین</h2>
-      <button aria-label="بستن" class="close-button hover:bg-gray-200 p-1.5 rounded-full transition">
+      <h2 class="text-lg font-semibold text-gray-900">Coin Analysis</h2>
+      <button aria-label="Close" class="close-button hover:bg-gray-200 p-1.5 rounded-full transition">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -92,13 +94,13 @@ class SmartCoinAnalysCard {
     <!-- Input Form -->
     <div class="p-6 space-y-5" id="${this.prefixId}_InputForm">
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700">💱 جفت ارز:</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700">Pair:</label>
         <select id="${this.prefixId}_coinPair" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">⏱️ تایم فریم:</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Timeframe:</label>
           <select id="${this.prefixId}_timeFrame" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
             <option value="1m">1Min</option>
             <option value="5m">5Min</option>
@@ -112,29 +114,33 @@ class SmartCoinAnalysCard {
           </select>
         </div>
         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">🕒 تعداد کندل:</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Candle Count:</label>
           <input type="number" id="${this.prefixId}_candleCount" value="10" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
       </div>
 
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700">📰 استفاده از اخبار:</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700">Use News:</label>
         <select id="${this.prefixId}_useNews" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          <option value="true" selected>✅ بله</option>
-          <option value="false">❌ خیر</option>
+          <option value="true" selected>Yes</option>
+          <option value="false">No</option>
         </select>
       </div>
 
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700">📊 استفاده از اندیکاتورها:</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700">Use Indicators:</label>
         <select id="${this.prefixId}_useIndicator" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          <option value="true">✅ بله</option>
-          <option value="false" selected>❌ خیر</option>
+          <option value="true">Yes</option>
+          <option value="false" selected>No</option>
         </select>
       </div>
 
-      <button class="analysis-button w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-        تحلیل 🔍
+      <button class="analysis-button w-full group relative inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ease-in-out rounded-lg bg-white border border-gray-200 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <span class="text-gray-700 group-hover:text-blue-600">Analyze</span>
+        <div class="absolute inset-0 rounded-lg transition-opacity duration-200 opacity-0 group-hover:opacity-10 bg-blue-50"></div>
       </button>
     </div>
 
@@ -144,50 +150,51 @@ class SmartCoinAnalysCard {
         <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
-        <span>در حال دریافت داده‌ها... لطفا منتظر بمانید. ⏳</span>
+        <span>Fetching data... Please wait.</span>
       </div>
     </div>
 
     <!-- Analysis Answer -->
     <div class="analysis-answer hidden p-6 space-y-4 animate-slide-up">
       <div class="flex justify-between items-center">
-        <h3 class="text-lg font-semibold text-gray-900" id="${this.prefixId}_pairName">XRP/USDT</h3>
-        <span id="${this.prefixId}_decision" class="px-3 py-1 text-sm bg-green-100 text-green-800 rounded-full">تصمیم</span>
+        <div class="flex items-center gap-2">
+          <h3 class="text-lg font-semibold text-gray-900" id="${this.prefixId}_pairName">XRP/USDT</h3>
+          <span id="${this.prefixId}_fetchedIndicator" class="hidden"><svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></span>
+        </div>
+        <span id="${this.prefixId}_decision" class="px-3 py-1 text-sm bg-green-100 text-green-800 rounded-full">Decision</span>
       </div>
 
       <div class="text-sm text-gray-800 space-y-1">
         <div class="flex justify-between">
-          <span>📐 الگو:</span><span id="${this.prefixId}_pattern">-</span>
+          <span>Pattern:</span><span id="${this.prefixId}_pattern">-</span>
         </div>
         <div class="flex justify-between">
-          <span>⌛ مدت:</span><span id="${this.prefixId}_duration">-</span>
+          <span>Duration:</span><span id="${this.prefixId}_duration">-</span>
         </div>
         <div class="flex justify-between">
-          <span>📅 آخرین بروزرسانی:</span><span id="${this.prefixId}_updatedAt">-</span>
+          <span>Last Updated:</span><span id="${this.prefixId}_updatedAt">-</span>
         </div>
         <div>
-          <span class="block font-medium">✨ آنالیز:</span>
+          <span class="block font-medium">Analysis:</span>
           <p id="${this.prefixId}_analyse" class="mt-1">-</p>
         </div>
         <div>
-          <span class="block font-medium">📝 خلاصه اخبار:</span>
+          <span class="block font-medium">News Summary:</span>
           <p id="${this.prefixId}_summery" class="mt-1">-</p>
         </div>
       </div>
 
       <div>
-        <label class="block mb-1 font-medium text-gray-700">📰 اخبار مرتبط:</label>
+        <label class="block mb-1 font-medium text-gray-700">Related News:</label>
         <div class="news-container p-2 rounded-md bg-gray-100" dir="ltr">
           <div id="${this.prefixId}_newsList" class="space-y-2"></div>
         </div>
-        <button id="${this.prefixId}_showMoreNews" class="hidden w-full text-sm text-blue-600 hover:underline mt-2">
-          نمایش بیشتر
-        </button>
+        <button id="${this.prefixId}_showMoreNews" class="hidden w-full text-sm text-blue-600 hover:underline mt-2">Show More</button>
       </div>
 
       <div class="flex flex-col gap-2">
-        <button class="refresh-button w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">تجزیه و تحلیل مجدد 🔄</button>
-        <button class="more-info-button w-full py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800">اطلاعات بیشتر</button>
+        <button class="refresh-button w-full group relative inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ease-in-out rounded-lg bg-white border border-gray-200 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Re-analyze 🔄</button>
+        <button class="more-info-button w-full group relative inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ease-in-out rounded-lg bg-gray-700 text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">More Info</button>
       </div>
     </div>
 
@@ -207,7 +214,7 @@ class SmartCoinAnalysCard {
       option.value = this.Pair_coins_value[index];
       option.id = this.Pair_coins_ids[index]
       option.innerHTML = element;
-      // Set the default selected option if it matches the card’s coin pair
+      // Set the default selected option if it matches the card's coin pair
       if (this.Pair_coins_value[index] === `${this.coin_one}-${this.coin_two}`) {
         option.selected = "true";
       }
@@ -385,13 +392,20 @@ class SmartCoinAnalysCard {
       this.cardElement.querySelector(".more-info-button");
 
     analysisButton.addEventListener("click", async () => {
-      analysisButton.disabled = true;
-      analysisButton.classList.replace("bg-purple-600", "bg-gray-400");
-      analysisButton.classList.replace("hover:bg-purple-700", "cursor-not-allowed");
+      // Show loading spinner and text in the trigger button
+      const originalBtnContent = this.triggerButton.innerHTML;
+      this.triggerButton.innerHTML = `
+        <svg class="animate-spin h-4 w-4 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span dir='ltr'>Fetching ...</span>
+      `;
+      this.triggerButton.disabled = true;
       this.triggerButton.classList.replace("bg-purple-600", "bg-gray-400");
-      analysisButton.classList.replace("bg-teal-600", "bg-gray-400");
-      analysisButton.classList.replace("hover:bg-teal-700", "cursor-not-allowed");
+      this.triggerButton.classList.replace("hover:bg-purple-700", "cursor-not-allowed");
       this.triggerButton.classList.replace("bg-teal-600", "bg-gray-400");
+      this.triggerButton.classList.replace("hover:bg-teal-700", "cursor-not-allowed");
 
       const params = {
         symbol: this.cardElement.querySelector(
@@ -462,11 +476,13 @@ class SmartCoinAnalysCard {
         ).textContent = data.summery;
         this.renderNews();
       } finally {
-        analysisButton.disabled = false;
-        analysisButton.classList.replace("bg-gray-400", "bg-teal-600");
-        analysisButton.classList.replace("cursor-not-allowed", "hover:bg-teal-700");
+        // Restore original button content and enable
+        this.triggerButton.innerHTML = originalBtnContent;
+        this.triggerButton.disabled = false;
         this.triggerButton.classList.replace("bg-gray-400", "bg-teal-600");
-
+        this.triggerButton.classList.replace("cursor-not-allowed", "hover:bg-teal-700");
+        // Show the tick indicator after restoring the button
+        this.triggerButton.querySelector('.tick-indicator').classList.remove('hidden');
         this.cardElement
           .querySelector(".waiting-message")
           .classList.add("hidden");

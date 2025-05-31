@@ -24,38 +24,27 @@
     <!-- Loading Overlay -->
     <div
       id="globalLoading"
-      class="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-90 pointer-events-auto hidden"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-90 pointer-events-auto hidden"
     >
-      <!-- <div class="🤚">
-      <div class="👉"></div>
-      <div class="👉"></div>
-      <div class="👉"></div>
-      <div class="👉"></div>
-      <div class="🌴"></div>
-      <div class="👍"></div>
-    </div> -->
-
       <div
-        class="w-[100%] h-screen gap-1 pt-40 pb-40 relative flex items-center justify-center"
+        class="w-full h-screen gap-1 pt-40 pb-40 relative flex items-center justify-center"
       >
         <div
-          class="flex flex-col items-center animate-[bounce_1s_ease-in-out_infinite_0.1s]"
+          class="flex flex-col items-center animate-bounce"
         >
           <div class="w-1 h-6 bg-green-500"></div>
           <div class="w-3 h-12 bg-green-500 rounded-sm"></div>
           <div class="w-1 h-6 bg-green-500"></div>
         </div>
-
         <div
-          class="flex flex-col items-center animate-[bounce_1s_ease-in-out_infinite_0.2s]"
+          class="flex flex-col items-center animate-bounce"
         >
           <div class="w-1 h-6 bg-red-500"></div>
           <div class="w-3 h-12 bg-red-500 rounded-sm"></div>
           <div class="w-1 h-6 bg-red-500"></div>
         </div>
-
         <div
-          class="flex flex-col items-center animate-[bounce_1s_ease-in-out_infinite_0.1s]"
+          class="flex flex-col items-center animate-bounce"
         >
           <div class="w-1 h-6 bg-green-500"></div>
           <div class="w-3 h-12 bg-green-500 rounded-sm"></div>
@@ -67,26 +56,26 @@
     <!-- Confirmation Modal -->
     <div
       id="confirmationModal"
-      class="hidden fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center px-4"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-50"
       style="z-index: 51"
     >
       <div
-        class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 text-center space-y-4"
+        class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 text-center space-y-4 border border-gray-200"
       >
-        <h2 class="text-lg font-semibold text-gray-800">Confirm Action</h2>
-        <p id="confirmationText" class="text-gray-600">
+        <h2 class="text-lg font-semibold text-gray-900">Confirm Action</h2>
+        <p id="confirmationText" class="text-gray-700">
           Are you sure you want to proceed?
         </p>
         <div class="flex justify-center gap-4 pt-2">
           <button
             onclick="closeConfirmationModal()"
-            class="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
+            class="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-blue-50 hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Cancel
           </button>
           <button
             onclick="proceedConfirmedAction()"
-            class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+            class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Confirm
           </button>
@@ -99,7 +88,7 @@
       class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center backdrop-blur-sm bg-black/50"
     >
       <div
-        class="relative bg-white p-6 md:p-8 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+        class="relative bg-white p-8 rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-200"
       >
         <div class="flex justify-center">
           <!-- Close Button -->
@@ -124,7 +113,7 @@
             </svg>
           </button>
 
-          <div>Candle News</div>
+          <div class="text-lg font-semibold text-gray-900">Candle News</div>
 
           <!-- Info Button -->
 
@@ -167,7 +156,7 @@
     <!-- Trigger Button -->
     <button
       id="fetchBtn"
-      class="transition-all fixed bottom-6 right-6 bg-indigo-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-105 z-20"
+      class="transition-all fixed bottom-6 right-6 bg-white border border-gray-200 text-blue-600 px-6 py-3 rounded-lg shadow-xl hover:bg-blue-50 hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 z-20"
     >
       Show Analysis
     </button>
@@ -175,16 +164,16 @@
     <!-- Main Modal -->
     <div
       id="mainModal"
-      class="hidden fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-start justify-center pt-10 px-4 z-50 overflow-y-auto"
+      class="hidden fixed inset-0 bg-black/50 flex items-start justify-center pt-10 px-4 z-50 overflow-y-auto"
     >
       <div
-        class="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden"
+        class="bg-white rounded-xl w-full max-w-5xl shadow-xl overflow-hidden border border-gray-200"
       >
         <!-- Header -->
         <div
-          class="flex justify-between items-center px-5 py-4 border-b border-transparent relative"
+          class="flex justify-between items-center px-5 py-4 border-b border-gray-200 relative"
         >
-          <div class="text-xl font-bold text-gray-800 relative flex items-center gap-2 ">
+          <div class="text-xl font-bold text-gray-900 relative flex items-center gap-2 ">
             Technical Analysis Dashboard
             <span
               id="analysisDate"
@@ -197,7 +186,7 @@
               ></div>
             <button
             id="infoIcon"
-            class="text-gray-400 hover:text-indigo-600 transition-colors"
+            class="text-gray-400 hover:text-blue-600 transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -241,7 +230,7 @@
 
         <!-- Content Grid -->
         <div
-          class="grid gap-5 p-5 max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-gray-100"
+          class="grid gap-5 p-5 max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100"
         >
           <!-- First Row -->
           <div class="grid md:grid-cols-2 gap-4 hidden">
@@ -254,18 +243,6 @@
                 class="space-y-3 border border-gray-200 bg-gray-50 rounded-lg shadow-sm p-3"
               ></div>
 
-              <!-- <button id="infoIcon" class="absolute top-4 right-32 text-gray-400 hover:text-indigo-600 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button> -->
-              <!-- <div id="componentsPopover"
-              class="absolute top-10 right-3 bg-white border border-gray-300 rounded shadow-lg p-3 w-72 mt-2 hidden z-30">
-              <h5 class="font-semibold mb-2">Components</h5>
-              <div id="componentsContent" class="text-sm space-y-2"></div>
-            </div> -->
             </div>
 
             <div
@@ -333,7 +310,7 @@
 
         <!-- Data Cards -->
         <div class="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8" id="dataCards">
-          <div class="bg-white rounded-xl shadow-lg p-8">
+          <div class="bg-white rounded-xl shadow-xl p-8 border border-gray-200">
             <div class="flex flex-col md:flex-row gap-8">
               <!-- Coin Information -->
               <div class="flex-1 space-y-6">
@@ -342,7 +319,7 @@
                     id="srcLogo"
                     src=""
                     alt="Source Coin Logo"
-                    class="w-14 h-14 rounded-full shadow-sm"
+                    class="w-14 h-14 rounded-full shadow-sm border border-gray-200"
                   />
                   <div>
                     <h2
@@ -361,7 +338,7 @@
                     id="baseLogo"
                     src=""
                     alt="Base Coin Logo"
-                    class="w-14 h-14 rounded-full shadow-sm"
+                    class="w-14 h-14 rounded-full shadow-sm border border-gray-200"
                   />
                   <div>
                     <h2
@@ -433,7 +410,7 @@
         </div>
 
         <!-- Hidden Chart Section -->
-        <div class="bg-white shadow rounded-lg p-6 hidden">
+        <div class="bg-white shadow-xl rounded-xl p-6 hidden border border-gray-200">
           <h3 class="text-2xl font-semibold text-gray-800 mb-4">
             Price History
           </h3>
@@ -442,7 +419,7 @@
       </div>
 
       <!-- Candlestick Chart Section -->
-      <div class="bg-white rounded-xl shadow-lg p-8">
+      <div class="bg-white rounded-xl shadow-xl p-8 border border-gray-200">
         <header class="mb-4">
           <h1 class="text-3xl font-bold text-gray-900">
             Market Candlestick Chart
@@ -450,7 +427,7 @@
         </header>
 
         <!-- Controls -->
-        <div class="bg-gray-50 rounded-lg p-6 mb-8">
+        <div class="bg-gray-50 rounded-xl p-6 mb-8 border border-gray-200">
           <div class="flex flex-wrap gap-6 items-end">
             <div class="hidden">
               <label
@@ -533,7 +510,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <!-- Chart Area -->
-        <div id="chartContainer" class="bg-white rounded-lg">
+        <div id="chartContainer" class="bg-white rounded-xl border border-gray-200">
           <div id="coinInfo" class="mb-6 flex flex-wrap gap-4 items-center">
             <h2
               id="marketName"
@@ -623,13 +600,13 @@
       <!-- DRAWER -->
       <div
         id="left-drawer"
-        class="bg-white shadow-lg rounded-l-lg w-[260px] p-4 h-auto transition-transform duration-300 transform translate-x-full border-r border-gray-200"
+        class="bg-white shadow-xl rounded-l-xl w-[260px] p-4 h-auto transition-transform duration-300 transform translate-x-full border-r border-gray-200"
       >
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-gray-800">Chart Tools</h2>
         </div>
         <div class="flex flex-col gap-3">
-          <label class="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
+          <label class="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-lg">
             <input
               type="checkbox"
               id="show-sma"
@@ -637,7 +614,7 @@
             />
             SMA 20
           </label>
-          <label class="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
+          <label class="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-lg">
             <input
               type="checkbox"
               id="show-ema"
@@ -645,7 +622,7 @@
             />
             EMA 20
           </label>
-          <label class="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
+          <label class="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-lg">
             <input
               type="checkbox"
               id="show-fib"
@@ -653,7 +630,7 @@
             />
             Fibonacci
           </label>
-          <label class="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
+          <label class="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-lg">
             <input
               type="checkbox"
               id="show-support-resistance"
@@ -666,7 +643,7 @@
         <!-- TOGGLE BUTTON -->
         <button
           id="drawer-toggle"
-          class="absolute -left-8 top-4 bg-white shadow-sm border border-gray-200 rounded-l-full p-2 z-40 hover:bg-gray-50 transition-all"
+          class="absolute -left-8 top-4 bg-white shadow-sm border border-gray-200 rounded-l-full p-2 z-40 hover:bg-blue-50 transition-all"
         >
           <svg
             id="drawer_svg"
@@ -688,7 +665,7 @@
       <!-- MODAL -->
       <div
         id="summery_modal"
-        class="relative bg-white rounded-lg shadow-lg z-50"
+        class="relative bg-white rounded-xl shadow-xl z-50 border border-gray-200"
         style="min-width: 320px"
       >
         <!-- MODAL CONTENT -->
