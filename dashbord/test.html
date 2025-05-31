@@ -3,159 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <title>Rounded-Edge 3-Slice Gauge (With Hover Popup)</title>
-  <style>
-    :root {
-      --slice1: 30;
-      --slice2: 50;
-      --slice3: calc(100 - var(--slice1) - var(--slice2));
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.css" rel="stylesheet">
 
-      --c1: #e74c3c;
-      --c2: #f1c40f;
-      --c3: #2ecc71;
-
-      --size: 200px;
-      --thickness: 20px;
-
-      --radius: calc((var(--size) / 2) - (var(--thickness) / 2));
-      --half: calc(3.14159265 * var(--radius));
-    }
-
-    body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #f9f9f9;
-      font-family: sans-serif;
-      position: relative;
-    }
-
-    .gauge {
-      width: var(--size);
-      height: calc(var(--size) / 2);
-      overflow: visible;
-    }
-
-    .gauge path {
-      fill: none;
-      stroke-width: var(--thickness);
-      stroke-linecap: round;
-      cursor: pointer;
-    }
-
-    .track { stroke: #eee; }
-    .s1 {
-      stroke: var(--c1);
-      stroke-dasharray: calc(var(--slice1) / 100 * var(--half)) var(--half);
-      stroke-dashoffset: 0;
-    }
-    .s2 {
-      stroke: var(--c2);
-      stroke-dasharray: calc(var(--slice2) / 100 * var(--half)) var(--half);
-      stroke-dashoffset: calc(-1 * var(--slice1) / 100 * var(--half));
-    }
-    .s3 {
-      stroke: var(--c3);
-      stroke-dasharray: calc(var(--slice3) / 100 * var(--half)) var(--half);
-      stroke-dashoffset: calc(-1 * (var(--slice1) + var(--slice2)) / 100 * var(--half));
-    }
-
-    text.center {
-      font-size: 1.4rem;
-      font-weight: bold;
-      fill: #333;
-      dominant-baseline: middle;
-      text-anchor: middle;
-    }
-
-    /* Popup tooltip */
-    #tooltip {
-      position: absolute;
-      padding: 4px 8px;
-      background: rgba(0, 0, 0, 0.75);
-      color: #fff;
-      font-size: 0.85rem;
-      border-radius: 4px;
-      pointer-events: none;
-      white-space: nowrap;
-      display: none;
-      transform: translate(-50%, -120%);
-      z-index: 100;
-    }
-
-    /* Legend Styles */
-    .legend {
-      list-style: none;
-      padding: 0;
-      margin: 1rem 0 0;
-      display: flex;
-      gap: 1rem;
-    }
-
-    .legend li {
-      display: flex;
-      align-items: center;
-      font-size: 0.9rem;
-      color: #333;
-    }
-
-    .legend span.box {
-      width: 12px;
-      height: 12px;
-      display: inline-block;
-      margin-right: 0.5rem;
-      border-radius: 2px;
-    }
-
-    .legend .c1 { background: var(--c1); }
-    .legend .c2 { background: var(--c2); }
-    .legend .c3 { background: var(--c3); }
-
-  </style>
+ 
 </head>
 <body>
 
-  <div class="gauge-wrapper" style="position: relative;">
-    <svg class="gauge" viewBox="0 0 200 100">
-      <!-- background track -->
-      <path class="track" d="M10,100 A90,90 0 0,1 190,100" />
-      <!-- slices with data-tooltip -->
-      <path class="s1" d="M10,100 A90,90 0 0,1 190,100" data-tooltip="Slice 1: 30%" />
-      <path class="s2" d="M10,100 A90,90 0 0,1 190,100" data-tooltip="Slice 2: 50%" />
-      <path class="s3" d="M10,100 A90,90 0 0,1 190,100" data-tooltip="Slice 3: 20%" />
-      <!-- centered label -->
-      <text class="center" x="100" y="90">100%</text>
-    </svg>
-    <div id="tooltip"></div>
+  <div class="h-96 w-80 bg-blue-800">wefwefw</div>
+
+  <div >
+    <svg  class="text-blue-600 p-[2rem] rounded-full border-blue border-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      
+      <g id="Iconly/Curved/Light/Close Square">
+      <g id="Close Square">
+        
+      <path id="Stroke 1" d="M14.3941 9.61502L9.60211 14.19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path id="Stroke 2" d="M14.3999 14.196L9.59991 9.6134" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+     
+      </g>
+      </g>
+      </svg>
   </div>
-
-  <!-- Legend / Labels -->
-  <ul class="legend">
-    <li><span class="box c1"></span>Slice 1 (30%)</li>
-    <li><span class="box c2"></span>Slice 2 (50%)</li>
-    <li><span class="box c3"></span>Slice 3 (20%)</li>
-  </ul>
-
-  <script>
-    const tooltip = document.getElementById('tooltip');
-    document.querySelectorAll('.gauge path.s1, .gauge path.s2, .gauge path.s3')
-      .forEach(el => {
-        el.addEventListener('mouseover', e => {
-          tooltip.textContent = el.dataset.tooltip;
-          tooltip.style.display = 'block';
-        });
-        el.addEventListener('mousemove', e => {
-          const rect = document.querySelector('.gauge-wrapper').getBoundingClientRect();
-          tooltip.style.left = `${e.clientX - rect.left}px`;
-          tooltip.style.top  = `${e.clientY - rect.top - 10}px`;
-        });
-        el.addEventListener('mouseout', () => {
-          tooltip.style.display = 'none';
-        });
-      });
-  </script>
 
 </body>
 </html>

@@ -1,5 +1,5 @@
 import ApexCharts from "apexcharts";
-import MoodAnalysisModal from './components/modals/moodanalysis.js';
+import MoodAnalysisModal from "./components/modals/moodanalysis.js";
 import {
   GetNewsbyDateCategory,
   GetMarketPair,
@@ -10,7 +10,12 @@ import {
   exGetMultipleTechnicalIndicatorSignal,
   ex_getSymbolInfo,
 } from "./endpoints";
-import connect from './utils/helpers/connect';
+import connect from "./utils/helpers/connect";
+import {x_icon , tick_icon } from './assets/icons.js'
+
+
+
+
 // ----------------------------------------------------------------------------------------
 // Global Variables & URL Params
 // ----------------------------------------------------------------------------------------
@@ -29,7 +34,7 @@ const LOG_COIN_LIST = false;
 const LOG_ACTIVE_MARKETS = false;
 const LOG_SR_LEVELS = false;
 const LOG_TECHNICAL_DATA = false;
-const LOG_MOOD_DATA = false
+const LOG_MOOD_DATA = false;
 
 // ----------------------------------------------------------------------------------------
 
@@ -93,36 +98,38 @@ async function fetchNewsall(firstCandleTime) {
   try {
     if (LOG_NEWS) {
       console.log("[fetchNewsall] Starting news fetch for pair:", pair_name);
-      console.log("[fetchNewsall] Time range start:", new Date(firstCandleTime * 1000).toLocaleString());
+      console.log(
+        "[fetchNewsall] Time range start:",
+        new Date(firstCandleTime * 1000).toLocaleString()
+      );
     }
-    
+
     let params = {
       symbols: pair_name,
       startDate: firstCandleTime,
       category: "cryptocurrencies",
     };
     if (LOG_NEWS) console.log("[fetchNewsall] Request params:", params);
-    
-    let newsResponse = await axios.post(
-      GetNewsbyDateCategory,
-      params,
-      {
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json; charset=utf-8",
-          Authorization: "d4735e3a265e16ee2393953",
-        },
-      }
-    );
-    
+
+    let newsResponse = await axios.post(GetNewsbyDateCategory, params, {
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json; charset=utf-8",
+        Authorization: "d4735e3a265e16ee2393953",
+      },
+    });
+
     if (newsResponse.data && newsResponse.data.return) {
       fetchedNews = newsResponse.data.data;
       if (LOG_NEWS) {
-        console.log("[fetchNewsall] Successfully fetched news count:", fetchedNews?.length || 0);
+        console.log(
+          "[fetchNewsall] Successfully fetched news count:",
+          fetchedNews?.length || 0
+        );
         if (fetchedNews?.length > 0) {
           console.log("[fetchNewsall] First news item:", {
             title: fetchedNews[0].title,
-            date: new Date(fetchedNews[0].pubDate * 1000).toLocaleString()
+            date: new Date(fetchedNews[0].pubDate * 1000).toLocaleString(),
           });
         }
       }
@@ -132,8 +139,10 @@ async function fetchNewsall(firstCandleTime) {
   } catch (err) {
     if (LOG_NEWS) {
       console.error("[fetchNewsall] Error fetching news:", err);
-      if (pair_name) console.error("[fetchNewsall] Failed for pair:", pair_name);
-      if (firstCandleTime) console.error("[fetchNewsall] Failed for time:", firstCandleTime);
+      if (pair_name)
+        console.error("[fetchNewsall] Failed for pair:", pair_name);
+      if (firstCandleTime)
+        console.error("[fetchNewsall] Failed for time:", firstCandleTime);
     }
   }
 }
@@ -146,7 +155,8 @@ async function fetchCoinList() {
   const params = { marketpair_id: id };
 
   try {
-    if (LOG_COIN_LIST) console.log("[fetchCoinList] Fetching coin list for market ID:", id);
+    if (LOG_COIN_LIST)
+      console.log("[fetchCoinList] Fetching coin list for market ID:", id);
     const response = await axios.post(url, params, {
       headers: {
         Accept: "application/json",
@@ -155,7 +165,11 @@ async function fetchCoinList() {
     });
     const data = response.data.market_pair;
     if (data) {
-      if (LOG_COIN_LIST) console.log("[fetchCoinList] Successfully fetched data for pair:", data.pair.name);
+      if (LOG_COIN_LIST)
+        console.log(
+          "[fetchCoinList] Successfully fetched data for pair:",
+          data.pair.name
+        );
       pair_name = data.pair.name;
 
       if (first_time) {
@@ -167,12 +181,13 @@ async function fetchCoinList() {
 
         cryptoComponent.fetchData();
 
- 
         const container = document.getElementById("analysis-root");
-        const moodModal = new MoodAnalysisModal(pair_name, container , LOG_MOOD_DATA);
-        moodModal.start();      
-
-   
+        const moodModal = new MoodAnalysisModal(
+          pair_name,
+          container,
+          LOG_MOOD_DATA
+        );
+        moodModal.start();
       }
 
       first_time = false;
@@ -185,8 +200,7 @@ async function fetchCoinList() {
       document.getElementById("volume").textContent = parseFloat(
         data.volume
       ).toFixed(2);
-      document.getElementById("changePrice").textContent =
-        data.change_price;
+      document.getElementById("changePrice").textContent = data.change_price;
       document.getElementById("changeRate").textContent = data.change_rate;
       if (data.pair.src) {
         document.getElementById(
@@ -230,7 +244,8 @@ setInterval(fetchCoinList, time_interval_for_chart);
 // ----------------------------------------------------------------------------------------
 async function fetchActiveMarkets() {
   try {
-    if (LOG_ACTIVE_MARKETS) console.log("[fetchActiveMarkets] Fetching active markets");
+    if (LOG_ACTIVE_MARKETS)
+      console.log("[fetchActiveMarkets] Fetching active markets");
     const response = await axios.get(ListPairs, {
       headers: {
         Accept: "application/json",
@@ -239,10 +254,18 @@ async function fetchActiveMarkets() {
     });
     if (response.data.return) {
       activeMarkets = response.data.pairs;
-      if (LOG_ACTIVE_MARKETS) console.log("[fetchActiveMarkets] Successfully fetched markets count:", activeMarkets.length);
+      if (LOG_ACTIVE_MARKETS)
+        console.log(
+          "[fetchActiveMarkets] Successfully fetched markets count:",
+          activeMarkets.length
+        );
     }
   } catch (error) {
-    if (LOG_ACTIVE_MARKETS) console.error("[fetchActiveMarkets] Error fetching active markets:", error);
+    if (LOG_ACTIVE_MARKETS)
+      console.error(
+        "[fetchActiveMarkets] Error fetching active markets:",
+        error
+      );
   }
 }
 
@@ -276,7 +299,7 @@ async function fetchOHLCVData() {
   const since = getDate(limit, timeframe);
   let chart_type = document.getElementById("chart_type").checked;
   let url = chart_type ? exGetTrendWithOHLCV : exGetOHLCV;
-  
+
   if (chart_type) {
     document.getElementById("modal-wrapper").classList.remove("hidden");
   } else {
@@ -290,10 +313,10 @@ async function fetchOHLCVData() {
         timeframe,
         limit,
         since,
-        chart_type
+        chart_type,
       });
     }
-    
+
     const response = await axios.post(
       url,
       { marketpair_id, timeframe, since, limit },
@@ -307,7 +330,11 @@ async function fetchOHLCVData() {
 
     if (response.data.return) {
       let ohlcv = chart_type ? response.data.data : response.data.ohlcv;
-      if (LOG_OHLCV) console.log("[fetchOHLCVData] Successfully fetched OHLCV data points:", ohlcv.length);
+      if (LOG_OHLCV)
+        console.log(
+          "[fetchOHLCVData] Successfully fetched OHLCV data points:",
+          ohlcv.length
+        );
       const firstCandleTime = Math.floor(
         new Date(ohlcv[0].datetime).getTime() / 1000
       );
@@ -411,8 +438,12 @@ async function updateAnnotationsWrapper(data) {
     const ann = { yaxis: getAnnotations(data) };
     chart.updateOptions({ annotations: ann });
   } catch (err) {
-    console.error("[updateAnnotationsWrapper] Error updating annotations:", err);
-    if (data) console.error("[updateAnnotationsWrapper] Data length:", data.length);
+    console.error(
+      "[updateAnnotationsWrapper] Error updating annotations:",
+      err
+    );
+    if (data)
+      console.error("[updateAnnotationsWrapper] Data length:", data.length);
   }
 }
 
@@ -425,16 +456,16 @@ async function fetchAndUpdateSRLevels() {
     const timeframe = document.getElementById("timeframe").value;
     const limit = parseInt(document.getElementById("limit").value);
     const since = getDate(limit, timeframe);
-    
+
     if (LOG_SR_LEVELS) {
       console.log("[fetchAndUpdateSRLevels] Fetching SR levels:", {
         marketpair_id,
         timeframe,
         limit,
-        since
+        since,
       });
     }
-    
+
     const response = await axios.post(
       exGetIntelligentSupportResistanceLevels,
       { marketpair_id, timeframe, since, limit },
@@ -448,11 +479,14 @@ async function fetchAndUpdateSRLevels() {
     if (response.data.return) {
       const srData = response.data.sr_levels;
       if (LOG_SR_LEVELS) {
-        console.log("[fetchAndUpdateSRLevels] Successfully fetched SR levels:", {
-          support_levels: srData.support_levels?.length || 0,
-          resistance_levels: srData.resistance_levels?.length || 0,
-          pivot_points: srData.pivot_points ? 1 : 0
-        });
+        console.log(
+          "[fetchAndUpdateSRLevels] Successfully fetched SR levels:",
+          {
+            support_levels: srData.support_levels?.length || 0,
+            resistance_levels: srData.resistance_levels?.length || 0,
+            pivot_points: srData.pivot_points ? 1 : 0,
+          }
+        );
       }
       let annotations = [];
       if (srData.resistance_levels) {
@@ -499,9 +533,15 @@ async function fetchAndUpdateSRLevels() {
     }
   } catch (error) {
     if (LOG_SR_LEVELS) {
-      console.error("[fetchAndUpdateSRLevels] Error fetching SR levels:", error);
+      console.error(
+        "[fetchAndUpdateSRLevels] Error fetching SR levels:",
+        error
+      );
       console.error("[fetchAndUpdateSRLevels] Market ID:", currentMarketId);
-      console.error("[fetchAndUpdateSRLevels] Timeframe:", document.getElementById("timeframe").value);
+      console.error(
+        "[fetchAndUpdateSRLevels] Timeframe:",
+        document.getElementById("timeframe").value
+      );
     }
   }
 }
@@ -525,7 +565,7 @@ async function updateChart() {
     const data = await fetchOHLCVData();
     hideLoading();
     first_time_candles = false;
-    
+
     if (!data || !Array.isArray(data) || data.length === 0) {
       console.warn("[updateChart] No OHLCV data available");
       return;
@@ -630,7 +670,9 @@ async function updateChart() {
     } else {
       chart
         .updateSeries(series, true)
-        .catch((err) => console.error("[updateChart] Error in full series update:", err));
+        .catch((err) =>
+          console.error("[updateChart] Error in full series update:", err)
+        );
       currentCandleCount = candlestickData.length;
     }
 
@@ -648,7 +690,9 @@ async function updateChart() {
     } else {
       volumeChart
         .updateSeries([{ name: "Volume", type: "bar", data: volumeData }], true)
-        .catch((err) => console.error("[updateChart] Error updating volume chart:", err));
+        .catch((err) =>
+          console.error("[updateChart] Error updating volume chart:", err)
+        );
       currentVolumeCount = volumeData.length;
     }
 
@@ -686,23 +730,39 @@ async function updateChart() {
       <div class="flex items-center gap-6 text-xs">
         <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
           <span class="text-gray-500">Price</span>
-          <span class="font-medium text-blue-600">$${(signal?.close || 0).toFixed(2)}</span>
+          <span class="font-medium text-blue-600">$${(
+            signal?.close || 0
+          ).toFixed(2)}</span>
         </div>
         <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
           <span class="text-gray-500">24h</span>
-          <span class="font-medium ${(signal?.close || 0) > (signal?.open || 0) ? 'text-green-600' : 'text-red-600'}">
-            ${(signal?.close || 0) > (signal?.open || 0) ? '↑' : '↓'} ${Math.abs(((signal?.close || 0) - (signal?.open || 0)) / (signal?.open || 1) * 100).toFixed(2)}%
+          <span class="font-medium ${
+            (signal?.close || 0) > (signal?.open || 0)
+              ? "text-green-600"
+              : "text-red-600"
+          }">
+            ${
+              (signal?.close || 0) > (signal?.open || 0) ? "↑" : "↓"
+            } ${Math.abs(
+      (((signal?.close || 0) - (signal?.open || 0)) / (signal?.open || 1)) * 100
+    ).toFixed(2)}%
           </span>
         </div>
         <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
           <span class="text-gray-500">Vol</span>
-          <span class="font-medium text-gray-700">$${parseFloat(signal?.volume || 0).toLocaleString()}</span>
+          <span class="font-medium text-gray-700">$${parseFloat(
+            signal?.volume || 0
+          ).toLocaleString()}</span>
         </div>
       </div>
     `;
   } catch (err) {
     console.error("[updateChart] Error in updateChart function:", err);
-    if (currentChartData) console.error("[updateChart] Current chart data length:", currentChartData.length);
+    if (currentChartData)
+      console.error(
+        "[updateChart] Current chart data length:",
+        currentChartData.length
+      );
   }
 }
 
@@ -817,28 +877,28 @@ const chartOptions = {
     },
   },
   series: [],
-  xaxis: { 
+  xaxis: {
     type: "datetime",
     labels: {
-      formatter: function(value) {
+      formatter: function (value) {
         return new Date(value).toLocaleString(undefined, {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
         });
-      }
-    }
+      },
+    },
   },
-  yaxis: { 
-    tooltip: { enabled: true }, 
+  yaxis: {
+    tooltip: { enabled: true },
     opposite: true,
     labels: {
-      formatter: function(value) {
+      formatter: function (value) {
         return value.toFixed(2);
-      }
-    }
+      },
+    },
   },
   plotOptions: {
     candlestick: {
@@ -977,7 +1037,7 @@ document.addEventListener("DOMContentLoaded", function () {
       newsModeBtn.addEventListener("click", async function () {
         console.log("[newsMode] Toggling news mode. Current state:", !newsMode);
         newsMode = !newsMode;
-        
+
         // Update button appearance
         this.classList.toggle("bg-blue-50", newsMode);
         this.classList.toggle("border-blue-500", newsMode);
@@ -1041,7 +1101,7 @@ document.addEventListener("DOMContentLoaded", function () {
                   : [];
                 console.log("[newsMode] Found related news for candle:", {
                   candleTime: candleTime.toLocaleString(),
-                  newsCount: relatedNews.length
+                  newsCount: relatedNews.length,
                 });
                 return relatedNews.length > 0
                   ? `<div class="p-2"><strong>${relatedNews[0].title}</strong></div>`
@@ -1051,7 +1111,9 @@ document.addEventListener("DOMContentLoaded", function () {
             toolbar: { autoSelected: "pan" },
           });
         } else {
-          console.log("[newsMode] News mode disabled, restoring default tooltip");
+          console.log(
+            "[newsMode] News mode disabled, restoring default tooltip"
+          );
           chart.updateOptions({
             tooltip: {
               custom: function ({ series, seriesIndex, dataPointIndex, w }) {
@@ -1066,7 +1128,9 @@ document.addEventListener("DOMContentLoaded", function () {
                           <div>High: ${parseFloat(item.high).toFixed(2)}</div>
                           <div>Low: ${parseFloat(item.low).toFixed(2)}</div>
                           <div>Close: ${parseFloat(item.close).toFixed(2)}</div>
-                          <div>Volume: ${parseFloat(item.volume).toFixed(2)}</div>
+                          <div>Volume: ${parseFloat(item.volume).toFixed(
+                            2
+                          )}</div>
                         </div>`;
               },
               shared: true,
@@ -1083,7 +1147,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (srModeBtn) {
       srModeBtn.addEventListener("click", function () {
         srMode = !srMode;
-        
+
         // Update button appearance
         this.classList.toggle("bg-blue-50", srMode);
         this.classList.toggle("border-blue-500", srMode);
@@ -1172,7 +1236,12 @@ function getDate(limit, timeframe) {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   } catch (error) {
     console.error("[getDate] Error generating date:", error);
-    console.error("[getDate] Input parameters - limit:", limit, "timeframe:", timeframe);
+    console.error(
+      "[getDate] Input parameters - limit:",
+      limit,
+      "timeframe:",
+      timeframe
+    );
     throw error;
   }
 }
@@ -1279,7 +1348,8 @@ function showNewsModal(relatedNews) {
     }
   } catch (error) {
     console.error("[showNewsModal] Error displaying news modal:", error);
-    if (relatedNews) console.error("[showNewsModal] Related news count:", relatedNews.length);
+    if (relatedNews)
+      console.error("[showNewsModal] Related news count:", relatedNews.length);
   }
 }
 
@@ -1416,7 +1486,8 @@ const TechnicalAnalysisComponent = (function () {
       limit: parseInt(document.getElementById("limit").value),
     };
     try {
-      if (LOG_TECHNICAL_DATA) console.log("[fetchTechnicalData] Fetching technical data:", payload);
+      if (LOG_TECHNICAL_DATA)
+        console.log("[fetchTechnicalData] Fetching technical data:", payload);
       const response = await axios.post(url, payload, {
         headers: {
           Accept: "application/json",
@@ -1424,10 +1495,15 @@ const TechnicalAnalysisComponent = (function () {
           Authorization: token,
         },
       });
-      if (LOG_TECHNICAL_DATA) console.log("[fetchTechnicalData] Successfully fetched technical data");
+      if (LOG_TECHNICAL_DATA)
+        console.log("[fetchTechnicalData] Successfully fetched technical data");
       return response.data;
     } catch (error) {
-      if (LOG_TECHNICAL_DATA) console.error("[fetchTechnicalData] Error fetching technical data:", error);
+      if (LOG_TECHNICAL_DATA)
+        console.error(
+          "[fetchTechnicalData] Error fetching technical data:",
+          error
+        );
       return null;
     }
   }
@@ -1479,11 +1555,12 @@ const TechnicalAnalysisComponent = (function () {
               ? "bg-green-100"
               : "bg-red-100"
           }">
-            ${rec.action === "BUY" || rec.action === "STRONG_BUY" 
-              ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            ${
+              rec.action === "BUY" || rec.action === "STRONG_BUY"
+                ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                 </svg>`
-              : `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                : `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
                 </svg>`
             }
@@ -1511,7 +1588,9 @@ const TechnicalAnalysisComponent = (function () {
           </span>
           <div>
             <p class="text-xs text-gray-600">Risk/Reward Ratio</p>
-            <p class="text-base font-bold text-blue-600">${rec.risk_reward_ratio.toFixed(2)}</p>
+            <p class="text-base font-bold text-blue-600">${rec.risk_reward_ratio.toFixed(
+              2
+            )}</p>
           </div>
         </div>
       </div>
@@ -1531,7 +1610,9 @@ const TechnicalAnalysisComponent = (function () {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           Take Profit 1</p>
-        <p class="font-semibold text-green-600">${rec.take_profit_1.toFixed(2)}</p>
+        <p class="font-semibold text-green-600">${rec.take_profit_1.toFixed(
+          2
+        )}</p>
       </div>
       <div class="bg-white p-4 rounded-lg border border-green-200">
         <p class="text-xs text-gray-600 mb-1">
@@ -1539,7 +1620,9 @@ const TechnicalAnalysisComponent = (function () {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           Take Profit 2</p>
-        <p class="font-semibold text-green-600">${rec.take_profit_2.toFixed(2)}</p>
+        <p class="font-semibold text-green-600">${rec.take_profit_2.toFixed(
+          2
+        )}</p>
       </div>
     </div>`
           : ""
@@ -1623,13 +1706,19 @@ const TechnicalAnalysisComponent = (function () {
                    data-type="support"
                    data-index="${index}">
                 <div class="flex items-center gap-2">
-                  <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
+                  <span class="font-medium">$${parseFloat(level.price).toFixed(
+                    2
+                  )}</span>
                   <span class="text-xs text-green-500 ml-2">
-                    ${parseFloat(level.distance).toFixed(2)}% ${getTrendIcon("BULLISH")}
+                    ${parseFloat(level.distance).toFixed(2)}% ${getTrendIcon(
+                "BULLISH"
+              )}
                   </span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <div class="text-xs text-green-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
+                  <div class="text-xs text-green-700">Strength: ${parseFloat(
+                    level.strength
+                  ).toFixed(2)}</div>
                   <div class="flex items-center gap-1">
                     <span class="text-xs text-green-600 font-medium">Click to select</span>
                     <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1659,13 +1748,19 @@ const TechnicalAnalysisComponent = (function () {
                    data-type="resistance"
                    data-index="${index}">
                 <div class="flex items-center gap-2">
-                  <span class="font-medium">$${parseFloat(level.price).toFixed(2)}</span>
+                  <span class="font-medium">$${parseFloat(level.price).toFixed(
+                    2
+                  )}</span>
                   <span class="text-xs text-red-500 ml-2">
-                    ${Math.abs(parseFloat(level.distance)).toFixed(2)}% ${getTrendIcon("BEARISH")}
+                    ${Math.abs(parseFloat(level.distance)).toFixed(
+                      2
+                    )}% ${getTrendIcon("BEARISH")}
                   </span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <div class="text-xs text-red-700">Strength: ${parseFloat(level.strength).toFixed(2)}</div>
+                  <div class="text-xs text-red-700">Strength: ${parseFloat(
+                    level.strength
+                  ).toFixed(2)}</div>
                   <div class="flex items-center gap-1">
                     <span class="text-xs text-red-600 font-medium">Click to select</span>
                     <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1683,73 +1778,88 @@ const TechnicalAnalysisComponent = (function () {
     resistanceLevelsContainer.innerHTML = resistanceHTML;
 
     // Add event listeners for level selection
-    document.querySelectorAll('.support-level, .resistance-level').forEach(element => {
-        element.addEventListener('click', function() {
-            // Remove selection from other elements of the same type
-            const type = this.dataset.type;
-            document.querySelectorAll(`.${type}-level`).forEach(el => {
-                el.classList.remove('ring-2', 'ring-blue-500');
-            });
-            
-            // Add selection to clicked element
-            this.classList.add('ring-2', 'ring-blue-500');
-            
-            // Get selected levels
-            const selectedSupport = document.querySelector('.support-level.ring-2');
-            const selectedResistance = document.querySelector('.resistance-level.ring-2');
-           
-            // If both types are selected, log them
-            if (selectedSupport || selectedResistance) {
+    document
+      .querySelectorAll(".support-level, .resistance-level")
+      .forEach((element) => {
+        element.addEventListener("click", function () {
+          // Remove selection from other elements of the same type
+          const type = this.dataset.type;
+          document.querySelectorAll(`.${type}-level`).forEach((el) => {
+            el.classList.remove("ring-2", "ring-blue-500");
+          });
 
-              let shortProfit = 0;
-              let longProfit = 0;
-              let supportData = null;
-              let resistanceData = null;
-              if (selectedSupport) {
-               supportData = {
-                  price: selectedSupport.dataset.price,
-                  strength: selectedSupport.dataset.strength,
-                  type: 'support',
-                  index: selectedSupport.dataset.index
-              }; } else {
-                supportData = null;
-              }
-              if (selectedResistance) {
-               resistanceData = {
-                  price: selectedResistance.dataset.price,
-                  strength: selectedResistance.dataset.strength,
-                  type: 'resistance',
-                  index: selectedResistance.dataset.index
-              }; } else {
-                resistanceData = null;
-              }
-      
-              // Get current wallet parameters
-              const riskMode = document.getElementById("riskMode").value;
-              const riskValue = parseFloat(document.getElementById("riskValue").value) || 0;
-              const leverage = parseFloat(document.getElementById("leverage").value) || 1;
-              const walletBalance = 1000; 
-              
-              // Calculate risk amount
-              const riskAmount = riskMode === "percentage" ? (riskValue * walletBalance) / 100 : riskValue;
-              
-              // Calculate position size
-              const positionSize = (riskAmount / signal.price) * leverage;
-              
-              // Calculate potential profits
-              if (resistanceData) {
-               longProfit = positionSize * (parseFloat(resistanceData.price) - signal.price);
-              } else {
-                longProfit = 0;
-              }
-              if (supportData) {
-               shortProfit = positionSize * (signal.price - parseFloat(supportData.price));
-              } else {
-                shortProfit = 0;
-              }
-              
-              // Create profit calculation component
-              const profitComponent = `
+          // Add selection to clicked element
+          this.classList.add("ring-2", "ring-blue-500");
+
+          // Get selected levels
+          const selectedSupport = document.querySelector(
+            ".support-level.ring-2"
+          );
+          const selectedResistance = document.querySelector(
+            ".resistance-level.ring-2"
+          );
+
+          // If both types are selected, log them
+          if (selectedSupport || selectedResistance) {
+            let shortProfit = 0;
+            let longProfit = 0;
+            let supportData = null;
+            let resistanceData = null;
+            if (selectedSupport) {
+              supportData = {
+                price: selectedSupport.dataset.price,
+                strength: selectedSupport.dataset.strength,
+                type: "support",
+                index: selectedSupport.dataset.index,
+              };
+            } else {
+              supportData = null;
+            }
+            if (selectedResistance) {
+              resistanceData = {
+                price: selectedResistance.dataset.price,
+                strength: selectedResistance.dataset.strength,
+                type: "resistance",
+                index: selectedResistance.dataset.index,
+              };
+            } else {
+              resistanceData = null;
+            }
+
+            // Get current wallet parameters
+            const riskMode = document.getElementById("riskMode").value;
+            const riskValue =
+              parseFloat(document.getElementById("riskValue").value) || 0;
+            const leverage =
+              parseFloat(document.getElementById("leverage").value) || 1;
+            const walletBalance = 1000;
+
+            // Calculate risk amount
+            const riskAmount =
+              riskMode === "percentage"
+                ? (riskValue * walletBalance) / 100
+                : riskValue;
+
+            // Calculate position size
+            const positionSize = (riskAmount / signal.price) * leverage;
+
+            // Calculate potential profits
+            if (resistanceData) {
+              longProfit =
+                positionSize *
+                (parseFloat(resistanceData.price) - signal.price);
+            } else {
+              longProfit = 0;
+            }
+            if (supportData) {
+              shortProfit =
+                positionSize * (signal.price - parseFloat(supportData.price));
+            } else {
+              shortProfit = 0;
+            }
+
+            // Create profit calculation component
+            const profitComponent = `
                  
                       <h4 class="text-base font-semibold mb-3 flex items-center gap-2 text-gray-700">
                           <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1759,7 +1869,9 @@ const TechnicalAnalysisComponent = (function () {
                       </h4>
                       
                       <div class="flex justify-between items-center gap-4">
-                      ${resistanceData ? `
+                      ${
+                        resistanceData
+                          ? `
                           <!-- Long Position -->
                           <div class="bg-green-50 p-3 rounded-lg border border-green-200 w-full ">
                               <div class="flex items-center gap-2 mb-2">
@@ -1770,13 +1882,23 @@ const TechnicalAnalysisComponent = (function () {
                               </div>
                               <div class="space-y-1 text-xs">
                                   <p>Entry: $${signal.price.toFixed(2)}</p>
-                                  <p>Target: $${parseFloat(resistanceData.price).toFixed(2)}</p>
-                                  <p>Position Size: ${positionSize.toFixed(6)}</p>
-                                  <p class="font-semibold text-green-600">Potential Profit: $${longProfit.toFixed(2)}</p>
+                                  <p>Target: $${parseFloat(
+                                    resistanceData.price
+                                  ).toFixed(2)}</p>
+                                  <p>Position Size: ${positionSize.toFixed(
+                                    6
+                                  )}</p>
+                                  <p class="font-semibold text-green-600">Potential Profit: $${longProfit.toFixed(
+                                    2
+                                  )}</p>
                               </div>
                           </div>
-                          ` : ''}
-                          ${supportData ? `
+                          `
+                          : ""
+                      }
+                          ${
+                            supportData
+                              ? `
                           <!-- Short Position -->
                           <div class="bg-red-50 p-3 rounded-lg border border-red-200 w-full ">
                               <div class="flex items-center gap-2 mb-2">
@@ -1787,26 +1909,35 @@ const TechnicalAnalysisComponent = (function () {
                               </div>
                               <div class="space-y-1 text-xs">
                                   <p>Entry: $${signal.price.toFixed(2)}</p>
-                                  <p>Target: $${parseFloat(supportData.price).toFixed(2)}</p>
-                                  <p>Position Size: ${positionSize.toFixed(6)}</p>
-                                  <p class="font-semibold text-red-600">Potential Profit: $${shortProfit.toFixed(2)}</p>
+                                  <p>Target: $${parseFloat(
+                                    supportData.price
+                                  ).toFixed(2)}</p>
+                                  <p>Position Size: ${positionSize.toFixed(
+                                    6
+                                  )}</p>
+                                  <p class="font-semibold text-red-600">Potential Profit: $${shortProfit.toFixed(
+                                    2
+                                  )}</p>
                               </div>
                           </div>
-                          ` : ''}
+                          `
+                              : ""
+                          }
                       </div>
                       
                  
               `;
-              
-              document.getElementById("wallet_profit_analysis").innerHTML = profitComponent;
-              
-              console.log('Selected Levels:', {
-                  support: supportData,
-                  resistance: resistanceData
-              });
+
+            document.getElementById("wallet_profit_analysis").innerHTML =
+              profitComponent;
+
+            console.log("Selected Levels:", {
+              support: supportData,
+              resistance: resistanceData,
+            });
           }
         });
-    });
+      });
 
     // Compute strongest and weakest support & resistance levels.
     // (For BUY trades: optimal = strongest resistance (TP) and strongest support (SL),
@@ -1833,17 +1964,29 @@ const TechnicalAnalysisComponent = (function () {
       <div class="flex items-center gap-6 text-xs">
         <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
           <span class="text-gray-500">Price</span>
-          <span class="font-medium text-blue-600">$${(signal?.close || 0).toFixed(2)}</span>
+          <span class="font-medium text-blue-600">$${(
+            signal?.close || 0
+          ).toFixed(2)}</span>
         </div>
         <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
           <span class="text-gray-500">24h</span>
-          <span class="font-medium ${(signal?.close || 0) > (signal?.open || 0) ? 'text-green-600' : 'text-red-600'}">
-            ${(signal?.close || 0) > (signal?.open || 0) ? '↑' : '↓'} ${Math.abs(((signal?.close || 0) - (signal?.open || 0)) / (signal?.open || 1) * 100).toFixed(2)}%
+          <span class="font-medium ${
+            (signal?.close || 0) > (signal?.open || 0)
+              ? "text-green-600"
+              : "text-red-600"
+          }">
+            ${
+              (signal?.close || 0) > (signal?.open || 0) ? "↑" : "↓"
+            } ${Math.abs(
+      (((signal?.close || 0) - (signal?.open || 0)) / (signal?.open || 1)) * 100
+    ).toFixed(2)}%
           </span>
         </div>
         <div class="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded border border-gray-200">
           <span class="text-gray-500">Vol</span>
-          <span class="font-medium text-gray-700">$${parseFloat(signal?.volume || 0).toLocaleString()}</span>
+          <span class="font-medium text-gray-700">$${parseFloat(
+            signal?.volume || 0
+          ).toLocaleString()}</span>
         </div>
       </div>
     `;
@@ -2223,8 +2366,7 @@ const TechnicalAnalysisComponent = (function () {
       }
 
       // Combine recommendations with AI recommends and update the container.
-      document.getElementById("recomendations").innerHTML =
-         aiRecommendsHTML;
+      document.getElementById("recomendations").innerHTML = aiRecommendsHTML;
     } // end updateTradeRecs
 
     // Initial call to update trade recommendations based on default risk management parameters.
@@ -2528,9 +2670,9 @@ class CryptoDataComponent {
 
   createDampChart(elementId) {
     const { daily_timeseries } = this.data;
-    const timestamps = daily_timeseries.timestamp.map(t => t * 1000);
+    const timestamps = daily_timeseries.timestamp.map((t) => t * 1000);
     const now = Date.now();
-    
+
     // Create time range selector
     const chartContainer = document.querySelector(elementId);
     const selectorHTML = `
@@ -2543,7 +2685,7 @@ class CryptoDataComponent {
         </select>
       </div>
     `;
-    chartContainer.insertAdjacentHTML('beforebegin', selectorHTML);
+    chartContainer.insertAdjacentHTML("beforebegin", selectorHTML);
 
     // Function to filter data based on time range
     const filterDataByTimeRange = (range) => {
@@ -2553,7 +2695,7 @@ class CryptoDataComponent {
         damp_10: [],
         damp_15: [],
         damp_20: [],
-        damp_30: []
+        damp_30: [],
       };
 
       timestamps.forEach((timestamp, index) => {
@@ -2571,7 +2713,7 @@ class CryptoDataComponent {
     };
 
     // Initial data filtering for 3 months
-    const initialRange = now - (90 * 24 * 60 * 60 * 1000);
+    const initialRange = now - 90 * 24 * 60 * 60 * 1000;
     const initialData = filterDataByTimeRange(initialRange);
 
     const chart = new ApexCharts(chartContainer, {
@@ -2580,80 +2722,82 @@ class CryptoDataComponent {
         height: "100%",
         zoom: { enabled: true },
         toolbar: { show: true, tools: { download: false } },
-        animations: { 
+        animations: {
           enabled: true,
-          easing: 'easeinout',
+          easing: "easeinout",
           speed: 800,
           animateGradually: {
             enabled: true,
-            delay: 150
+            delay: 150,
           },
           dynamicAnimation: {
             enabled: true,
-            speed: 350
-          }
-        }
+            speed: 350,
+          },
+        },
       },
       series: [
         { name: "DAMP 5", data: initialData.data.damp_5 },
         { name: "DAMP 10", data: initialData.data.damp_10 },
         { name: "DAMP 15", data: initialData.data.damp_15 },
         { name: "DAMP 20", data: initialData.data.damp_20 },
-        { name: "DAMP 30", data: initialData.data.damp_30 }
+        { name: "DAMP 30", data: initialData.data.damp_30 },
       ],
       xaxis: {
         type: "datetime",
-        categories: initialData.timestamps
+        categories: initialData.timestamps,
       },
       stroke: { width: 1.5, curve: "smooth" },
       colors: ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#64748B"],
       tooltip: { theme: "dark", x: { format: "dd MMM yyyy HH:mm" } },
       legend: {
-        position: 'bottom',
-        fontSize: '10px',
+        position: "bottom",
+        fontSize: "10px",
         itemMargin: {
           horizontal: 5,
-          vertical: 2
-        }
-      }
+          vertical: 2,
+        },
+      },
     });
 
     // Add event listener for time range selection
-    document.getElementById('dampTimeRange').addEventListener('change', function(e) {
-      const value = e.target.value;
-      let range;
-      
-      switch(value) {
-        case '3m':
-          range = now - (90 * 24 * 60 * 60 * 1000);
-          break;
-        case '1m':
-          range = now - (30 * 24 * 60 * 60 * 1000);
-          break;
-        case '1y':
-          range = now - (365 * 24 * 60 * 60 * 1000);
-          break;
-        case 'all':
-          range = undefined;
-          break;
-      }
-      
-      const filteredData = filterDataByTimeRange(range);
-      
-      chart.updateOptions({
-        xaxis: {
-          categories: filteredData.timestamps
-        }
-      });
+    document
+      .getElementById("dampTimeRange")
+      .addEventListener("change", function (e) {
+        const value = e.target.value;
+        let range;
 
-      chart.updateSeries([
-        { data: filteredData.data.damp_5 },
-        { data: filteredData.data.damp_10 },
-        { data: filteredData.data.damp_15 },
-        { data: filteredData.data.damp_20 },
-        { data: filteredData.data.damp_30 }
-      ]);
-    });
+        switch (value) {
+          case "3m":
+            range = now - 90 * 24 * 60 * 60 * 1000;
+            break;
+          case "1m":
+            range = now - 30 * 24 * 60 * 60 * 1000;
+            break;
+          case "1y":
+            range = now - 365 * 24 * 60 * 60 * 1000;
+            break;
+          case "all":
+            range = undefined;
+            break;
+        }
+
+        const filteredData = filterDataByTimeRange(range);
+
+        chart.updateOptions({
+          xaxis: {
+            categories: filteredData.timestamps,
+          },
+        });
+
+        chart.updateSeries([
+          { data: filteredData.data.damp_5 },
+          { data: filteredData.data.damp_10 },
+          { data: filteredData.data.damp_15 },
+          { data: filteredData.data.damp_20 },
+          { data: filteredData.data.damp_30 },
+        ]);
+      });
 
     return chart;
   }
@@ -2715,13 +2859,13 @@ class CryptoDataComponent {
           ]
         : [],
       labels: ["Positive", "Negative", "Neutral"],
-      legend: { 
+      legend: {
         position: "bottom",
-        fontSize: '10px',
+        fontSize: "10px",
         itemMargin: {
           horizontal: 5,
-          vertical: 2
-        }
+          vertical: 2,
+        },
       },
       dataLabels: { enabled: false },
       plotOptions: {
@@ -2729,21 +2873,21 @@ class CryptoDataComponent {
           donut: {
             labels: {
               show: true,
-              name: { 
+              name: {
                 show: true,
-                fontSize: '10px',
-                offsetY: -5
+                fontSize: "10px",
+                offsetY: -5,
               },
               value: {
                 show: true,
-                fontSize: '12px',
+                fontSize: "12px",
                 formatter: (val) => Math.round(val) + "%",
-                offsetY: 5
+                offsetY: 5,
               },
               total: {
                 show: true,
                 label: title,
-                fontSize: '10px',
+                fontSize: "10px",
                 formatter: () => "100%",
               },
             },
@@ -2776,12 +2920,20 @@ class CryptoDataComponent {
                 na.updatedAt * 1000
               ).toLocaleDateString()}</p>
             </div>
-            <span class="px-2 py-1 rounded-full text-xs font-medium ${
-              na.decision === "خرید"
+            <span class="px-2 py-1 rounded-full text-xs font-medium flex gap-2${
+              na.decision === "Buy"
                 ? "bg-green-100 text-green-700"
                 : "bg-red-100 text-red-700"
             }">
-              ${na.decision} ${na.decision === "خرید" ? "↗" : "↘"}
+              ${na.decision} ${
+        na.decision === "Buy"
+          ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                  </svg>`
+          : `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
+                                  </svg>`
+      }
             </span>
           </div>
 
@@ -2840,7 +2992,7 @@ class CryptoDataComponent {
                 <ul class="mt-1.5 pl-4 space-y-1.5 text-xs text-gray-600">
                   ${na.news_titles
                     .map(
-                      (item , index) => `
+                      (item, index) => `
                     <li class="hover:text-blue-400 relative before:absolute before:-left-4 before:top-2 before:w-1.5 before:h-1.5 before:bg-gray-300 before:rounded-full">
                       <a href='${na.news_links[index]}'>${item}</a>
                     </li>
@@ -2982,39 +3134,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Add this function at the end of the file, before the last closing brace
 function handleLevelSelection(element) {
-    // Remove selection from other elements of the same type
-    const type = element.dataset.type;
-    document.querySelectorAll(`.${type}-level`).forEach(el => {
-        el.classList.remove('ring-2', 'ring-blue-500');
-    });
-    
-    // Add selection to clicked element
-    element.classList.add('ring-2', 'ring-blue-500');
-    
-    // Get selected levels
-    const selectedSupport = document.querySelector('.support-level.ring-2');
-    const selectedResistance = document.querySelector('.resistance-level.ring-2');
-    
-    // If both types are selected, log them
-    if (selectedSupport && selectedResistance) {
-        const supportData = {
-            price: selectedSupport.dataset.price,
-            strength: selectedSupport.dataset.strength,
-            type: 'support',
-            index: selectedSupport.dataset.index
-        };
-        
-        const resistanceData = {
-            price: selectedResistance.dataset.price,
-            strength: selectedResistance.dataset.strength,
-            type: 'resistance',
-            index: selectedResistance.dataset.index
-        };
-        
-        console.log('Selected Levels:', {
-            support: supportData,
-            resistance: resistanceData
-        });
-    }
-}
+  // Remove selection from other elements of the same type
+  const type = element.dataset.type;
+  document.querySelectorAll(`.${type}-level`).forEach((el) => {
+    el.classList.remove("ring-2", "ring-blue-500");
+  });
 
+  // Add selection to clicked element
+  element.classList.add("ring-2", "ring-blue-500");
+
+  // Get selected levels
+  const selectedSupport = document.querySelector(".support-level.ring-2");
+  const selectedResistance = document.querySelector(".resistance-level.ring-2");
+
+  // If both types are selected, log them
+  if (selectedSupport && selectedResistance) {
+    const supportData = {
+      price: selectedSupport.dataset.price,
+      strength: selectedSupport.dataset.strength,
+      type: "support",
+      index: selectedSupport.dataset.index,
+    };
+
+    const resistanceData = {
+      price: selectedResistance.dataset.price,
+      strength: selectedResistance.dataset.strength,
+      type: "resistance",
+      index: selectedResistance.dataset.index,
+    };
+
+    console.log("Selected Levels:", {
+      support: supportData,
+      resistance: resistanceData,
+    });
+  }
+}
