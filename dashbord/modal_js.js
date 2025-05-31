@@ -186,7 +186,7 @@ class SmartCoinAnalysCard {
 
       <div>
         <label class="block mb-1 font-medium text-gray-700">Related News:</label>
-        <div class="news-container p-2 rounded-md bg-gray-100" dir="ltr">
+        <div class="news-container p-2 rounded-md bg-gray-100 overflow-auto max-h-64" dir="ltr">
           <div id="${this.prefixId}_newsList" class="space-y-2"></div>
         </div>
         <button id="${this.prefixId}_showMoreNews" class="hidden w-full text-sm text-blue-600 hover:underline mt-2">Show More</button>
