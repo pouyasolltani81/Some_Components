@@ -2642,7 +2642,9 @@ class CryptoDataComponent {
     try {
       const response = await axios.post(
         ex_getSymbolInfo,
-        { name: this.coinPair },
+        { name: this.coinPair,
+          language: "en"
+         },
         {
           headers: {
             Accept: "application/json",
@@ -2651,6 +2653,8 @@ class CryptoDataComponent {
           },
         }
       );
+      console.log(response);
+      
       this.data = response.data.data[0];
       this.render();
     } catch (error) {

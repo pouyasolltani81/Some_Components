@@ -130,8 +130,8 @@ class SmartCoinAnalysCard {
       <div>
         <label class="block mb-1 text-sm font-medium text-gray-700">Use Indicators:</label>
         <select id="${this.prefixId}_useIndicator" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          <option value="true">Yes</option>
-          <option value="false" selected>No</option>
+          <option value="true" selected>Yes</option>
+          <option value="false" >No</option>
         </select>
       </div>
 
