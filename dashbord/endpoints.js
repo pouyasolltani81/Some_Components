@@ -5,7 +5,7 @@ const exchange = "https://exchanges.imoonex.ir/"
 const aimoonhub = "https://news.imoonex.ir/"
 
 
-const exchangetoken = 'b7c2ee9cb6d56750bf0ca5bdfd8b19d0'
+const exchangetoken = '23b30428c4102a9280abbbd75762cf01'
 const aimoonhubtoken = '96fd30916bb6fafe293b182a0f400df8'
 
 

@@ -6,7 +6,7 @@ import { coinAnalyze, getLLMResponse, ListPairs } from './endpoints'
 // ===========================================================================
 async function fetchCoinList() {
   const url = ListPairs;
-  const token = "b7c2ee9cb6d56750bf0ca5bdfd8b19d0";
+  const token = "23b30428c4102a9280abbbd75762cf01";
   try {
     const response = await axios.get(url, {
       headers: {
@@ -275,7 +275,7 @@ class SmartCoinAnalysCard {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json; charset=utf-8",
-          Authorization: 'e19ad04e557b1cc1fee6b60b4d421fef',
+          Authorization: '96fd30916bb6fafe293b182a0f400df8',
         },
       });
 
@@ -301,7 +301,7 @@ class SmartCoinAnalysCard {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json; charset=utf-8",
-            Authorization: 'e19ad04e557b1cc1fee6b60b4d421fef',
+            Authorization: '96fd30916bb6fafe293b182a0f400df8',
           },
 
         });
