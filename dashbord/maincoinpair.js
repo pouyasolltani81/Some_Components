@@ -174,7 +174,7 @@ async function fetchCoinList() {
 
       if (first_time) {
         cryptoComponent = new CryptoDataComponent(
-          "96fd30916bb6fafe293b182a0f400df8",
+          "e19ad04e557b1cc1fee6b60b4d421fef",
           pair_name,
           document.getElementById("news_statistics")
         );
