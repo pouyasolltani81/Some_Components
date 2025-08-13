@@ -1,29 +1,394 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Rounded-Edge 3-Slice Gauge (With Hover Popup)</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.css" rel="stylesheet">
-
- 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#0f172a',
+                        card: '#1e293b',
+                        positive: '#10b981',
+                        negative: '#ef4444',
+                        signal: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
+<body class="bg-gradient-to-br from-gray-900 to-dark min-h-screen text-gray-100">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-indigo-600 bg-clip-text text-transparent">
+                <i class="fas fa-coins mr-3"></i>Crypto Dashboard
+            </h1>
+            <p class="text-gray-400 max-w-2xl mx-auto">
+                Track cryptocurrency prices, market changes, and AI signals to make informed trading decisions
+            </p>
+        </header>
 
-  <div class="h-96 w-80 bg-blue-800">wefwefw</div>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="bg-card rounded-xl p-6 shadow-xl border border-gray-700">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center mr-3">
+                        <i class="fas fa-coins text-blue-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold">Total Coins</h3>
+                </div>
+                <p class="text-3xl font-bold text-blue-400">41</p>
+            </div>
+            
+            <div class="bg-card rounded-xl p-6 shadow-xl border border-gray-700">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 rounded-full bg-indigo-900 flex items-center justify-center mr-3">
+                        <i class="fas fa-chart-line text-indigo-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold">Market Cap</h3>
+                </div>
+                <p class="text-3xl font-bold text-indigo-400">$2.4T</p>
+            </div>
+            
+            <div class="bg-card rounded-xl p-6 shadow-xl border border-gray-700">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 rounded-full bg-emerald-900 flex items-center justify-center mr-3">
+                        <i class="fas fa-robot text-emerald-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold">AI Signals</h3>
+                </div>
+                <p class="text-3xl font-bold text-emerald-400">24/7</p>
+            </div>
+        </div>
 
-  <div >
-    <svg  class="text-blue-600 p-[2rem] rounded-full border-blue border-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      
-      <g id="Iconly/Curved/Light/Close Square">
-      <g id="Close Square">
+        <!-- Global Search -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div class="relative w-full">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <i class="fas fa-search text-gray-500"></i>
+                </div>
+                <input 
+                    type="text" 
+                    id="globalSearch" 
+                    class="w-full pl-10 pr-4 py-3 bg-gray-800 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+                    placeholder="Search all cryptocurrencies..."
+                >
+            </div>
+            
+            <div class="flex gap-3 w-full md:w-auto">
+                <button class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center gap-2">
+                    <i class="fas fa-exchange-alt"></i> Trade Selected
+                </button>
+            </div>
+        </div>
+
+        <!-- Crypto Table -->
+        <div class="bg-card rounded-xl shadow-xl overflow-hidden border border-gray-700 mb-10">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-800 border-b border-gray-700">
+                        <tr>
+                            <th class="py-4 px-4 text-left font-semibold text-gray-300">
+                                <div class="flex items-center gap-2">
+                                  <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                            </th>
+                            <th class="py-4 px-4 text-left font-semibold text-gray-300 cursor-pointer hover:text-white sortable" data-sort="symbol">
+                                <div class="flex items-center gap-1">
+                                    <span>Symbol</span>
+                                    <i class="fas fa-sort text-gray-500"></i>
+                                </div>
+                            </th>
+                            <th class="py-4 px-4 text-left font-semibold text-gray-300 cursor-pointer hover:text-white sortable" data-sort="change">
+                                <div class="flex items-center gap-1">
+                                    <span>24h Change</span>
+                                    <i class="fas fa-sort text-gray-500"></i>
+                                </div>
+                            </th>
+                            <th class="py-4 px-4 text-left font-semibold text-gray-300 cursor-pointer hover:text-white sortable" data-sort="price">
+                                <div class="flex items-center gap-1">
+                                    <span>Current Price</span>
+                                    <i class="fas fa-sort text-gray-500"></i>
+                                </div>
+                            </th>
+                            <th class="py-4 px-4 text-left font-semibold text-gray-300 cursor-pointer hover:text-white sortable" data-sort="signal">
+                                <div class="flex items-center gap-1">
+                                    <span>AI Signal</span>
+                                    <i class="fas fa-sort text-gray-500"></i>
+                                </div>
+                            </th>
+                            <th class="py-4 px-4 text-left font-semibold text-gray-300">
+                                Dashboard
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="cryptoTableBody">
+                        <!-- Table rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center py-6 text-gray-500 border-t border-gray-800">
+            <p>Crypto Dashboard &copy; 2025 - Real-time cryptocurrency data with AI signals</p>
+        </footer>
+    </div>
+
+    <script>
+        // Sample cryptocurrency data
+        const cryptoData = [
+            {
+                id: 1,
+                name: "BTC-USDT",
+                symbol: "BTC",
+                fullName: "Bitcoin",
+                change: 0.86,
+                price: 105794.20,
+                signal: 26.97,
+                logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/1.png"
+            },
+            {
+                id: 2,
+                name: "ETH-USDT",
+                symbol: "ETH",
+                fullName: "Ethereum",
+                change: 1.08,
+                price: 2553.69,
+                signal: 23.16,
+                logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png"
+            },
+            {
+                id: 3,
+                name: "PI-USDT",
+                symbol: "PI",
+                fullName: "Pi Network",
+                change: -0.74,
+                price: 42.18,
+                signal: 20.27,
+                logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/7455.png"
+            },
+            {
+                id: 4,
+                name: "TRUMP-USDT",
+                symbol: "TRUMP",
+                fullName: "Trump Token",
+                change: 0.45,
+                price: 15.75,
+                signal: 20.10,
+                logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/35336.png"
+            },
+            {
+                id: 5,
+                name: "XRP-USDT",
+                symbol: "XRP",
+                fullName: "Ripple",
+                change: 0.53,
+                price: 2.174,
+                signal: 19.05,
+                logo: "https://assets.coingecko.com/coins/images/44/thumb/xrp-symbol-white-128.png"
+            },
+            {
+                id: 6,
+                name: "SOL-USDT",
+                symbol: "SOL",
+                fullName: "Solana",
+                change: 2.15,
+                price: 152.43,
+                signal: 28.91,
+                logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png"
+            },
+            {
+                id: 7,
+                name: "ADA-USDT",
+                symbol: "ADA",
+                fullName: "Cardano",
+                change: -1.23,
+                price: 0.42,
+                signal: 18.32,
+                logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/2010.png"
+            },
+            {
+                id: 8,
+                name: "DOGE-USDT",
+                symbol: "DOGE",
+                fullName: "Dogecoin",
+                change: 3.45,
+                price: 0.12,
+                signal: 22.76,
+                logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/74.png"
+            }
+        ];
+
+        // Populate the table with data
+        function populateTable(data) {
+            const tableBody = document.getElementById('cryptoTableBody');
+            tableBody.innerHTML = '';
+            
+            data.forEach(coin => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-700 hover:bg-gray-800/50';
+                
+                // Determine change class and icon
+                const changeClass = coin.change >= 0 ? 'text-positive' : 'text-negative';
+                const changeIcon = coin.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                
+                // Format price
+                const formattedPrice = coin.price > 1000 ? 
+                    `$${coin.price.toLocaleString('en-US', {maximumFractionDigits: 2})}` : 
+                    `$${coin.price.toFixed(coin.price < 1 ? 4 : 2)}`;
+                
+                row.innerHTML = `
+                    <td class="py-4 px-4">
+                        <div class="flex items-center gap-4">
+                            <input type="checkbox" class="h-5 w-5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-600 coin-checkbox">
+                        </div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${coin.logo}" alt="${coin.symbol}" class="w-10 h-10 rounded-full">
+                            <div>
+                                <div class="font-medium">${coin.symbol}</div>
+                                <div class="text-gray-400 text-sm">${coin.fullName}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="flex items-center gap-2 ${changeClass}">
+                            <i class="fas ${changeIcon}"></i>
+                            <span>${coin.change > 0 ? '+' : ''}${coin.change.toFixed(2)}%</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 font-medium">${formattedPrice}</td>
+                    <td class="py-4 px-4">
+                        <span class="px-3 py-1.5 rounded-full bg-indigo-900/50 text-indigo-300 font-medium text-sm">
+                            ${coin.signal.toFixed(2)}
+                        </span>
+                    </td>
+                    <td class="py-4 px-4">
+                        <button class="px-4 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2">
+                            <i class="fas fa-chart-line"></i> View
+                        </button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+
+            // Add event listener for select all checkbox
+            document.getElementById('selectAll').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.coin-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+            });
+        }
+
+        // Sort table function
+        function sortTable(column, direction) {
+            const sortedData = [...cryptoData];
+            
+            sortedData.sort((a, b) => {
+                let valA, valB;
+                
+                switch(column) {
+                    case 'symbol':
+                        valA = a.symbol;
+                        valB = b.symbol;
+                        return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                    case 'change':
+                        valA = a.change;
+                        valB = b.change;
+                        break;
+                    case 'price':
+                        valA = a.price;
+                        valB = b.price;
+                        break;
+                    case 'signal':
+                        valA = a.signal;
+                        valB = b.signal;
+                        break;
+                    default:
+                        return 0;
+                }
+                
+                return direction === 'asc' ? valA - valB : valB - valA;
+            });
+            
+            populateTable(sortedData);
+        }
+
+        // Initialize the table
+        populateTable(cryptoData);
         
-      <path id="Stroke 1" d="M14.3941 9.61502L9.60211 14.19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <path id="Stroke 2" d="M14.3999 14.196L9.59991 9.6134" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-     
-      </g>
-      </g>
-      </svg>
-  </div>
-
+        // Add sorting functionality
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.addEventListener('click', () => {
+                const column = header.getAttribute('data-sort');
+                const isAsc = header.classList.contains('asc');
+                const icon = header.querySelector('i');
+                
+                // Reset all headers
+                document.querySelectorAll('.sortable').forEach(h => {
+                    h.classList.remove('asc', 'desc');
+                    h.querySelector('i').className = 'fas fa-sort text-gray-500';
+                });
+                
+                // Set new sort direction
+                header.classList.toggle('asc', !isAsc);
+                header.classList.toggle('desc', isAsc);
+                
+                // Update icon
+                if (header.classList.contains('asc')) {
+                    icon.className = 'fas fa-sort-up text-indigo-400';
+                } else {
+                    icon.className = 'fas fa-sort-down text-indigo-400';
+                }
+                
+                // Sort the table
+                sortTable(column, header.classList.contains('asc') ? 'asc' : 'desc');
+            });
+        });
+        
+        // Global search functionality
+        document.getElementById('globalSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredData = cryptoData.filter(coin => 
+                coin.symbol.toLowerCase().includes(searchTerm) || 
+                coin.fullName.toLowerCase().includes(searchTerm) ||
+                coin.name.toLowerCase().includes(searchTerm)
+            );
+            populateTable(filteredData);
+        });
+        
+        // Search coin function for the search column
+        function searchCoin(symbol) {
+            const searchInput = document.getElementById('globalSearch');
+            searchInput.value = symbol;
+            searchInput.dispatchEvent(new Event('input'));
+        }
+        
+        // Trade button functionality
+        document.querySelector('button:has(.fa-exchange-alt)').addEventListener('click', () => {
+            const selectedCoins = [];
+            document.querySelectorAll('.coin-checkbox:checked').forEach(checkbox => {
+                const row = checkbox.closest('tr');
+                const symbol = row.querySelector('td:nth-child(2) .font-medium').textContent;
+                selectedCoins.push(symbol);
+            });
+            
+            if (selectedCoins.length > 0) {
+                alert(`Preparing to trade: ${selectedCoins.join(', ')}`);
+            } else {
+                alert('Please select at least one coin to trade');
+            }
+        });
+    </script>
 </body>
 </html>

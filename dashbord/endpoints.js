@@ -5,6 +5,11 @@ const exchange = "https://exchanges.imoonex.ir/"
 const aimoonhub = "https://news.imoonex.ir/"
 
 
+const exchangetoken = 'b7c2ee9cb6d56750bf0ca5bdfd8b19d0'
+const aimoonhubtoken = '96fd30916bb6fafe293b182a0f400df8'
+
+
+
 // main coin pair 
 export const GetNewsbyDateCategory = aimoonhub + "News/GetNewsbyDateCategory/"
 export const GetMarketPair = exchange + "Market/GetMarketPair/"

@@ -23,7 +23,7 @@ const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
 
 // Global settings and state variables
-const token = "23b30428c4102a9280abbbd75762cf01";
+const token = "b7c2ee9cb6d56750bf0ca5bdfd8b19d0";
 const priceHistory = []; // Price history (up to 20 points)
 const maxDataPoints = 20;
 
@@ -174,7 +174,7 @@ async function fetchCoinList() {
 
       if (first_time) {
         cryptoComponent = new CryptoDataComponent(
-          "e19ad04e557b1cc1fee6b60b4d421fef",
+          "96fd30916bb6fafe293b182a0f400df8",
           pair_name,
           document.getElementById("news_statistics")
         );
